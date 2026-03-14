@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import orderService from '../services/orderService';
+import { useNotifications } from '../context/NotificationContext';
 
 const MyOrdersPage = () => {
+  const { markOrdersRead } = useNotifications();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -10,6 +12,7 @@ const MyOrdersPage = () => {
   const [deleting, setDeleting] = useState(null);
 
   useEffect(() => {
+    markOrdersRead(); // Mark notifications as read when user visits this page
     loadOrders();
   }, []);
 

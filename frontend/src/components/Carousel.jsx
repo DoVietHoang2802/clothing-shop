@@ -27,7 +27,7 @@ const Carousel = ({ slides = [] }) => {
     },
     {
       id: 5,
-      image: 'https://images.unsplash.com/photo-1614613535308-eb5fbd8f2c81?w=1200&h=400&fit=crop&q=80',
+      image: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=1920&h=500&fit=crop&q=80',
       title: 'iPad Air - Sáng Tạo không Giới Hạn'
     },
   ];

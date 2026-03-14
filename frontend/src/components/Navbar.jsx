@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useNotifications } from '../context/NotificationContext';
 
 const Navbar = () => {
   const { isAuthenticated, user, logout } = useAuth();
@@ -55,7 +56,35 @@ const Navbar = () => {
           </>
         ) : (
           <>
-            <li><Link to="/my-orders">📦 Đơn Hàng</Link></li>
+            <li>
+              <Link to="/my-orders" onClick={markOrdersRead}>
+                <span style={{ position: 'relative' }}>
+                  📦 Đơn Hàng
+                  {orderNotification.count > 0 && !orderNotification.read && (
+                    <span
+                      style={{
+                        position: 'absolute',
+                        top: '-8px',
+                        right: '-8px',
+                        backgroundColor: '#e74c3c',
+                        color: 'white',
+                        borderRadius: '50%',
+                        width: '20px',
+                        height: '20px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '12px',
+                        fontWeight: 'bold',
+                        border: '2px solid white',
+                      }}
+                    >
+                      {orderNotification.count}
+                    </span>
+                  )}
+                </span>
+              </Link>
+            </li>
             <li><Link to="/wishlist">❤️ Yêu Thích</Link></li>
             <li><Link to="/cart">🛒 Giỏ ({cartCount})</Link></li>
             <li><Link to="/profile">👤 Hồ Sơ</Link></li>
@@ -65,7 +94,35 @@ const Navbar = () => {
             )}
 
             {user?.role === 'ADMIN' && (
-              <li><Link to="/admin/dashboard">⚙️ Admin</Link></li>
+              <li>
+                <Link to="/admin/dashboard" onClick={markAdminRead}>
+                  <span style={{ position: 'relative' }}>
+                    ⚙️ Admin
+                    {adminNotification.count > 0 && !adminNotification.read && (
+                      <span
+                        style={{
+                          position: 'absolute',
+                          top: '-8px',
+                          right: '-8px',
+                          backgroundColor: '#e74c3c',
+                          color: 'white',
+                          borderRadius: '50%',
+                          width: '20px',
+                          height: '20px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '12px',
+                          fontWeight: 'bold',
+                          border: '2px solid white',
+                        }}
+                      >
+                        {adminNotification.count}
+                      </span>
+                    )}
+                  </span>
+                </Link>
+              </li>
             )}
 
             <li>

@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { NotificationProvider } from './context/NotificationContext';
 import PrivateRoute from './routes/PrivateRoute';
 import MainLayout from './layouts/MainLayout';
 
@@ -29,8 +30,9 @@ function App() {
   return (
     <Router>
       <AuthProvider>
-        <MainLayout>
-          <Routes>
+        <NotificationProvider>
+          <MainLayout>
+            <Routes>
             {/* Public Routes */}
             <Route path="/" element={<HomePage />} />
             <Route path="/products" element={<HomePage />} />
@@ -144,6 +146,7 @@ function App() {
             <Route path="*" element={<div className="container" style={{ textAlign: 'center', marginTop: '2rem' }}><h1>404 - Trang Không Tìm Thấy</h1></div>} />
           </Routes>
         </MainLayout>
+        </NotificationProvider>
       </AuthProvider>
     </Router>
   );

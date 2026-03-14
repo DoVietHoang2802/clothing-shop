@@ -1,6 +1,7 @@
 import React from 'react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import FloatingContactBubbles from '../components/FloatingContactBubbles';
 
 const MainLayout = ({ children }) => {
   return (
@@ -10,6 +11,7 @@ const MainLayout = ({ children }) => {
         {children}
       </main>
       <Footer />
+      <FloatingContactBubbles />
     </div>
   );
 };

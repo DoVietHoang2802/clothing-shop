@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import orderService from '../../services/orderService';
+import { useNotifications } from '../../context/NotificationContext';
 
 const AdminOrdersPage = () => {
   const navigate = useNavigate();
+  const { markAdminRead } = useNotifications();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -12,6 +14,7 @@ const AdminOrdersPage = () => {
   const [deletingId, setDeletingId] = useState(null);
 
   useEffect(() => {
+    markAdminRead(); // Mark admin notifications as read when admin visits orders page
     loadOrders();
   }, []);
 
