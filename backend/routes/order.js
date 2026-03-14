@@ -6,6 +6,8 @@ const {
   getAllOrders,
   updateOrderStatus,
   cancelOrder,
+  deleteOrder,
+  deleteOrderAdmin,
 } = require('../controllers/orderController');
 const { verifyToken, authorizeRoles } = require('../middlewares/auth');
 
@@ -20,6 +22,9 @@ router.get('/my', verifyToken, authorizeRoles('USER', 'STAFF', 'ADMIN'), getMyOr
 // PUT /api/orders/:id/cancel - Hủy đơn hàng của user (phải trước GET /:id)
 router.put('/:id/cancel', verifyToken, authorizeRoles('USER', 'STAFF', 'ADMIN'), cancelOrder);
 
+// DELETE /api/orders/:id - Xóa đơn hàng của user
+router.delete('/:id', verifyToken, authorizeRoles('USER', 'STAFF'), deleteOrder);
+
 // GET /api/orders/:id - Lấy chi tiết một đơn hàng
 router.get('/:id', verifyToken, authorizeRoles('USER', 'STAFF', 'ADMIN'), getOrderById);
 
@@ -28,5 +33,8 @@ router.get('/', verifyToken, authorizeRoles('ADMIN'), getAllOrders);
 
 // PUT /api/orders/:id/status - Cập nhật trạng thái đơn hàng (ADMIN, STAFF)
 router.put('/:id/status', verifyToken, authorizeRoles('ADMIN', 'STAFF'), updateOrderStatus);
+
+// DELETE /api/orders/admin/:id - Xóa đơn hàng (ADMIN)
+router.delete('/admin/:id', verifyToken, authorizeRoles('ADMIN'), deleteOrderAdmin);
 
 module.exports = router;

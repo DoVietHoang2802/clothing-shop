@@ -70,14 +70,14 @@ const CartPage = () => {
     try {
       setLoading(true);
       setError('');
-      await orderService.createOrder(items);
+      await orderService.createOrder(items, appliedCoupon?.code);
       setSuccess('Tạo đơn hàng thành công!');
       localStorage.removeItem('cart');
       setCart([]);
       setAppliedCoupon(null);
       setTimeout(() => navigate('/my-orders'), 1500);
     } catch (err) {
-      setError(err.message || 'Tạo đơn hàng thất bại');
+      setError(err.response?.data?.message || err.message || 'Tạo đơn hàng thất bại');
       console.error(err);
     } finally {
       setLoading(false);

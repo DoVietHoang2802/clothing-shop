@@ -1,12 +1,13 @@
 const Order = require('../models/Order');
 const Product = require('../models/Product');
+const Coupon = require('../models/Coupon');
 const asyncHandler = require('../utils/asyncHandler');
 
 // @desc    Tạo đơn hàng mới
 // @route   POST /api/orders
 // @access  Private/USER
 const createOrder = asyncHandler(async (req, res, next) => {
-  const { items } = req.body;
+  const { items, couponCode } = req.body;
   const userId = req.user.id;
 
   if (!items || items.length === 0) {
@@ -19,7 +20,7 @@ const createOrder = asyncHandler(async (req, res, next) => {
 
   let totalPrice = 0;
   const orderItems = [];
-  const productsToUpdate = []; // Track products to update stock
+  const productsToUpdate = [];
 
   // Validate tất cả trước
   for (const item of items) {
@@ -49,20 +50,84 @@ const createOrder = asyncHandler(async (req, res, next) => {
       price: price,
     });
 
-    // Track products for stock update
     productsToUpdate.push({
       productId: product._id,
       quantity: item.quantity,
     });
   }
 
-  // Create order - nếu fail thì không giảm stock
+  // Xử lý coupon nếu có
+  let couponData = null;
+  let discountAmount = 0;
+  let finalPrice = totalPrice;
+
+  if (couponCode) {
+    const coupon = await Coupon.findOne({
+      code: couponCode.toUpperCase(),
+      isActive: true,
+      expiresAt: { $gt: new Date() },
+    });
+
+    if (!coupon) {
+      return res.status(400).json({
+        success: false,
+        message: 'Mã coupon không hợp lệ hoặc đã hết hạn',
+        data: null,
+      });
+    }
+
+    // Check min order value
+    if (coupon.minOrderValue && totalPrice < coupon.minOrderValue) {
+      return res.status(400).json({
+        success: false,
+        message: `Đơn hàng phải tối thiểu ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(coupon.minOrderValue)}`,
+        data: null,
+      });
+    }
+
+    // Check usage limit
+    if (coupon.usageLimit && coupon.usageCount >= coupon.usageLimit) {
+      return res.status(400).json({
+        success: false,
+        message: 'Mã coupon đã được sử dụng hết',
+        data: null,
+      });
+    }
+
+    // Calculate discount
+    if (coupon.discountType === 'PERCENTAGE') {
+      discountAmount = Math.floor((totalPrice * coupon.discountValue) / 100);
+      if (coupon.maxDiscount) {
+        discountAmount = Math.min(discountAmount, coupon.maxDiscount);
+      }
+    } else {
+      discountAmount = coupon.discountValue;
+    }
+
+    finalPrice = Math.max(0, totalPrice - discountAmount);
+
+    couponData = {
+      code: coupon.code,
+      discountType: coupon.discountType,
+      discountValue: coupon.discountValue,
+    };
+
+    // Update coupon usage
+    await Coupon.findByIdAndUpdate(coupon._id, {
+      $inc: { usageCount: 1 },
+    });
+  }
+
+  // Create order
   let order;
   try {
     order = await Order.create({
       user: userId,
       items: orderItems,
       totalPrice,
+      coupon: couponData,
+      discountAmount,
+      finalPrice,
     });
   } catch (err) {
     console.error('Order creation failed:', err);
@@ -296,6 +361,75 @@ const cancelOrder = asyncHandler(async (req, res, next) => {
   });
 });
 
+// @desc    Xóa đơn hàng (user xóa đơn hàng của mình)
+// @route   DELETE /api/orders/:id
+// @access  Private/USER
+const deleteOrder = asyncHandler(async (req, res, next) => {
+  const { id } = req.params;
+  const userId = req.user.id;
+
+  const order = await Order.findById(id);
+
+  if (!order) {
+    return res.status(404).json({
+      success: false,
+      message: 'Đơn hàng không tìm thấy',
+      data: null,
+    });
+  }
+
+  // Check authorization
+  if (order.user.toString() !== userId) {
+    return res.status(403).json({
+      success: false,
+      message: 'Bạn không có quyền xóa đơn hàng này',
+      data: null,
+    });
+  }
+
+  // Only allow deleting CANCELLED or COMPLETED orders
+  if (!['CANCELLED', 'COMPLETED'].includes(order.status)) {
+    return res.status(400).json({
+      success: false,
+      message: `Chỉ có thể xóa đơn hàng đã hủy hoặc hoàn thành`,
+      data: null,
+    });
+  }
+
+  await Order.findByIdAndDelete(id);
+
+  res.status(200).json({
+    success: true,
+    message: 'Xóa đơn hàng thành công',
+    data: null,
+  });
+});
+
+// @desc    Xóa đơn hàng (admin xóa)
+// @route   DELETE /api/orders/admin/:id
+// @access  Private/ADMIN
+const deleteOrderAdmin = asyncHandler(async (req, res, next) => {
+  const { id } = req.params;
+
+  const order = await Order.findById(id);
+
+  if (!order) {
+    return res.status(404).json({
+      success: false,
+      message: 'Đơn hàng không tìm thấy',
+      data: null,
+    });
+  }
+
+  await Order.findByIdAndDelete(id);
+
+  res.status(200).json({
+    success: true,
+    message: 'Xóa đơn hàng thành công',
+    data: null,
+  });
+});
+
 module.exports = {
   createOrder,
   getMyOrders,
@@ -303,4 +437,6 @@ module.exports = {
   getAllOrders,
   updateOrderStatus,
   cancelOrder,
+  deleteOrder,
+  deleteOrderAdmin,
 };

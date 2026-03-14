@@ -9,6 +9,7 @@ const AdminOrdersPage = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [updatingId, setUpdatingId] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
 
   useEffect(() => {
     loadOrders();
@@ -40,6 +41,25 @@ const AdminOrdersPage = () => {
       console.error(err);
     } finally {
       setUpdatingId(null);
+    }
+  };
+
+  const handleDeleteOrder = async (orderId) => {
+    if (!window.confirm('Bạn chắc chắn muốn xóa đơn hàng này?')) {
+      return;
+    }
+
+    try {
+      setDeletingId(orderId);
+      await orderService.deleteOrderAdmin(orderId);
+      setSuccess('Xóa đơn hàng thành công');
+      loadOrders();
+      setTimeout(() => setSuccess(''), 2000);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Không thể xóa đơn hàng');
+      console.error(err);
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -86,6 +106,8 @@ const AdminOrdersPage = () => {
                 <th>ID Đơn Hàng</th>
                 <th>Khách Hàng</th>
                 <th>Tổng Tiền</th>
+                <th>Chiết Khấu</th>
+                <th>Thành Tiền</th>
                 <th>Trạng Thái</th>
                 <th>Ngày Tạo</th>
                 <th>Hành Động</th>
@@ -102,20 +124,58 @@ const AdminOrdersPage = () => {
                       currency: 'VND',
                     }).format(order.totalPrice)}
                   </td>
+                  <td>
+                    {order.discountAmount > 0 ? (
+                      <span style={{ color: '#27ae60', fontWeight: 'bold' }}>
+                        -{new Intl.NumberFormat('vi-VN', {
+                          style: 'currency',
+                          currency: 'VND',
+                        }).format(order.discountAmount)}
+                      </span>
+                    ) : (
+                      '-'
+                    )}
+                  </td>
+                  <td>
+                    {new Intl.NumberFormat('vi-VN', {
+                      style: 'currency',
+                      currency: 'VND',
+                    }).format(order.finalPrice || order.totalPrice)}
+                  </td>
                   <td>{getStatusBadge(order.status)}</td>
                   <td>{new Date(order.createdAt).toLocaleDateString('vi-VN')}</td>
                   <td>
-                    <select
-                      value={order.status}
-                      onChange={(e) => handleStatusChange(order._id, e.target.value)}
-                      disabled={updatingId === order._id}
-                    >
-                      <option value="PENDING">Chờ Xác Nhận</option>
-                      <option value="CONFIRMED">Đã Xác Nhận</option>
-                      <option value="SHIPPED">Đang Giao</option>
-                      <option value="COMPLETED">Hoàn Tất</option>
-                      <option value="CANCELLED">Hủy</option>
-                    </select>
+                    <div style={{ display: 'flex', gap: '0.5rem', flexDirection: 'column' }}>
+                      <select
+                        value={order.status}
+                        onChange={(e) => handleStatusChange(order._id, e.target.value)}
+                        disabled={updatingId === order._id}
+                        style={{ padding: '0.5rem', borderRadius: '4px' }}
+                      >
+                        <option value="PENDING">Chờ Xác Nhận</option>
+                        <option value="CONFIRMED">Đã Xác Nhận</option>
+                        <option value="SHIPPED">Đang Giao</option>
+                        <option value="COMPLETED">Hoàn Tất</option>
+                        <option value="CANCELLED">Hủy</option>
+                      </select>
+                      {['CANCELLED'].includes(order.status) && (
+                        <button
+                          onClick={() => handleDeleteOrder(order._id)}
+                          disabled={deletingId === order._id}
+                          style={{
+                            padding: '0.5rem',
+                            backgroundColor: '#6c757d',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontSize: '0.9rem',
+                          }}
+                        >
+                          {deletingId === order._id ? 'Xóa...' : 'Xóa'}
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}

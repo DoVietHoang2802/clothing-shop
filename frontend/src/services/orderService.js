@@ -1,8 +1,8 @@
 import api from './api';
 
 const orderService = {
-  createOrder: (items) => {
-    return api.post('/orders', { items });
+  createOrder: (items, couponCode = null) => {
+    return api.post('/orders', { items, couponCode });
   },
 
   getMyOrders: () => {
@@ -23,6 +23,14 @@ const orderService = {
 
   cancelOrder: (id) => {
     return api.put(`/orders/${id}/cancel`);
+  },
+
+  deleteOrder: (id) => {
+    return api.delete(`/orders/${id}`);
+  },
+
+  deleteOrderAdmin: (id) => {
+    return api.delete(`/orders/admin/${id}`);
   },
 };
 

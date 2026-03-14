@@ -7,6 +7,7 @@ const MyOrdersPage = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [cancelling, setCancelling] = useState(null);
+  const [deleting, setDeleting] = useState(null);
 
   useEffect(() => {
     loadOrders();
@@ -36,16 +37,39 @@ const MyOrdersPage = () => {
       setError('');
       await orderService.cancelOrder(orderId);
       setSuccess('Hủy đơn hàng thành công!');
-      
+
       // Reload orders
       await loadOrders();
-      
+
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
       setError(err.response?.data?.message || 'Hủy đơn hàng thất bại');
       console.error(err);
     } finally {
       setCancelling(null);
+    }
+  };
+
+  const handleDeleteOrder = async (orderId) => {
+    if (!window.confirm('Bạn chắc chắn muốn xóa đơn hàng này không? Hành động này không thể hoàn nguyên!')) {
+      return;
+    }
+
+    try {
+      setDeleting(orderId);
+      setError('');
+      await orderService.deleteOrder(orderId);
+      setSuccess('Xóa đơn hàng thành công!');
+
+      // Reload orders
+      await loadOrders();
+
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Xóa đơn hàng thất bại');
+      console.error(err);
+    } finally {
+      setDeleting(null);
     }
   };
 
@@ -119,11 +143,27 @@ const MyOrdersPage = () => {
                   <p style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>
                     {getStatusBadge(order.status)}
                   </p>
+                  {order.discountAmount > 0 && (
+                    <>
+                      <p style={{ textDecoration: 'line-through', color: '#999', marginBottom: '0.25rem' }}>
+                        {new Intl.NumberFormat('vi-VN', {
+                          style: 'currency',
+                          currency: 'VND',
+                        }).format(order.totalPrice)}
+                      </p>
+                      <p style={{ color: '#27ae60', marginBottom: '0.5rem' }}>
+                        Giảm: {new Intl.NumberFormat('vi-VN', {
+                          style: 'currency',
+                          currency: 'VND',
+                        }).format(order.discountAmount)}
+                      </p>
+                    </>
+                  )}
                   <h2 style={{ color: '#e74c3c' }}>
                     {new Intl.NumberFormat('vi-VN', {
                       style: 'currency',
                       currency: 'VND',
-                    }).format(order.totalPrice)}
+                    }).format(order.finalPrice || order.totalPrice)}
                   </h2>
                 </div>
               </div>
@@ -159,9 +199,9 @@ const MyOrdersPage = () => {
                 </tbody>
               </table>
 
-              {/* Cancel Button */}
-              {order.status === 'PENDING' && (
-                <div style={{ marginTop: '1rem' }}>
+              {/* Cancel & Delete Buttons */}
+              <div style={{ marginTop: '1rem', display: 'flex', gap: '1rem' }}>
+                {order.status === 'PENDING' && (
                   <button
                     onClick={() => handleCancelOrder(order._id)}
                     disabled={cancelling === order._id}
@@ -178,8 +218,27 @@ const MyOrdersPage = () => {
                   >
                     {cancelling === order._id ? 'Đang hủy...' : '❌ Hủy Đơn Hàng'}
                   </button>
-                </div>
-              )}
+                )}
+
+                {['CANCELLED', 'COMPLETED'].includes(order.status) && (
+                  <button
+                    onClick={() => handleDeleteOrder(order._id)}
+                    disabled={deleting === order._id}
+                    style={{
+                      padding: '0.75rem 1.5rem',
+                      backgroundColor: '#6c757d',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: deleting === order._id ? 'not-allowed' : 'pointer',
+                      fontWeight: 'bold',
+                      opacity: deleting === order._id ? 0.6 : 1,
+                    }}
+                  >
+                    {deleting === order._id ? 'Đang xóa...' : '🗑️ Xóa Đơn Hàng'}
+                  </button>
+                )}
+              </div>
             </div>
           ))}
         </div>
