@@ -5,7 +5,7 @@ import { useNotifications } from '../../context/NotificationContext';
 
 const AdminOrdersPage = () => {
   const navigate = useNavigate();
-  const { markAdminRead } = useNotifications();
+  const { markAdminRead, setAdminNotificationCount } = useNotifications();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -14,7 +14,6 @@ const AdminOrdersPage = () => {
   const [deletingId, setDeletingId] = useState(null);
 
   useEffect(() => {
-    markAdminRead(); // Mark admin notifications as read when admin visits orders page
     loadOrders();
   }, []);
 
@@ -24,6 +23,16 @@ const AdminOrdersPage = () => {
       const res = await orderService.getAllOrders();
       setOrders(res.data.data);
       setError('');
+
+      // Count pending orders
+      const pendingCount = res.data.data.filter(order => order.status === 'PENDING').length;
+
+      // If logged in as admin, set notification count
+      if (pendingCount > 0) {
+        setAdminNotificationCount(pendingCount);
+      } else {
+        markAdminRead();
+      }
     } catch (err) {
       setError('Không thể tải đơn hàng');
       console.error(err);

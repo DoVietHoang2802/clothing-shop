@@ -3,7 +3,7 @@ import orderService from '../services/orderService';
 import { useNotifications } from '../context/NotificationContext';
 
 const MyOrdersPage = () => {
-  const { markOrdersRead } = useNotifications();
+  const { markOrdersRead, setOrderNotificationCount } = useNotifications();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -12,7 +12,6 @@ const MyOrdersPage = () => {
   const [deleting, setDeleting] = useState(null);
 
   useEffect(() => {
-    markOrdersRead(); // Mark notifications as read when user visits this page
     loadOrders();
   }, []);
 
@@ -22,6 +21,18 @@ const MyOrdersPage = () => {
       const res = await orderService.getMyOrders();
       setOrders(res.data.data);
       setError('');
+
+      // Count pending/unshipped orders (not COMPLETED/CANCELLED)
+      const unfinishedCount = res.data.data.filter(
+        order => !['COMPLETED', 'CANCELLED'].includes(order.status)
+      ).length;
+
+      // Set notification if there are unfinished orders
+      if (unfinishedCount > 0) {
+        setOrderNotificationCount(unfinishedCount);
+      } else {
+        markOrdersRead();
+      }
     } catch (err) {
       setError('Không thể tải đơn hàng');
       console.error(err);

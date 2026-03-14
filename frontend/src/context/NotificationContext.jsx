@@ -14,16 +14,30 @@ export const NotificationProvider = ({ children }) => {
   });
 
   const markOrdersRead = () => {
-    setOrderNotification({
-      count: 0,
+    setOrderNotification(prev => ({
+      ...prev,
       read: true,
-    });
+    }));
   };
 
   const markAdminRead = () => {
-    setAdminNotification({
-      count: 0,
+    setAdminNotification(prev => ({
+      ...prev,
       read: true,
+    }));
+  };
+
+  const setOrderNotificationCount = (count) => {
+    setOrderNotification({
+      count,
+      read: false,
+    });
+  };
+
+  const setAdminNotificationCount = (count) => {
+    setAdminNotification({
+      count,
+      read: false,
     });
   };
 
@@ -46,6 +60,8 @@ export const NotificationProvider = ({ children }) => {
     adminNotification,
     markOrdersRead,
     markAdminRead,
+    setOrderNotificationCount,
+    setAdminNotificationCount,
     incrementOrderNotification,
     incrementAdminNotification,
   };
