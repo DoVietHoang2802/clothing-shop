@@ -7,8 +7,8 @@ const Carousel = ({ slides = [] }) => {
   const defaultSlides = [
     {
       id: 1,
-      image: 'https://images.unsplash.com/photo-1505228395891-9a51e7e86e81?w=1200&h=400&fit=crop&q=80',
-      title: 'iPhone 15 Pro Max - Công Nghệ Mới Nhất'
+      image: '/images/panel1.png',
+      title: 'Công Nghệ Mới Nhất'
     },
     {
       id: 2,
