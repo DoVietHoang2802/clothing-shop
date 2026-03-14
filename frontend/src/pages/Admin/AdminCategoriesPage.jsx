@@ -31,8 +31,7 @@ const AdminCategoriesPage = () => {
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
     if (!formData.name) {
       setError('Vui lòng điền tên danh mục');
       return;

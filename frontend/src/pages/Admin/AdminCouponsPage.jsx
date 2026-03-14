@@ -53,8 +53,7 @@ const AdminCouponsPage = () => {
     setEditingId(null);
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
     if (!formData.code || !formData.discountType || !formData.discountValue) {
       setError('Vui lòng nhập đầy đủ mã, loại giảm giá và giá trị giảm');
       return;

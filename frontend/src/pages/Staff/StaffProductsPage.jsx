@@ -44,8 +44,7 @@ const StaffProductsPage = () => {
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
     if (!formData.name || !formData.category || !formData.price) {
       setError('Vui lòng điền đầy đủ thông tin bắt buộc');
       return;
