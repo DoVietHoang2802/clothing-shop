@@ -5,6 +5,7 @@ import { useNotifications } from '../context/NotificationContext';
 
 const Navbar = () => {
   const { isAuthenticated, user, logout } = useAuth();
+  const { orderNotification, adminNotification, markOrdersRead, markAdminRead } = useNotifications();
   const [cartCount, setCartCount] = useState(0);
 
   // Đồng bộ số lượng sản phẩm trong giỏ từ localStorage
