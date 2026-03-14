@@ -16,9 +16,28 @@ const errorHandler = require('./middlewares/errorHandler');
 
 const app = express();
 
+// CORS configuration for Firebase OAuth
+const corsOptions = {
+  origin: [
+    'http://localhost:3000',
+    'http://localhost:5173',
+    'https://clothing-shop-ashy.vercel.app',
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+};
+
 // Middlewares
 app.use(express.json());
-app.use(cors());
+app.use(cors(corsOptions));
+
+// Add COOP/COEP headers for better security with OAuth
+app.use((req, res, next) => {
+  res.header('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
+  res.header('Cross-Origin-Resource-Policy', 'cross-origin');
+  next();
+});
 
 // Routes
 app.use('/api/auth', authRoutes);
