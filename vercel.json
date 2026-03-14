@@ -1,7 +1,6 @@
 {
-  "buildCommand": "cd frontend && npm install && npm run build",
-  "outputDirectory": "frontend/dist",
-  "devCommand": "cd frontend && npm run dev",
+  "buildCommand": "npm install && npm run build",
+  "outputDirectory": "dist",
   "env": {
     "VITE_API_BASE_URL": "@vite_api_base_url",
     "VITE_FIREBASE_API_KEY": "@vite_firebase_api_key",
@@ -11,10 +10,10 @@
     "VITE_FIREBASE_MESSAGING_SENDER_ID": "@vite_firebase_messaging_sender_id",
     "VITE_FIREBASE_APP_ID": "@vite_firebase_app_id"
   },
-  "rewrites": [
+  "routes": [
     {
-      "source": "/(.*)",
-      "destination": "/index.html"
+      "src": "/(.*)",
+      "dest": "/index.html"
     }
   ],
   "headers": [
