@@ -7,13 +7,13 @@ const Carousel = ({ slides = [] }) => {
   const defaultSlides = [
     {
       id: 1,
-      image: '/images/panel1.png',
+      image: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=1920&h=500&fit=crop&q=80',
       title: 'Công Nghệ Mới Nhất'
     },
     {
       id: 2,
-      image: 'https://images.unsplash.com/photo-1588872657840-790ff3bde726?w=1200&h=400&fit=crop&q=80',
-      title: 'Laptop Gaming - Hiệu Năng Đỉnh Cao'
+      image: 'https://images.unsplash.com/photo-1550009158-9ebf69173e03?w=1920&h=500&fit=crop&q=80',
+      title: 'Hiệu Năng Đỉnh Cao'
     },
     {
       id: 3,
