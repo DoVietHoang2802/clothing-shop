@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import categoryService from '../../services/categoryService';
+import CategoryFormModal from '../../components/CategoryFormModal';
 
 const AdminCategoriesPage = () => {
   const navigate = useNavigate();
@@ -110,42 +111,14 @@ const AdminCategoriesPage = () => {
         </button>
       )}
 
-      {showForm && (
-        <div className="card" style={{ marginBottom: '2rem', padding: '1.5rem' }}>
-          <h3>{editingId ? 'Cập Nhật' : 'Thêm Mới'} Danh Mục</h3>
-          <form onSubmit={handleSubmit} style={{ marginTop: '1rem' }}>
-            <div className="form-group">
-              <label>Tên Danh Mục</label>
-              <input
-                type="text"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Mô Tả</label>
-              <textarea
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              />
-            </div>
-
-            <div style={{ display: 'flex', gap: '1rem' }}>
-              <button type="submit" className="btn btn-success">
-                {editingId ? 'Cập Nhật' : 'Thêm'}
-              </button>
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={handleCancel}
-              >
-                Hủy
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
+      <CategoryFormModal
+        isOpen={showForm}
+        onClose={handleCancel}
+        onSubmit={handleSubmit}
+        formData={formData}
+        setFormData={setFormData}
+        editingId={editingId}
+      />
 
       {categories.length === 0 ? (
         <div className="card" style={{ textAlign: 'center', padding: '2rem' }}>

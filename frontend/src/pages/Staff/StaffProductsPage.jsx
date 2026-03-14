@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import productService from '../../services/productService';
 import categoryService from '../../services/categoryService';
+import ProductFormModal from '../../components/ProductFormModal';
 
 const StaffProductsPage = () => {
   const navigate = useNavigate();
@@ -138,91 +139,15 @@ const StaffProductsPage = () => {
         </button>
       )}
 
-      {showForm && (
-        <div className="card" style={{ marginBottom: '2rem', padding: '1.5rem' }}>
-          <h3>{editingId ? 'Cập Nhật' : 'Thêm Mới'} Sản Phẩm</h3>
-          <form onSubmit={handleSubmit} style={{ marginTop: '1rem' }}>
-            <div className="form-group">
-              <label>Tên Sản Phẩm *</label>
-              <input
-                type="text"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Mô Tả *</label>
-              <textarea
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                required
-              />
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-              <div className="form-group">
-                <label>Giá *</label>
-                <input
-                  type="number"
-                  value={formData.price}
-                  onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Tồn Kho</label>
-                <input
-                  type="number"
-                  value={formData.stock}
-                  onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
-                />
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label>Danh Mục *</label>
-              <select
-                value={formData.category}
-                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                required
-              >
-                <option value="">Chọn danh mục</option>
-                {categories.map((cat) => (
-                  <option key={cat._id} value={cat._id}>
-                    {cat.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label>Link Hình Ảnh</label>
-              <input
-                type="url"
-                value={formData.image}
-                onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                placeholder="https://via.placeholder.com/300x300"
-              />
-            </div>
-
-            <div style={{ display: 'flex', gap: '1rem' }}>
-              <button type="submit" className="btn btn-success">
-                {editingId ? 'Cập Nhật' : 'Thêm'}
-              </button>
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={handleCancel}
-              >
-                Hủy
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
+      <ProductFormModal
+        isOpen={showForm}
+        onClose={handleCancel}
+        onSubmit={handleSubmit}
+        formData={formData}
+        setFormData={setFormData}
+        categories={categories}
+        editingId={editingId}
+      />
 
       {products.length === 0 ? (
         <div className="card" style={{ textAlign: 'center', padding: '2rem' }}>

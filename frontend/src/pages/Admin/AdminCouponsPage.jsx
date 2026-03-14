@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { couponService } from '../../services/couponService';
+import CouponFormModal from '../../components/CouponFormModal';
 
 const AdminCouponsPage = () => {
   const navigate = useNavigate();
@@ -157,123 +158,14 @@ const AdminCouponsPage = () => {
         </button>
       )}
 
-      {showForm && (
-        <div className="card" style={{ marginBottom: '2rem', padding: '1.5rem' }}>
-          <h3>{editingId ? 'Cập Nhật Coupon' : 'Thêm Mới Coupon'}</h3>
-          <form onSubmit={handleSubmit} style={{ marginTop: '1rem' }}>
-            <div className="form-group">
-              <label>Mã Coupon *</label>
-              <input
-                type="text"
-                value={formData.code}
-                onChange={(e) =>
-                  setFormData({ ...formData, code: e.target.value.toUpperCase() })
-                }
-                required
-              />
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-              <div className="form-group">
-                <label>Loại Giảm Giá *</label>
-                <select
-                  value={formData.discountType}
-                  onChange={(e) =>
-                    setFormData({ ...formData, discountType: e.target.value })
-                  }
-                >
-                  <option value="PERCENTAGE">Phần trăm (%)</option>
-                  <option value="FIXED">Số tiền (VND)</option>
-                </select>
-              </div>
-              <div className="form-group">
-                <label>Giá Trị Giảm *</label>
-                <input
-                  type="number"
-                  value={formData.discountValue}
-                  onChange={(e) =>
-                    setFormData({ ...formData, discountValue: e.target.value })
-                  }
-                  required
-                />
-              </div>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-              <div className="form-group">
-                <label>Giá Trị Đơn Hàng Tối Thiểu</label>
-                <input
-                  type="number"
-                  value={formData.minOrderValue}
-                  onChange={(e) =>
-                    setFormData({ ...formData, minOrderValue: e.target.value })
-                  }
-                />
-              </div>
-              <div className="form-group">
-                <label>Giảm Tối Đa (nếu là %)</label>
-                <input
-                  type="number"
-                  value={formData.maxDiscount}
-                  onChange={(e) =>
-                    setFormData({ ...formData, maxDiscount: e.target.value })
-                  }
-                />
-              </div>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-              <div className="form-group">
-                <label>Số Lần Sử Dụng Tối Đa</label>
-                <input
-                  type="number"
-                  value={formData.usageLimit}
-                  onChange={(e) =>
-                    setFormData({ ...formData, usageLimit: e.target.value })
-                  }
-                />
-              </div>
-              <div className="form-group">
-                <label>Ngày Hết Hạn</label>
-                <input
-                  type="date"
-                  value={formData.expiresAt}
-                  onChange={(e) =>
-                    setFormData({ ...formData, expiresAt: e.target.value })
-                  }
-                />
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label>
-                <input
-                  type="checkbox"
-                  checked={formData.isActive}
-                  onChange={(e) =>
-                    setFormData({ ...formData, isActive: e.target.checked })
-                  }
-                  style={{ marginRight: '0.5rem' }}
-                />
-                Đang hoạt động
-              </label>
-            </div>
-
-            <div style={{ display: 'flex', gap: '1rem' }}>
-              <button type="submit" className="btn btn-success">
-                {editingId ? 'Cập Nhật' : 'Thêm'}
-              </button>
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={handleCancel}
-              >
-                Hủy
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
+      <CouponFormModal
+        isOpen={showForm}
+        onClose={handleCancel}
+        onSubmit={handleSubmit}
+        formData={formData}
+        setFormData={setFormData}
+        editingId={editingId}
+      />
 
       {coupons.length === 0 ? (
         <div className="card" style={{ textAlign: 'center', padding: '2rem' }}>
