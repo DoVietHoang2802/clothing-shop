@@ -62,6 +62,10 @@ const authService = {
       return null;
     }
   },
+
+  googleLogin: (googleToken) => {
+    return api.post('/auth/google', { googleToken });
+  },
 };
 
 export default authService;

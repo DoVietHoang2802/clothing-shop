@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const asyncHandler = require('../utils/asyncHandler');
+const admin = require('../config/firebase');
 
 // @desc    Đăng ký người dùng mới
 // @route   POST /api/auth/register
@@ -103,6 +104,77 @@ const login = asyncHandler(async (req, res, next) => {
       token,
     },
   });
+});
+
+// @desc    Đăng nhập với Google OAuth
+// @route   POST /api/auth/google
+// @access  Public
+const googleAuth = asyncHandler(async (req, res, next) => {
+  const { googleToken } = req.body;
+
+  if (!googleToken) {
+    return res.status(400).json({
+      success: false,
+      message: 'Google token là bắt buộc',
+      data: null,
+    });
+  }
+
+  try {
+    // Verify Google token using Firebase Admin SDK
+    const decodedToken = await admin.auth().verifyIdToken(googleToken);
+
+    const { uid, email, name, picture } = decodedToken;
+
+    // Find or create user
+    let user = await User.findOne({ email });
+
+    if (!user) {
+      // Create new user from Google data
+      user = await User.create({
+        name: name || email.split('@')[0],
+        email,
+        provider: 'google',
+        providerId: uid,
+        avatar: picture || null,
+      });
+    } else if (user.provider === 'local') {
+      // Link Google account to existing local user
+      user.provider = 'google';
+      user.providerId = uid;
+      user.avatar = picture || user.avatar;
+      await user.save();
+    }
+
+    // Create JWT token
+    const token = jwt.sign(
+      { id: user._id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: 'Đăng nhập với Google thành công',
+      data: {
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          avatar: user.avatar,
+        },
+        token,
+      },
+    });
+  } catch (error) {
+    console.error('Google Auth Error:', error);
+    return res.status(401).json({
+      success: false,
+      message: 'Google token không hợp lệ hoặc đã hết hạn',
+      data: null,
+    });
+  }
 });
 
 // @desc    Làm mới token
@@ -249,6 +321,7 @@ const changePassword = asyncHandler(async (req, res, next) => {
 module.exports = {
   register,
   login,
+  googleAuth,
   refreshToken,
   changePassword,
 };

@@ -44,6 +44,26 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const googleLogin = async (googleToken) => {
+    try {
+      const response = await authService.googleLogin(googleToken);
+      const { token, user } = response.data.data;
+
+      authService.setToken(token);
+      authService.setUser(user);
+
+      setToken(token);
+      setUser({
+        id: user.id,
+        role: user.role,
+      });
+
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error;
+    }
+  };
+
   const register = async (name, email, password) => {
     try {
       const response = await authService.register({ name, email, password });
@@ -75,6 +95,7 @@ export const AuthProvider = ({ children }) => {
     token,
     loading,
     login,
+    googleLogin,
     register,
     logout,
     isAuthenticated: !!token,
