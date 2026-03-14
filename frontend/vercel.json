@@ -1,6 +1,8 @@
 {
   "buildCommand": "npm install && npm run build",
   "outputDirectory": "dist",
+  "trailingSlash": false,
+  "cleanUrls": true,
   "env": {
     "VITE_API_BASE_URL": "@vite_api_base_url",
     "VITE_FIREBASE_API_KEY": "@vite_firebase_api_key",
@@ -10,12 +12,6 @@
     "VITE_FIREBASE_MESSAGING_SENDER_ID": "@vite_firebase_messaging_sender_id",
     "VITE_FIREBASE_APP_ID": "@vite_firebase_app_id"
   },
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "/index.html"
-    }
-  ],
   "headers": [
     {
       "source": "/(.*)",
