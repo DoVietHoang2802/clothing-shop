@@ -4,13 +4,14 @@ const User = require('../models/User');
 const Product = require('../models/Product');
 const Order = require('../models/Order');
 const Category = require('../models/Category');
+const { verifyToken, authorizeRoles } = require('../middlewares/auth');
 
 const router = express.Router();
 
 // @desc    Lấy thống kê dashboard
 // @route   GET /api/admin/stats
 // @access  Private/ADMIN
-const getStats = asyncHandler(async (req, res, next) => {
+router.get('/stats', verifyToken, authorizeRoles('ADMIN'), asyncHandler(async (req, res, next) => {
   // Đếm số người dùng
   const totalUsers = await User.countDocuments();
 
@@ -59,6 +60,6 @@ const getStats = asyncHandler(async (req, res, next) => {
       newUsersThisMonth
     }
   });
-});
+}));
 
 module.exports = router;
