@@ -31,7 +31,7 @@ const AdminUsersPage = () => {
     }
   };
 
-  const handleSelectUser = (user) => {
+  const handleEditUser = (user) => {
     setSelectedUser(user._id);
     setSelectedRole(user.role);
   };
@@ -168,7 +168,7 @@ const AdminUsersPage = () => {
         </div>
       )}
 
-      {/* Search & Stats */}
+      {/* Search */}
       <div style={{
         background: 'white',
         borderRadius: '16px',
@@ -222,11 +222,8 @@ const AdminUsersPage = () => {
                     key={user._id}
                     style={{
                       borderBottom: '1px solid #f0f0f0',
-                      transition: 'all 0.3s ease',
-                      background: selectedUser === user._id ? '#f8f9fa' : 'white'
+                      transition: 'all 0.3s ease'
                     }}
-                    onMouseEnter={(e) => e.currentTarget.style.background = '#f8f9fa'}
-                    onMouseLeave={(e) => e.currentTarget.style.background = selectedUser === user._id ? '#f8f9fa' : 'white'}
                   >
                     <td style={{ padding: '1rem' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -260,29 +257,54 @@ const AdminUsersPage = () => {
                       </span>
                     </td>
                     <td style={{ padding: '1rem', textAlign: 'center' }}>
-                      <button
-                        onClick={() => handleDeleteUser(user._id)}
-                        style={{
-                          padding: '0.5rem 1rem',
-                          background: '#fee',
-                          color: '#e74c3c',
-                          border: 'none',
-                          borderRadius: '8px',
-                          cursor: 'pointer',
-                          fontWeight: '600',
-                          transition: 'all 0.3s ease'
-                        }}
-                        onMouseEnter={(e) => {
-                          e.target.style.background = '#e74c3c';
-                          e.target.style.color = 'white';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.target.style.background = '#fee';
-                          e.target.style.color = '#e74c3c';
-                        }}
-                      >
-                        🗑️ Xóa
-                      </button>
+                      <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
+                        <button
+                          onClick={() => handleEditUser(user)}
+                          style={{
+                            padding: '0.5rem 1rem',
+                            background: '#667eea20',
+                            color: '#667eea',
+                            border: 'none',
+                            borderRadius: '8px',
+                            cursor: 'pointer',
+                            fontWeight: '600',
+                            transition: 'all 0.3s ease'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.target.style.background = '#667eea';
+                            e.target.style.color = 'white';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.target.style.background = '#667eea20';
+                            e.target.style.color = '#667eea';
+                          }}
+                        >
+                          ✏️ Sửa
+                        </button>
+                        <button
+                          onClick={() => handleDeleteUser(user._id)}
+                          style={{
+                            padding: '0.5rem 1rem',
+                            background: '#fee',
+                            color: '#e74c3c',
+                            border: 'none',
+                            borderRadius: '8px',
+                            cursor: 'pointer',
+                            fontWeight: '600',
+                            transition: 'all 0.3s ease'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.target.style.background = '#e74c3c';
+                            e.target.style.color = 'white';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.target.style.background = '#fee';
+                            e.target.style.color = '#e74c3c';
+                          }}
+                        >
+                          🗑️ Xóa
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
@@ -312,12 +334,15 @@ const AdminUsersPage = () => {
             background: 'white',
             borderRadius: '16px',
             padding: '2rem',
-            maxWidth: '500px',
-            width: '90%'
+            maxWidth: '450px',
+            width: '90%',
+            animation: 'slideIn 0.3s ease'
           }}
           onClick={(e) => e.stopPropagation()}
           >
-            <h3 style={{ margin: '0 0 1.5rem 0', color: '#2c3e50' }}>📝 Cập Nhật Vai Trò</h3>
+            <h3 style={{ margin: '0 0 1.5rem 0', color: '#2c3e50', fontSize: '1.3rem' }}>
+              📝 Cập Nhật Vai Trò Người Dùng
+            </h3>
 
             <div style={{ marginBottom: '1.5rem' }}>
               <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', color: '#34495e' }}>
@@ -379,6 +404,10 @@ const AdminUsersPage = () => {
       <style>{`
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(-10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes slideIn {
+          from { opacity: 0; transform: translateY(-20px); }
           to { opacity: 1; transform: translateY(0); }
         }
       `}</style>
