@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s \"https://raw.githubusercontent.com/DoVietHoang2802/clothing-shop/main/frontend/src/pages/HomePage.jsx\")",
+      "Bash(curl -s \"https://raw.githubusercontent.com/DoVietHoang2802/clothing-shop/main/frontend/src/components/ProductFilterPanel.jsx\")"
+    ]
+  }
+}
