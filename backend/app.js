@@ -10,6 +10,7 @@ const orderRoutes = require('./routes/order');
 const reviewRoutes = require('./routes/review');
 const wishlistRoutes = require('./routes/wishlist');
 const couponRoutes = require('./routes/coupon');
+const adminRoutes = require('./routes/admin');
 
 // Import middlewares
 const errorHandler = require('./middlewares/errorHandler');
@@ -48,6 +49,7 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/coupons', couponRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
