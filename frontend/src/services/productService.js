@@ -2,15 +2,16 @@ import api from './api';
 
 const productService = {
   getAllProducts: (params = {}) => {
-    // params: { category, search, minPrice, maxPrice, page, limit }
+    // params: { category, search, minPrice, maxPrice, page, limit, sortBy }
     const queryParams = new URLSearchParams();
-    
+
     if (params.category) queryParams.append('category', params.category);
     if (params.search) queryParams.append('search', params.search);
     if (params.minPrice !== undefined) queryParams.append('minPrice', params.minPrice);
     if (params.maxPrice !== undefined) queryParams.append('maxPrice', params.maxPrice);
     if (params.page) queryParams.append('page', params.page);
     if (params.limit) queryParams.append('limit', params.limit);
+    if (params.sortBy) queryParams.append('sortBy', params.sortBy);
 
     const url = `/products${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
     return api.get(url);

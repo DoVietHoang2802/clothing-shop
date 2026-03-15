@@ -1,12 +1,12 @@
 const Product = require('../models/Product');
 const asyncHandler = require('../utils/asyncHandler');
 
-// @desc    Lấy tất cả sản phẩm (với search, filter, pagination)
+// @desc    Lấy tất cả sản phẩm (với search, filter, pagination, sort)
 // @route   GET /api/products
 // @access  Public
-// Query params: search, category, minPrice, maxPrice, page, limit
+// Query params: search, category, minPrice, maxPrice, page, limit, sortBy
 const getAllProducts = asyncHandler(async (req, res, next) => {
-  const { search, category, minPrice, maxPrice, page = 1, limit = 10 } = req.query;
+  const { search, category, minPrice, maxPrice, page = 1, limit = 10, sortBy } = req.query;
   let query = {};
 
   // Search by name
@@ -35,15 +35,38 @@ const getAllProducts = asyncHandler(async (req, res, next) => {
   const pageSize = Math.max(1, Math.min(100, parseInt(limit))); // Max 100 per page
   const skip = (pageNum - 1) * pageSize;
 
+  // Sort options
+  let sortOption = { createdAt: -1 }; // Default: newest first
+  if (sortBy) {
+    switch (sortBy) {
+      case 'name-asc':
+        sortOption = { name: 1 };
+        break;
+      case 'name-desc':
+        sortOption = { name: -1 };
+        break;
+      case 'price-asc':
+        sortOption = { price: 1 };
+        break;
+      case 'price-desc':
+        sortOption = { price: -1 };
+        break;
+      case 'newest':
+      default:
+        sortOption = { createdAt: -1 };
+        break;
+    }
+  }
+
   // Get total count for pagination
   const total = await Product.countDocuments(query);
 
-  // Get products with pagination
+  // Get products with pagination and sorting
   const products = await Product.find(query)
     .populate('category', 'name')
     .limit(pageSize)
     .skip(skip)
-    .sort({ createdAt: -1 });
+    .sort(sortOption);
 
   res.status(200).json({
     success: true,
