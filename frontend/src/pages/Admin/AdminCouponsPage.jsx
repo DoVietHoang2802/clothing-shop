@@ -205,154 +205,21 @@ const AdminCouponsPage = () => {
       )}
 
       {/* Add Button */}
-      {!showForm && (
-        <button
-          onClick={() => setShowForm(true)}
-          style={{
-            padding: '1rem 2rem',
-            background: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
-            color: 'white',
-            border: 'none',
-            borderRadius: '8px',
-            fontWeight: '600',
-            cursor: 'pointer',
-            marginBottom: '1.5rem'
-          }}
-        >
-          ➕ Thêm Coupon Mới
-        </button>
-      )}
-
-      {/* Form */}
-      {showForm && (
-        <div style={{
-          background: 'white',
-          borderRadius: '16px',
-          padding: '2rem',
-          marginBottom: '1.5rem',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
-        }}>
-          <h3 style={{ margin: '0 0 1.5rem 0', color: '#2c3e50' }}>
-            {editingId ? '✏️ Chỉnh sửa coupon' : '➕ Thêm coupon mới'}
-          </h3>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-            <div>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Mã coupon *</label>
-              <input
-                type="text"
-                value={formData.code}
-                onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
-                placeholder="ABC123"
-                style={{ width: '100%', padding: '0.75rem', border: '2px solid #e0e0e0', borderRadius: '8px' }}
-              />
-            </div>
-            <div>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Loại giảm giá *</label>
-              <select
-                value={formData.discountType}
-                onChange={(e) => setFormData({ ...formData, discountType: e.target.value })}
-                style={{ width: '100%', padding: '0.75rem', border: '2px solid #e0e0e0', borderRadius: '8px' }}
-              >
-                <option value="PERCENTAGE">Phần trăm (%)</option>
-                <option value="FIXED">Giảm cố định (VND)</option>
-              </select>
-            </div>
-            <div>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Giá trị giảm *</label>
-              <input
-                type="number"
-                value={formData.discountValue}
-                onChange={(e) => setFormData({ ...formData, discountValue: e.target.value })}
-                placeholder={formData.discountType === 'PERCENTAGE' ? '10' : '50000'}
-                style={{ width: '100%', padding: '0.75rem', border: '2px solid #e0e0e0', borderRadius: '8px' }}
-              />
-            </div>
-            <div>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Đơn hàng tối thiểu (VND)</label>
-              <input
-                type="number"
-                value={formData.minOrderValue}
-                onChange={(e) => setFormData({ ...formData, minOrderValue: e.target.value })}
-                placeholder="0"
-                style={{ width: '100%', padding: '0.75rem', border: '2px solid #e0e0e0', borderRadius: '8px' }}
-              />
-            </div>
-            <div>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Giảm tối đa (VND)</label>
-              <input
-                type="number"
-                value={formData.maxDiscount}
-                onChange={(e) => setFormData({ ...formData, maxDiscount: e.target.value })}
-                placeholder="Không giới hạn"
-                style={{ width: '100%', padding: '0.75rem', border: '2px solid #e0e0e0', borderRadius: '8px' }}
-              />
-            </div>
-            <div>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Số lần sử dụng</label>
-              <input
-                type="number"
-                value={formData.usageLimit}
-                onChange={(e) => setFormData({ ...formData, usageLimit: e.target.value })}
-                placeholder="Không giới hạn"
-                style={{ width: '100%', padding: '0.75rem', border: '2px solid #e0e0e0', borderRadius: '8px' }}
-              />
-            </div>
-            <div>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Ngày hết hạn</label>
-              <input
-                type="date"
-                value={formData.expiresAt}
-                onChange={(e) => setFormData({ ...formData, expiresAt: e.target.value })}
-                style={{ width: '100%', padding: '0.75rem', border: '2px solid #e0e0e0', borderRadius: '8px' }}
-              />
-            </div>
-            <div>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Trạng thái</label>
-              <select
-                value={formData.isActive}
-                onChange={(e) => setFormData({ ...formData, isActive: e.target.value === 'true' })}
-                style={{ width: '100%', padding: '0.75rem', border: '2px solid #e0e0e0', borderRadius: '8px' }}
-              >
-                <option value="true">Hoạt động</option>
-                <option value="false">Tạm dừng</option>
-              </select>
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
-            <button
-              onClick={handleSubmit}
-              style={{
-                flex: 1,
-                padding: '1rem',
-                background: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                fontWeight: '600',
-                cursor: 'pointer'
-              }}
-            >
-              {editingId ? '💾 Lưu thay đổi' : '➕ Thêm coupon'}
-            </button>
-            <button
-              onClick={handleCancel}
-              style={{
-                padding: '1rem 2rem',
-                background: 'white',
-                color: '#7f8c8d',
-                border: '2px solid #ddd',
-                borderRadius: '8px',
-                fontWeight: '600',
-                cursor: 'pointer'
-              }}
-            >
-              ❌ Hủy
-            </button>
-          </div>
-        </div>
-      )}
+      <button
+        onClick={() => setShowForm(true)}
+        style={{
+          padding: '1rem 2rem',
+          background: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
+          color: 'white',
+          border: 'none',
+          borderRadius: '8px',
+          fontWeight: '600',
+          cursor: 'pointer',
+          marginBottom: '1.5rem'
+        }}
+      >
+        ➕ Thêm Coupon Mới
+      </button>
 
       {/* Coupons Grid */}
       {coupons.length === 0 ? (
@@ -443,9 +310,164 @@ const AdminCouponsPage = () => {
         </div>
       )}
 
+      {/* Modal Form */}
+      {showForm && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}
+        onClick={handleCancel}
+        >
+          <div style={{
+            background: 'white',
+            borderRadius: '16px',
+            padding: '2rem',
+            maxWidth: '600px',
+            width: '90%',
+            maxHeight: '90vh',
+            overflowY: 'auto',
+            animation: 'slideIn 0.3s ease'
+          }}
+          onClick={(e) => e.stopPropagation()}
+          >
+            <h3 style={{ margin: '0 0 1.5rem 0', color: '#2c3e50', fontSize: '1.3rem' }}>
+              {editingId ? '✏️ Chỉnh sửa coupon' : '➕ Thêm coupon mới'}
+            </h3>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Mã coupon *</label>
+                <input
+                  type="text"
+                  value={formData.code}
+                  onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
+                  placeholder="ABC123"
+                  style={{ width: '100%', padding: '0.75rem', border: '2px solid #e0e0e0', borderRadius: '8px' }}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Loại giảm giá *</label>
+                <select
+                  value={formData.discountType}
+                  onChange={(e) => setFormData({ ...formData, discountType: e.target.value })}
+                  style={{ width: '100%', padding: '0.75rem', border: '2px solid #e0e0e0', borderRadius: '8px' }}
+                >
+                  <option value="PERCENTAGE">Phần trăm (%)</option>
+                  <option value="FIXED">Giảm cố định (VND)</option>
+                </select>
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Giá trị giảm *</label>
+                <input
+                  type="number"
+                  value={formData.discountValue}
+                  onChange={(e) => setFormData({ ...formData, discountValue: e.target.value })}
+                  placeholder={formData.discountType === 'PERCENTAGE' ? '10' : '50000'}
+                  style={{ width: '100%', padding: '0.75rem', border: '2px solid #e0e0e0', borderRadius: '8px' }}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Đơn hàng tối thiểu (VND)</label>
+                <input
+                  type="number"
+                  value={formData.minOrderValue}
+                  onChange={(e) => setFormData({ ...formData, minOrderValue: e.target.value })}
+                  placeholder="0"
+                  style={{ width: '100%', padding: '0.75rem', border: '2px solid #e0e0e0', borderRadius: '8px' }}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Giảm tối đa (VND)</label>
+                <input
+                  type="number"
+                  value={formData.maxDiscount}
+                  onChange={(e) => setFormData({ ...formData, maxDiscount: e.target.value })}
+                  placeholder="Không giới hạn"
+                  style={{ width: '100%', padding: '0.75rem', border: '2px solid #e0e0e0', borderRadius: '8px' }}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Số lần sử dụng</label>
+                <input
+                  type="number"
+                  value={formData.usageLimit}
+                  onChange={(e) => setFormData({ ...formData, usageLimit: e.target.value })}
+                  placeholder="Không giới hạn"
+                  style={{ width: '100%', padding: '0.75rem', border: '2px solid #e0e0e0', borderRadius: '8px' }}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Ngày hết hạn</label>
+                <input
+                  type="date"
+                  value={formData.expiresAt}
+                  onChange={(e) => setFormData({ ...formData, expiresAt: e.target.value })}
+                  style={{ width: '100%', padding: '0.75rem', border: '2px solid #e0e0e0', borderRadius: '8px' }}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Trạng thái</label>
+                <select
+                  value={formData.isActive}
+                  onChange={(e) => setFormData({ ...formData, isActive: e.target.value === 'true' })}
+                  style={{ width: '100%', padding: '0.75rem', border: '2px solid #e0e0e0', borderRadius: '8px' }}
+                >
+                  <option value="true">Hoạt động</option>
+                  <option value="false">Tạm dừng</option>
+                </select>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
+              <button
+                onClick={handleSubmit}
+                style={{
+                  flex: 1,
+                  padding: '1rem',
+                  background: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontWeight: '600',
+                  cursor: 'pointer'
+                }}
+              >
+                {editingId ? '💾 Lưu thay đổi' : '➕ Thêm coupon'}
+              </button>
+              <button
+                onClick={handleCancel}
+                style={{
+                  padding: '1rem 2rem',
+                  background: 'white',
+                  color: '#7f8c8d',
+                  border: '2px solid #ddd',
+                  borderRadius: '8px',
+                  fontWeight: '600',
+                  cursor: 'pointer'
+                }}
+              >
+                ❌ Hủy
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <style>{`
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(-10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes slideIn {
+          from { opacity: 0; transform: translateY(-20px); }
           to { opacity: 1; transform: translateY(0); }
         }
       `}</style>

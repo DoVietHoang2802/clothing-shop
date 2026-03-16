@@ -121,22 +121,20 @@ const AdminCategoriesPage = () => {
           <h1 style={{ margin: 0, fontSize: '2rem', fontWeight: '700' }}>📂 Quản Lý Danh Mục</h1>
           <p style={{ margin: '0.5rem 0 0 0', opacity: 0.9 }}>{categories.length} danh mục</p>
         </div>
-        <div style={{ display: 'flex', gap: '1rem' }}>
-          <button
-            onClick={() => navigate('/admin/dashboard')}
-            style={{
-              padding: '0.75rem 1.5rem',
-              background: 'white',
-              color: '#f5576c',
-              border: 'none',
-              borderRadius: '8px',
-              fontWeight: '600',
-              cursor: 'pointer'
-            }}
-          >
-            ← Quay Lại
-          </button>
-        </div>
+        <button
+          onClick={() => navigate('/admin/dashboard')}
+          style={{
+            padding: '0.75rem 1.5rem',
+            background: 'white',
+            color: '#f5576c',
+            border: 'none',
+            borderRadius: '8px',
+            fontWeight: '600',
+            cursor: 'pointer'
+          }}
+        >
+          ← Quay Lại
+        </button>
       </div>
 
       {error && (
@@ -167,110 +165,22 @@ const AdminCategoriesPage = () => {
       )}
 
       {/* Add Button */}
-      {!showForm && (
-        <button
-          onClick={() => setShowForm(true)}
-          style={{
-            padding: '1rem 2rem',
-            background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-            color: 'white',
-            border: 'none',
-            borderRadius: '8px',
-            fontWeight: '600',
-            cursor: 'pointer',
-            marginBottom: '1.5rem',
-            fontSize: '1rem'
-          }}
-        >
-          ➕ Thêm Danh Mục Mới
-        </button>
-      )}
-
-      {/* Form */}
-      {showForm && (
-        <div style={{
-          background: 'white',
-          borderRadius: '16px',
-          padding: '2rem',
+      <button
+        onClick={() => setShowForm(true)}
+        style={{
+          padding: '1rem 2rem',
+          background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+          color: 'white',
+          border: 'none',
+          borderRadius: '8px',
+          fontWeight: '600',
+          cursor: 'pointer',
           marginBottom: '1.5rem',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
-        }}>
-          <h3 style={{ margin: '0 0 1.5rem 0', color: '#2c3e50' }}>
-            {editingId ? '✏️ Chỉnh sửa danh mục' : '➕ Thêm danh mục mới'}
-          </h3>
-
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', color: '#34495e' }}>
-              📝 Tên danh mục
-            </label>
-            <input
-              type="text"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              placeholder="Nhập tên danh mục..."
-              style={{
-                width: '100%',
-                padding: '1rem',
-                border: '2px solid #e0e0e0',
-                borderRadius: '8px',
-                fontSize: '1rem'
-              }}
-            />
-          </div>
-
-          <div style={{ marginBottom: '1.5rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', color: '#34495e' }}>
-              📄 Mô tả
-            </label>
-            <textarea
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              placeholder="Nhập mô tả..."
-              rows={3}
-              style={{
-                width: '100%',
-                padding: '1rem',
-                border: '2px solid #e0e0e0',
-                borderRadius: '8px',
-                fontSize: '1rem',
-                resize: 'vertical'
-              }}
-            />
-          </div>
-
-          <div style={{ display: 'flex', gap: '1rem' }}>
-            <button
-              onClick={handleSubmit}
-              style={{
-                flex: 1,
-                padding: '1rem',
-                background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                fontWeight: '600',
-                cursor: 'pointer'
-              }}
-            >
-              {editingId ? '💾 Lưu thay đổi' : '➕ Thêm danh mục'}
-            </button>
-            <button
-              onClick={handleCancel}
-              style={{
-                padding: '1rem 2rem',
-                background: 'white',
-                color: '#7f8c8d',
-                border: '2px solid #ddd',
-                borderRadius: '8px',
-                fontWeight: '600',
-                cursor: 'pointer'
-              }}
-            >
-              ❌ Hủy
-            </button>
-          </div>
-        </div>
-      )}
+          fontSize: '1rem'
+        }}
+      >
+        ➕ Thêm Danh Mục Mới
+      </button>
 
       {/* Categories Grid */}
       {categories.length === 0 ? (
@@ -390,9 +300,117 @@ const AdminCategoriesPage = () => {
         </div>
       )}
 
+      {/* Modal Form */}
+      {showForm && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}
+        onClick={handleCancel}
+        >
+          <div style={{
+            background: 'white',
+            borderRadius: '16px',
+            padding: '2rem',
+            maxWidth: '500px',
+            width: '90%',
+            animation: 'slideIn 0.3s ease'
+          }}
+          onClick={(e) => e.stopPropagation()}
+          >
+            <h3 style={{ margin: '0 0 1.5rem 0', color: '#2c3e50', fontSize: '1.3rem' }}>
+              {editingId ? '✏️ Chỉnh sửa danh mục' : '➕ Thêm danh mục mới'}
+            </h3>
+
+            <div style={{ marginBottom: '1rem' }}>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', color: '#34495e' }}>
+                📝 Tên danh mục *
+              </label>
+              <input
+                type="text"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder="Nhập tên danh mục..."
+                style={{
+                  width: '100%',
+                  padding: '1rem',
+                  border: '2px solid #e0e0e0',
+                  borderRadius: '8px',
+                  fontSize: '1rem'
+                }}
+              />
+            </div>
+
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', color: '#34495e' }}>
+                📄 Mô tả
+              </label>
+              <textarea
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                placeholder="Nhập mô tả..."
+                rows={3}
+                style={{
+                  width: '100%',
+                  padding: '1rem',
+                  border: '2px solid #e0e0e0',
+                  borderRadius: '8px',
+                  fontSize: '1rem',
+                  resize: 'vertical'
+                }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', gap: '1rem' }}>
+              <button
+                onClick={handleSubmit}
+                style={{
+                  flex: 1,
+                  padding: '1rem',
+                  background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontWeight: '600',
+                  cursor: 'pointer'
+                }}
+              >
+                {editingId ? '💾 Lưu thay đổi' : '➕ Thêm danh mục'}
+              </button>
+              <button
+                onClick={handleCancel}
+                style={{
+                  padding: '1rem 2rem',
+                  background: 'white',
+                  color: '#7f8c8d',
+                  border: '2px solid #ddd',
+                  borderRadius: '8px',
+                  fontWeight: '600',
+                  cursor: 'pointer'
+                }}
+              >
+                ❌ Hủy
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <style>{`
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(-10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes slideIn {
+          from { opacity: 0; transform: translateY(-20px); }
           to { opacity: 1; transform: translateY(0); }
         }
       `}</style>
