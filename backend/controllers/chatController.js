@@ -2,6 +2,7 @@
  * Chat Controller - Tin nhắn giữa user và admin/staff
  */
 
+const mongoose = require('mongoose');
 const Message = require('../models/Message');
 const User = require('../models/User');
 const asyncHandler = require('../utils/asyncHandler');
@@ -112,8 +113,8 @@ const getConversations = asyncHandler(async (req, res, next) => {
     {
       $match: {
         $or: [
-          { sender: require('mongoose').Types.ObjectId(currentUserId) },
-          { receiver: require('mongoose').Types.ObjectId(currentUserId) },
+          { sender: mongoose.Types.ObjectId(currentUserId) },
+          { receiver: mongoose.Types.ObjectId(currentUserId) },
         ],
       },
     },
@@ -124,7 +125,7 @@ const getConversations = asyncHandler(async (req, res, next) => {
       $group: {
         _id: {
           $cond: {
-            if: { $eq: ['$sender', require('mongoose').Types.ObjectId(currentUserId)] },
+            if: { $eq: ['$sender', mongoose.Types.ObjectId(currentUserId)] },
             then: '$receiver',
             else: '$sender',
           },
@@ -135,7 +136,7 @@ const getConversations = asyncHandler(async (req, res, next) => {
             $cond: {
               if: {
                 $and: [
-                  { $eq: ['$receiver', require('mongoose').Types.ObjectId(currentUserId)] },
+                  { $eq: ['$receiver', mongoose.Types.ObjectId(currentUserId)] },
                   { $eq: ['$read', false] },
                 ],
               },

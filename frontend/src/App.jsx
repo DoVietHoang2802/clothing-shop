@@ -29,6 +29,7 @@ import AdminWithdrawalsPage from './pages/Admin/AdminWithdrawalsPage';
 
 // Staff Pages
 import StaffProductsPage from './pages/Staff/StaffProductsPage';
+import StaffDashboard from './pages/Staff/StaffDashboard';
 
 function App() {
   return (
@@ -97,6 +98,14 @@ function App() {
             />
 
             {/* Staff Routes */}
+            <Route
+              path="/staff/dashboard"
+              element={
+                <PrivateRoute allowedRoles={['STAFF', 'ADMIN']}>
+                  <StaffDashboard />
+                </PrivateRoute>
+              }
+            />
             <Route
               path="/staff/products"
               element={

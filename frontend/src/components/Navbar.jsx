@@ -90,8 +90,8 @@ const Navbar = () => {
             <li><Link to="/cart">🛒 Giỏ ({cartCount})</Link></li>
             <li><Link to="/profile">👤 Hồ Sơ</Link></li>
 
-            {user?.role === 'STAFF' && (
-              <li><Link to="/staff/products">📦 Quản Lý</Link></li>
+            {(user?.role === 'STAFF' || user?.role === 'ADMIN') && (
+              <li><Link to="/staff/dashboard">📦 Quản Lý</Link></li>
             )}
 
             {user?.role === 'ADMIN' && (

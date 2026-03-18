@@ -5,47 +5,71 @@ import { useAuth } from '../context/AuthContext';
 const ChatWidget = () => {
   const { isAuthenticated, user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
-  const [conversations, setConversations] = useState([]);
-  const [selectedUser, setSelectedUser] = useState(null);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [showNewChat, setShowNewChat] = useState(false);
-  const [chatUsers, setChatUsers] = useState([]);
+  const [adminInfo, setAdminInfo] = useState(null);
   const messagesEndRef = useRef(null);
+
+  // Check if user is admin/staff
+  const isAdminOrStaff = user?.role === 'ADMIN' || user?.role === 'STAFF';
 
   useEffect(() => {
     if (isAuthenticated && isOpen) {
-      loadConversations();
+      if (isAdminOrStaff) {
+        // Admin/Staff - load conversations
+        loadConversations();
+      } else {
+        // User - load messages with admin
+        loadAdminInfo();
+      }
     }
-  }, [isAuthenticated, isOpen]);
-
-  useEffect(() => {
-    if (selectedUser) {
-      loadMessages(selectedUser._id);
-      loadChatUsers();
-    }
-  }, [selectedUser]);
+  }, [isAuthenticated, isOpen, isAdminOrStaff]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
   useEffect(() => {
-    // Poll for unread count
     if (isAuthenticated) {
       loadUnreadCount();
-      const interval = setInterval(loadUnreadCount, 30000);
+      const interval = setInterval(() => {
+        if (isAdminOrStaff) {
+          loadConversations();
+        } else if (adminInfo?.userId) {
+          loadMessages(adminInfo.userId);
+        }
+        loadUnreadCount();
+      }, 5000);
       return () => clearInterval(interval);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, isAdminOrStaff, adminInfo]);
+
+  const loadAdminInfo = async () => {
+    try {
+      const res = await chatService.getChatUsers();
+      if (res.data.data.length > 0) {
+        setAdminInfo(res.data.data[0]); // Get first admin/staff
+        loadMessages(res.data.data[0]._id);
+      }
+    } catch (err) {
+      console.error('Error loading admin info:', err);
+    }
+  };
 
   const loadConversations = async () => {
     try {
       const res = await chatService.getConversations();
-      setConversations(res.data.data);
+      const unread = res.data.data.reduce((sum, c) => sum + c.unreadCount, 0);
+      setUnreadCount(unread);
+      if (res.data.data.length > 0) {
+        // Auto-select first conversation for admin
+        setMessages(res.data.data);
+      } else {
+        setMessages([]);
+      }
     } catch (err) {
       console.error('Error loading conversations:', err);
     }
@@ -57,20 +81,10 @@ const ChatWidget = () => {
       const res = await chatService.getMessages(userId);
       setMessages(res.data.data);
       await chatService.markAsRead(userId);
-      loadConversations();
     } catch (err) {
       console.error('Error loading messages:', err);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const loadChatUsers = async () => {
-    try {
-      const res = await chatService.getChatUsers();
-      setChatUsers(res.data.data);
-    } catch (err) {
-      console.error('Error loading chat users:', err);
     }
   };
 
@@ -85,19 +99,24 @@ const ChatWidget = () => {
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
-    if (!newMessage.trim() || !selectedUser) return;
+    if (!newMessage.trim() || !adminInfo?.userId) return;
 
     try {
       setSending(true);
-      await chatService.sendMessage(selectedUser._id, newMessage.trim());
+      await chatService.sendMessage(adminInfo.userId, newMessage.trim());
       setNewMessage('');
-      loadMessages(selectedUser._id);
-      loadConversations();
+      loadMessages(adminInfo.userId);
+      loadUnreadCount();
     } catch (err) {
       console.error('Error sending message:', err);
     } finally {
       setSending(false);
     }
+  };
+
+  const handleSelectConversation = (conv) => {
+    loadMessages(conv.user._id);
+    setAdminInfo(conv.user);
   };
 
   const formatTime = (date) => {
@@ -189,107 +208,44 @@ const ChatWidget = () => {
             background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
             color: 'white',
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <h3 style={{ margin: 0, fontSize: '1.1rem' }}>💬 Tin nhắn</h3>
-              <button
-                onClick={() => setShowNewChat(!showNewChat)}
-                style={{
-                  background: 'rgba(255,255,255,0.2)',
-                  border: 'none',
-                  color: 'white',
-                  padding: '6px 12px',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  fontSize: '0.85rem',
-                }}
-              >
-                + Tin mới
-              </button>
-            </div>
+            <h3 style={{ margin: 0, fontSize: '1.1rem' }}>
+              {isAdminOrStaff ? '💬 Tin nhắn' : '💬 Hỗ trợ trực tuyến'}
+            </h3>
+            <p style={{ margin: '4px 0 0 0', fontSize: '0.8rem', opacity: 0.9 }}>
+              {isAdminOrStaff ? 'Quản lý tin nhắn từ khách hàng' : 'Gửi tin nhắn cho admin/staff'}
+            </p>
           </div>
 
-          {/* New Chat User List */}
-          {showNewChat && (
-            <div style={{
-              padding: '12px',
-              borderBottom: '1px solid #eee',
-              maxHeight: '200px',
-              overflowY: 'auto',
-              background: '#f8f9fa',
-            }}>
-              <p style={{ margin: '0 0 8px 0', fontSize: '0.85rem', color: '#666' }}>Chọn người để chat:</p>
-              {chatUsers.map((u) => (
-                <div
-                  key={u._id}
-                  onClick={() => {
-                    setSelectedUser(u);
-                    setShowNewChat(false);
-                  }}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px',
-                    padding: '8px',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    background: selectedUser?._id === u._id ? '#e8efff' : 'white',
-                  }}
-                >
-                  <img
-                    src={getAvatar(u)}
-                    alt={u.name}
-                    style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover' }}
-                  />
-                  <div>
-                    <div style={{ fontWeight: '600', fontSize: '0.9rem' }}>{u.name}</div>
-                    <div style={{ fontSize: '0.75rem', color: '#666' }}>{u.role}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Conversation List or Messages */}
-          {!selectedUser ? (
-            <div style={{ flex: 1, overflowY: 'auto' }}>
-              {conversations.length === 0 ? (
+          {/* Content */}
+          {isAdminOrStaff ? (
+            // Admin/Staff - Show conversations list
+            <div style={{ flex: 1, overflowY: 'auto', padding: '8px' }}>
+              {messages.length === 0 ? (
                 <div style={{ padding: '2rem', textAlign: 'center', color: '#666' }}>
-                  <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>💬</div>
-                  <p>Chưa có cuộc trò chuyện nào</p>
-                  <button
-                    onClick={() => setShowNewChat(true)}
-                    style={{
-                      background: '#667eea',
-                      color: 'white',
-                      border: 'none',
-                      padding: '10px 20px',
-                      borderRadius: '8px',
-                      cursor: 'pointer',
-                      marginTop: '10px',
-                    }}
-                  >
-                    Bắt đầu cuộc trò chuyện
-                  </button>
+                  <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📭</div>
+                  <p>Chưa có tin nhắn nào</p>
                 </div>
               ) : (
-                conversations.map((conv) => (
+                messages.map((conv) => (
                   <div
-                    key={conv.user._id}
-                    onClick={() => setSelectedUser(conv.user)}
+                    key={conv.user?._id || conv.lastMessage?.sender?._id || conv.lastMessage?.receiver?._id}
+                    onClick={() => handleSelectConversation(conv)}
                     style={{
                       display: 'flex',
                       alignItems: 'center',
                       gap: '12px',
-                      padding: '12px 16px',
-                      borderBottom: '1px solid #f0f0f0',
+                      padding: '12px',
+                      borderRadius: '12px',
                       cursor: 'pointer',
-                      background: '#fff',
+                      background: adminInfo?.userId === (conv.user?._id || conv.lastMessage?.sender?._id || conv.lastMessage?.receiver?._id) ? '#e8efff' : '#fff',
+                      border: '1px solid #eee',
+                      marginBottom: '8px',
                     }}
                   >
                     <div style={{ position: 'relative' }}>
                       <img
-                        src={getAvatar(conv.user)}
-                        alt={conv.user.name}
+                        src={getAvatar(conv.user || conv.lastMessage?.sender || conv.lastMessage?.receiver)}
+                        alt="avatar"
                         style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover' }}
                       />
                       {conv.unreadCount > 0 && (
@@ -300,12 +256,12 @@ const ChatWidget = () => {
                           background: '#e74c3c',
                           color: 'white',
                           borderRadius: '50%',
-                          width: '18px',
-                          height: '18px',
+                          width: '20px',
+                          height: '20px',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          fontSize: '10px',
+                          fontSize: '11px',
                           fontWeight: 'bold',
                         }}>
                           {conv.unreadCount}
@@ -313,23 +269,22 @@ const ChatWidget = () => {
                       )}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                         <span style={{ fontWeight: conv.unreadCount > 0 ? '700' : '600', fontSize: '0.95rem' }}>
-                          {conv.user.name}
+                          {conv.user?.name || conv.lastMessage?.sender?.name || conv.lastMessage?.receiver?.name || 'Người dùng'}
                         </span>
                         <span style={{ fontSize: '0.75rem', color: '#999' }}>
-                          {formatTime(conv.lastMessage.createdAt)}
+                          {formatTime(conv.lastMessage?.createdAt)}
                         </span>
                       </div>
                       <div style={{
                         fontSize: '0.85rem',
-                        color: conv.unreadCount > 0 ? '#333' : '#666',
-                        fontWeight: conv.unreadCount > 0 ? '500' : '400',
+                        color: '#666',
                         whiteSpace: 'nowrap',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
                       }}>
-                        {conv.lastMessage.sender._id === user._id ? 'Bạn: ' : ''}{conv.lastMessage.content}
+                        {conv.lastMessage?.sender?._id === user._id ? 'Bạn: ' : ''}{conv.lastMessage?.content}
                       </div>
                     </div>
                   </div>
@@ -337,135 +292,110 @@ const ChatWidget = () => {
               )}
             </div>
           ) : (
+            // User - Show chat with admin
             <>
-              {/* Chat Header */}
-              <div style={{
-                padding: '12px 16px',
-                borderBottom: '1px solid #eee',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                background: '#f8f9fa',
-              }}>
-                <button
-                  onClick={() => setSelectedUser(null)}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    fontSize: '1.2rem',
-                    cursor: 'pointer',
-                    padding: '4px',
-                  }}
-                >
-                  ←
-                </button>
-                <img
-                  src={getAvatar(selectedUser)}
-                  alt={selectedUser.name}
-                  style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover' }}
-                />
-                <div>
-                  <div style={{ fontWeight: '600', fontSize: '0.95rem' }}>{selectedUser.name}</div>
-                  <div style={{ fontSize: '0.75rem', color: '#666' }}>{selectedUser.role}</div>
-                </div>
-              </div>
-
-              {/* Messages */}
-              <div style={{ flex: 1, overflowY: 'auto', padding: '16px', background: '#f5f5f5' }}>
-                {loading ? (
-                  <div style={{ textAlign: 'center', padding: '2rem', color: '#666' }}>Đang tải...</div>
-                ) : messages.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '2rem', color: '#666' }}>
-                    <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>👋</div>
-                    <p>Hãy gửi tin nhắn để bắt đầu cuộc trò chuyện</p>
-                  </div>
-                ) : (
-                  messages.map((msg) => {
-                    const isMe = msg.sender._id === user._id;
-                    return (
-                      <div
-                        key={msg._id}
-                        style={{
-                          display: 'flex',
-                          justifyContent: isMe ? 'flex-end' : 'flex-start',
-                          marginBottom: '12px',
-                        }}
-                      >
-                        <div style={{
-                          maxWidth: '75%',
-                          display: 'flex',
-                          flexDirection: isMe ? 'row-reverse' : 'row',
-                          alignItems: 'flex-end',
-                          gap: '8px',
-                        }}>
-                          <img
-                            src={getAvatar(msg.sender)}
-                            alt={msg.sender.name}
-                            style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover' }}
-                          />
-                          <div style={{
-                            background: isMe ? '#667eea' : 'white',
-                            color: isMe ? 'white' : '#333',
-                            padding: '10px 14px',
-                            borderRadius: '16px',
-                            borderBottomRightRadius: isMe ? '4px' : '16px',
-                            borderBottomLeftRadius: isMe ? '16px' : '4px',
-                            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                            fontSize: '0.9rem',
-                            lineHeight: '1.4',
-                          }}>
-                            {msg.content}
-                          </div>
-                        </div>
+              {adminInfo ? (
+                <>
+                  {/* Chat with admin */}
+                  <div style={{ flex: 1, overflowY: 'auto', padding: '16px', background: '#f5f5f5' }}>
+                    {loading ? (
+                      <div style={{ textAlign: 'center', padding: '2rem' }}>Đang tải...</div>
+                    ) : messages.length === 0 ? (
+                      <div style={{ textAlign: 'center', padding: '2rem', color: '#666' }}>
+                        <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>👋</div>
+                        <p>Gửi tin nhắn để được hỗ trợ</p>
                       </div>
-                    );
-                  })
-                )}
-                <div ref={messagesEndRef} />
-              </div>
+                    ) : (
+                      messages.map((msg) => {
+                        const isMe = msg.sender._id === user._id;
+                        return (
+                          <div
+                            key={msg._id}
+                            style={{
+                              display: 'flex',
+                              justifyContent: isMe ? 'flex-end' : 'flex-start',
+                              marginBottom: '12px',
+                            }}
+                          >
+                            <div style={{
+                              maxWidth: '75%',
+                              display: 'flex',
+                              flexDirection: isMe ? 'row-reverse' : 'row',
+                              alignItems: 'flex-end',
+                              gap: '8px',
+                            }}>
+                              <img
+                                src={getAvatar(msg.sender)}
+                                alt={msg.sender.name}
+                                style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover' }}
+                              />
+                              <div style={{
+                                background: isMe ? '#667eea' : 'white',
+                                color: isMe ? 'white' : '#333',
+                                padding: '10px 14px',
+                                borderRadius: '16px',
+                                borderBottomRightRadius: isMe ? '4px' : '16px',
+                                borderBottomLeftRadius: isMe ? '16px' : '4px',
+                                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                                fontSize: '0.9rem',
+                              }}>
+                                {msg.content}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                    <div ref={messagesEndRef} />
+                  </div>
 
-              {/* Message Input */}
-              <form onSubmit={handleSendMessage} style={{
-                padding: '12px 16px',
-                borderTop: '1px solid #eee',
-                display: 'flex',
-                gap: '10px',
-                background: 'white',
-              }}>
-                <input
-                  type="text"
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  placeholder="Nhập tin nhắn..."
-                  style={{
-                    flex: 1,
-                    padding: '10px 14px',
-                    border: '2px solid #eee',
-                    borderRadius: '24px',
-                    outline: 'none',
-                    fontSize: '0.9rem',
-                  }}
-                />
-                <button
-                  type="submit"
-                  disabled={sending || !newMessage.trim()}
-                  style={{
-                    width: '42px',
-                    height: '42px',
-                    borderRadius: '50%',
-                    background: sending || !newMessage.trim() ? '#ccc' : '#667eea',
-                    color: 'white',
-                    border: 'none',
-                    cursor: sending || !newMessage.trim() ? 'not-allowed' : 'pointer',
+                  {/* Message Input */}
+                  <form onSubmit={handleSendMessage} style={{
+                    padding: '12px 16px',
+                    borderTop: '1px solid #eee',
                     display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '1.2rem',
-                  }}
-                >
-                  ➤
-                </button>
-              </form>
+                    gap: '10px',
+                    background: 'white',
+                  }}>
+                    <input
+                      type="text"
+                      value={newMessage}
+                      onChange={(e) => setNewMessage(e.target.value)}
+                      placeholder="Nhập tin nhắn..."
+                      style={{
+                        flex: 1,
+                        padding: '10px 14px',
+                        border: '2px solid #eee',
+                        borderRadius: '24px',
+                        outline: 'none',
+                        fontSize: '0.9rem',
+                      }}
+                    />
+                    <button
+                      type="submit"
+                      disabled={sending || !newMessage.trim()}
+                      style={{
+                        width: '42px',
+                        height: '42px',
+                        borderRadius: '50%',
+                        background: sending || !newMessage.trim() ? '#ccc' : '#667eea',
+                        color: 'white',
+                        border: 'none',
+                        cursor: sending || !newMessage.trim() ? 'not-allowed' : 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      ➤
+                    </button>
+                  </form>
+                </>
+              ) : (
+                <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#666' }}>
+                  <p>Đang kết nối với hỗ trợ...</p>
+                </div>
+              )}
             </>
           )}
         </div>
