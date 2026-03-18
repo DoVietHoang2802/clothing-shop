@@ -71,18 +71,16 @@ const CartPage = () => {
       return;
     }
 
-    // Validate shipping address for COD
-    if (paymentMethod === 'COD') {
-      if (!shippingAddress.fullName || !shippingAddress.phone || !shippingAddress.address) {
-        setError('Vui lòng nhập đầy đủ thông tin giao hàng');
-        return;
-      }
+    // Validate shipping address (required for both COD and VNPAY)
+    if (!shippingAddress.fullName || !shippingAddress.phone || !shippingAddress.address) {
+      setError('Vui lòng nhập đầy đủ thông tin giao hàng');
+      return;
+    }
 
-      // Validate phone number
-      if (!/^0\d{9}$/.test(shippingAddress.phone)) {
-        setError('Số điện thoại không hợp lệ (phải bắt đầu bằng 0 và có 10 số)');
-        return;
-      }
+    // Validate phone number
+    if (!/^0\d{9}$/.test(shippingAddress.phone)) {
+      setError('Số điện thoại không hợp lệ (phải bắt đầu bằng 0 và có 10 số)');
+      return;
     }
 
     const items = cart.map((item) => ({
@@ -98,7 +96,7 @@ const CartPage = () => {
       const orderRes = await orderService.createOrder(
         items,
         appliedCoupon?.code,
-        paymentMethod === 'COD' ? shippingAddress : null,
+        shippingAddress, // Always require shipping address
         paymentMethod
       );
 
@@ -460,8 +458,8 @@ const CartPage = () => {
               </div>
             </div>
 
-            {/* Shipping Address Form - Only show for COD */}
-            {paymentMethod === 'COD' && (
+            {/* Shipping Address Form - Show for both COD and VNPAY */}
+            {(paymentMethod === 'COD' || paymentMethod === 'VNPAY') && (
               <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '2px solid #f0f0f0' }}>
                 <h4 style={{ margin: '0 0 1rem 0', fontSize: '1rem', color: '#2c3e50' }}>
                   📍 Địa Chỉ Giao Hàng

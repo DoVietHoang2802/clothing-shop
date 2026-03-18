@@ -18,8 +18,17 @@ const createOrder = asyncHandler(async (req, res, next) => {
     });
   }
 
-  // Validate shipping address cho COD
+  // Validate shipping address cho COD (không bắt buộc với VNPAY)
   if (paymentMethod === 'COD') {
+    if (!shippingAddress || !shippingAddress.fullName || !shippingAddress.phone || !shippingAddress.address) {
+      return res.status(400).json({
+        success: false,
+        message: 'Vui lòng cung cấp địa chỉ giao hàng đầy đủ',
+        data: null,
+      });
+    }
+  } else {
+    // VNPAY - vẫn cần shippingAddress để giao hàng
     if (!shippingAddress || !shippingAddress.fullName || !shippingAddress.phone || !shippingAddress.address) {
       return res.status(400).json({
         success: false,
