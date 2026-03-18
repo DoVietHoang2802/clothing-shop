@@ -107,14 +107,15 @@ const getMessages = asyncHandler(async (req, res, next) => {
 // @access  Private
 const getConversations = asyncHandler(async (req, res, next) => {
   const currentUserId = req.user.id;
+  const userIdObj = new mongoose.Types.ObjectId(currentUserId);
 
   // Lấy tin nhắn cuối cùng của mỗi cuộc trò chuyện
   const messages = await Message.aggregate([
     {
       $match: {
         $or: [
-          { sender: mongoose.Types.ObjectId(currentUserId) },
-          { receiver: mongoose.Types.ObjectId(currentUserId) },
+          { sender: userIdObj },
+          { receiver: userIdObj },
         ],
       },
     },
@@ -125,7 +126,7 @@ const getConversations = asyncHandler(async (req, res, next) => {
       $group: {
         _id: {
           $cond: {
-            if: { $eq: ['$sender', mongoose.Types.ObjectId(currentUserId)] },
+            if: { $eq: [{ $toString: '$sender' }, currentUserId] },
             then: '$receiver',
             else: '$sender',
           },
@@ -136,7 +137,7 @@ const getConversations = asyncHandler(async (req, res, next) => {
             $cond: {
               if: {
                 $and: [
-                  { $eq: ['$receiver', mongoose.Types.ObjectId(currentUserId)] },
+                  { $eq: [{ $toString: '$receiver' }, currentUserId] },
                   { $eq: ['$read', false] },
                 ],
               },

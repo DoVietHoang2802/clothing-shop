@@ -38,7 +38,7 @@ const ChatWidget = () => {
       const interval = setInterval(() => {
         if (isAdminOrStaff) {
           loadConversations();
-        } else if (adminInfo?.userId) {
+        } else if (adminInfo?._id) {
           loadMessages(adminInfo.userId);
         }
         loadUnreadCount();
@@ -99,16 +99,17 @@ const ChatWidget = () => {
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
-    if (!newMessage.trim() || !adminInfo?.userId) return;
+    if (!newMessage.trim() || !adminInfo?._id) return;
 
     try {
       setSending(true);
-      await chatService.sendMessage(adminInfo.userId, newMessage.trim());
+      await chatService.sendMessage(adminInfo._id, newMessage.trim());
       setNewMessage('');
-      loadMessages(adminInfo.userId);
+      loadMessages(adminInfo._id);
       loadUnreadCount();
     } catch (err) {
       console.error('Error sending message:', err);
+      alert(err.response?.data?.message || 'Lỗi khi gửi tin nhắn');
     } finally {
       setSending(false);
     }
@@ -145,7 +146,7 @@ const ChatWidget = () => {
         style={{
           position: 'fixed',
           bottom: '20px',
-          right: '20px',
+          left: '20px',
           width: '60px',
           height: '60px',
           borderRadius: '50%',
@@ -191,7 +192,7 @@ const ChatWidget = () => {
         <div style={{
           position: 'fixed',
           bottom: '90px',
-          right: '20px',
+          left: '20px',
           width: '380px',
           height: '500px',
           background: 'white',
@@ -237,7 +238,7 @@ const ChatWidget = () => {
                       padding: '12px',
                       borderRadius: '12px',
                       cursor: 'pointer',
-                      background: adminInfo?.userId === (conv.user?._id || conv.lastMessage?.sender?._id || conv.lastMessage?.receiver?._id) ? '#e8efff' : '#fff',
+                      background: adminInfo?._id === (conv.user?._id || conv.lastMessage?.sender?._id || conv.lastMessage?.receiver?._id) ? '#e8efff' : '#fff',
                       border: '1px solid #eee',
                       marginBottom: '8px',
                     }}
