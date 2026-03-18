@@ -13,6 +13,7 @@ const couponRoutes = require('./routes/coupon');
 const adminRoutes = require('./routes/admin');
 const paymentRoutes = require('./routes/payment');
 const withdrawalRoutes = require('./routes/withdrawal');
+const chatRoutes = require('./routes/chat');
 
 // Import middlewares
 const errorHandler = require('./middlewares/errorHandler');
@@ -54,6 +55,7 @@ app.use('/api/coupons', couponRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/api/withdrawals', withdrawalRoutes);
+app.use('/api/chat', chatRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

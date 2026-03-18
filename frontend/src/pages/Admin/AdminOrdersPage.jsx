@@ -330,13 +330,14 @@ const AdminOrdersPage = () => {
                     <select
                       value={order.status}
                       onChange={(e) => handleStatusChange(order._id, e.target.value)}
-                      disabled={updatingId === order._id}
+                      disabled={updatingId === order._id || order.status === 'COMPLETED' || order.status === 'CANCELLED'}
                       style={{
                         padding: '0.75rem 1rem',
                         borderRadius: '8px',
                         border: '2px solid #ddd',
                         fontWeight: '600',
-                        cursor: updatingId === order._id ? 'not-allowed' : 'pointer'
+                        cursor: updatingId === order._id || order.status === 'COMPLETED' || order.status === 'CANCELLED' ? 'not-allowed' : 'pointer',
+                        opacity: order.status === 'COMPLETED' || order.status === 'CANCELLED' ? 0.6 : 1
                       }}
                     >
                       <option value="PENDING">⏳ Chờ Xác Nhận</option>
