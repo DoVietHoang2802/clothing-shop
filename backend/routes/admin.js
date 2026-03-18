@@ -24,9 +24,11 @@ router.get('/stats', verifyToken, authorizeRoles('ADMIN'), asyncHandler(async (r
   // Đếm số đơn hàng
   const totalOrders = await Order.countDocuments();
 
-  // Tính tổng doanh thu (chỉ tính đơn hàng đã hoàn thành)
-  const completedOrders = await Order.find({ status: 'COMPLETED' });
-  const totalRevenue = completedOrders.reduce((sum, order) => sum + (order.finalPrice || order.totalPrice), 0);
+  // Tính tổng doanh thu (chỉ tính đơn đã thanh toán)
+  const paidOrders = await Order.find({
+    paymentStatus: 'PAID'
+  });
+  const totalRevenue = paidOrders.reduce((sum, order) => sum + (order.finalPrice || order.totalPrice), 0);
 
   // Đếm đơn hàng theo trạng thái
   const pendingOrders = await Order.countDocuments({ status: 'PENDING' });

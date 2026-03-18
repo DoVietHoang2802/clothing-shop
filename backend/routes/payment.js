@@ -2,6 +2,7 @@ const express = require('express');
 const {
   createMockPayment,
   confirmMockPayment,
+  cancelMockPayment,
 } = require('../controllers/mockPaymentController');
 const { verifyToken, authorizeRoles } = require('../middlewares/auth');
 
@@ -12,5 +13,8 @@ router.post('/vnpay/create', verifyToken, authorizeRoles('USER'), createMockPaym
 
 // POST /api/payment/mock/confirm - Xác nhận thanh toán mock
 router.post('/mock/confirm', verifyToken, authorizeRoles('USER'), confirmMockPayment);
+
+// POST /api/payment/mock/cancel - Hủy thanh toán mock (hủy đơn + restore stock)
+router.post('/mock/cancel', verifyToken, authorizeRoles('USER'), cancelMockPayment);
 
 module.exports = router;

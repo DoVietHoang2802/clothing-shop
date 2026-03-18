@@ -67,12 +67,45 @@ const MockPaymentPage = () => {
       const res = await paymentService.confirmMockPayment(orderId);
 
       if (res.data.success) {
+        // Xóa giỏ hàng sau khi thanh toán thành công
+        localStorage.removeItem('cart');
+        window.dispatchEvent(new Event('cartUpdated'));
         setSuccess(true);
       } else {
         setError(res.data.message || 'Thanh toán thất bại');
       }
     } catch (err) {
       setError(err.response?.data?.message || 'Lỗi khi xác nhận thanh toán');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  // Hủy thanh toán - hủy đơn hàng và restore stock
+  const handleCancel = async () => {
+    if (!orderId) {
+      setError('Không có mã đơn hàng');
+      return;
+    }
+
+    if (!window.confirm('Bạn có chắc chắn muốn hủy thanh toán? Đơn hàng sẽ bị hủy.')) {
+      return;
+    }
+
+    setProcessing(true);
+    setError('');
+
+    try {
+      const res = await paymentService.cancelMockPayment(orderId);
+
+      if (res.data.success) {
+        // Chuyển về trang đơn hàng
+        navigate('/my-orders', { state: { message: 'Đơn hàng đã được hủy' } });
+      } else {
+        setError(res.data.message || 'Hủy thanh toán thất bại');
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Lỗi khi hủy thanh toán');
     } finally {
       setProcessing(false);
     }
@@ -314,16 +347,21 @@ const MockPaymentPage = () => {
 
         {/* Cancel */}
         <div style={{ textAlign: 'center' }}>
-          <Link
-            to="/my-orders"
+          <button
+            onClick={handleCancel}
+            disabled={processing}
             style={{
-              color: '#7f8c8d',
+              background: 'none',
+              border: 'none',
+              color: '#e74c3c',
               textDecoration: 'none',
-              fontSize: '0.9rem'
+              fontSize: '0.9rem',
+              cursor: processing ? 'not-allowed' : 'pointer',
+              fontWeight: '500'
             }}
           >
             ← Hủy thanh toán
-          </Link>
+          </button>
         </div>
       </div>
     </div>
