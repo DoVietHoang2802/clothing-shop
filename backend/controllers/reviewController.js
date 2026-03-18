@@ -161,6 +161,15 @@ const deleteReview = asyncHandler(async (req, res, next) => {
 const getAverageRating = asyncHandler(async (req, res, next) => {
   const { productId } = req.params;
 
+  // Validate ObjectId
+  if (!require('mongoose').Types.ObjectId.isValid(productId)) {
+    return res.status(200).json({
+      success: true,
+      message: 'Lấy rating trung bình thành công',
+      data: { averageRating: 0, totalReviews: 0 },
+    });
+  }
+
   const result = await Review.aggregate([
     { $match: { product: require('mongoose').Types.ObjectId(productId) } },
     {

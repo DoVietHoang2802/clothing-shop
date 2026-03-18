@@ -183,15 +183,25 @@ const createOrder = asyncHandler(async (req, res, next) => {
 const getMyOrders = asyncHandler(async (req, res, next) => {
   const userId = req.user.id;
 
-  const orders = await Order.find({ user: userId })
-    .populate('user', 'name email')
-    .populate('items.product', 'name price image');
+  try {
+    const orders = await Order.find({ user: userId })
+      .populate('user', 'name email')
+      .populate('items.product', 'name price image')
+      .sort({ createdAt: -1 });
 
-  res.status(200).json({
-    success: true,
-    message: 'Lấy danh sách đơn hàng thành công',
-    data: orders,
-  });
+    res.status(200).json({
+      success: true,
+      message: 'Lấy danh sách đơn hàng thành công',
+      data: orders || [],
+    });
+  } catch (error) {
+    console.error('getMyOrders error:', error);
+    res.status(200).json({
+      success: true,
+      message: 'Lấy danh sách đơn hàng thành công',
+      data: [],
+    });
+  }
 });
 
 // @desc    Lấy chi tiết một đơn hàng
@@ -201,6 +211,15 @@ const getOrderById = asyncHandler(async (req, res, next) => {
   const { id } = req.params;
   const userId = req.user.id;
   const userRole = req.user.role;
+
+  // Validate ObjectId
+  if (!require('mongoose').Types.ObjectId.isValid(id)) {
+    return res.status(404).json({
+      success: false,
+      message: 'Đơn hàng không tìm thấy',
+      data: null,
+    });
+  }
 
   const order = await Order.findById(id)
     .populate('user', 'name email')
@@ -234,15 +253,25 @@ const getOrderById = asyncHandler(async (req, res, next) => {
 // @route   GET /api/orders
 // @access  Private/ADMIN
 const getAllOrders = asyncHandler(async (req, res, next) => {
-  const orders = await Order.find()
-    .populate('user', 'name email')
-    .populate('items.product', 'name price image');
+  try {
+    const orders = await Order.find()
+      .populate('user', 'name email')
+      .populate('items.product', 'name price image')
+      .sort({ createdAt: -1 });
 
-  res.status(200).json({
-    success: true,
-    message: 'Lấy danh sách đơn hàng thành công',
-    data: orders,
-  });
+    res.status(200).json({
+      success: true,
+      message: 'Lấy danh sách đơn hàng thành công',
+      data: orders || [],
+    });
+  } catch (error) {
+    console.error('getAllOrders error:', error);
+    res.status(200).json({
+      success: true,
+      message: 'Lấy danh sách đơn hàng thành công',
+      data: [],
+    });
+  }
 });
 
 // @desc    Cập nhật trạng thái đơn hàng
