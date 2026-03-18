@@ -14,6 +14,7 @@ import MyOrdersPage from './pages/MyOrdersPage';
 import UserProfilePage from './pages/UserProfilePage';
 import ChangePasswordPage from './pages/ChangePasswordPage';
 import WishlistPage from './pages/WishlistPage';
+import PaymentResultPage from './pages/PaymentResultPage';
 
 // Admin Pages
 import AdminDashboard from './pages/Admin/AdminDashboard';
@@ -39,6 +40,7 @@ function App() {
             <Route path="/products/:id" element={<ProductDetailPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
+            <Route path="/payment-result" element={<PaymentResultPage />} />
 
             {/* User Routes */}
             <Route

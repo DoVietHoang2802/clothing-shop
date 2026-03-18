@@ -11,6 +11,7 @@ const reviewRoutes = require('./routes/review');
 const wishlistRoutes = require('./routes/wishlist');
 const couponRoutes = require('./routes/coupon');
 const adminRoutes = require('./routes/admin');
+const paymentRoutes = require('./routes/payment');
 
 // Import middlewares
 const errorHandler = require('./middlewares/errorHandler');
@@ -50,6 +51,7 @@ app.use('/api/reviews', reviewRoutes);
 app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/coupons', couponRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/payment', paymentRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

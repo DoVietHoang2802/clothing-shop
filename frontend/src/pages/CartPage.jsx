@@ -93,12 +93,38 @@ const CartPage = () => {
     try {
       setLoading(true);
       setError('');
-      await orderService.createOrder(
+
+      // Tạo đơn hàng trước
+      const orderRes = await orderService.createOrder(
         items,
         appliedCoupon?.code,
         paymentMethod === 'COD' ? shippingAddress : null,
         paymentMethod
       );
+
+      const orderId = orderRes.data.data._id;
+
+      // Nếu là VNPay, chuyển sang trang thanh toán
+      if (paymentMethod === 'VNPAY') {
+        try {
+          const paymentRes = await import('../services/paymentService').then(module =>
+            module.default.createVNPayPayment(orderId)
+          );
+
+          if (paymentRes.data.success && paymentRes.data.data.paymentUrl) {
+            // Redirect đến VNPay
+            window.location.href = paymentRes.data.data.paymentUrl;
+            return;
+          }
+        } catch (payErr) {
+          console.error('Payment error:', payErr);
+          setError('Lỗi khi tạo link thanh toán VNPay');
+          setLoading(false);
+          return;
+        }
+      }
+
+      // COD - hoàn tất luôn
       setSuccess('Tạo đơn hàng thành công!');
       localStorage.removeItem('cart');
       setCart([]);
@@ -408,17 +434,16 @@ const CartPage = () => {
                   <div style={{ fontSize: '0.8rem', color: '#7f8c8d' }}>Thanh toán khi nhận hàng</div>
                 </label>
 
-                {/* VNPay Option (Coming Soon) */}
+                {/* VNPay Option */}
                 <label style={{
                   flex: 1,
                   padding: '1rem',
                   border: paymentMethod === 'VNPAY' ? '2px solid #3498db' : '2px solid #ddd',
                   borderRadius: '8px',
-                  cursor: paymentMethod === 'VNPAY' ? 'pointer' : 'not-allowed',
-                  background: paymentMethod === 'VNPAY' ? '#f0f7fc' : '#f5f5f5',
+                  cursor: 'pointer',
+                  background: paymentMethod === 'VNPAY' ? '#f0f7fc' : 'white',
                   transition: 'all 0.3s ease',
-                  textAlign: 'center',
-                  opacity: 0.7
+                  textAlign: 'center'
                 }}>
                   <input
                     type="radio"
@@ -426,12 +451,11 @@ const CartPage = () => {
                     value="VNPAY"
                     checked={paymentMethod === 'VNPAY'}
                     onChange={(e) => setPaymentMethod(e.target.value)}
-                    disabled
                     style={{ display: 'none' }}
                   />
                   <div style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>🏦</div>
                   <div style={{ fontWeight: '600', color: '#2c3e50' }}>VNPay</div>
-                  <div style={{ fontSize: '0.8rem', color: '#7f8c8d' }}>Thanh toán online (sắp có)</div>
+                  <div style={{ fontSize: '0.8rem', color: '#7f8c8d' }}>Thanh toán qua VNPay</div>
                 </label>
               </div>
             </div>
