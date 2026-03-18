@@ -32,8 +32,8 @@ router.delete('/:id', verifyToken, authorizeRoles('USER', 'STAFF'), deleteOrder)
 // GET /api/orders/:id - Lấy chi tiết một đơn hàng
 router.get('/:id', verifyToken, authorizeRoles('USER', 'STAFF', 'ADMIN'), getOrderById);
 
-// GET /api/orders - Lấy tất cả đơn hàng (ADMIN)
-router.get('/', verifyToken, authorizeRoles('ADMIN'), getAllOrders);
+// GET /api/orders - Lấy tất cả đơn hàng (ADMIN, STAFF)
+router.get('/', verifyToken, authorizeRoles('ADMIN', 'STAFF'), getAllOrders);
 
 // PUT /api/orders/:id/status - Cập nhật trạng thái đơn hàng (ADMIN, STAFF)
 router.put('/:id/status', verifyToken, authorizeRoles('ADMIN', 'STAFF'), updateOrderStatus);
