@@ -11,6 +11,8 @@ const MyOrdersPage = () => {
   const [success, setSuccess] = useState('');
   const [cancelling, setCancelling] = useState(null);
   const [deleting, setDeleting] = useState(null);
+  const [confirmingPayment, setConfirmingPayment] = useState(null);
+  const [filterStatus, setFilterStatus] = useState('ALL'); // ALL, COMPLETED, NOT_COMPLETED
 
   useEffect(() => {
     loadOrders();
@@ -87,10 +89,44 @@ const MyOrdersPage = () => {
       SHIPPED: { label: '📦 Đã Giao Cho ĐVVC', color: '#9b59b6', bg: '#9b59b620' },
       DELIVERING: { label: '🚚 Đang Giao Hàng', color: '#e67e22', bg: '#e67e2220' },
       ARRIVED: { label: '🏪 Đã Đến Nơi - Chờ Thanh Toán', color: '#e74c3c', bg: '#e74c3c20' },
+      PAID_TO_SHIPPER: { label: '💵 Đã Thanh Toán Cho Shipper', color: '#27ae60', bg: '#27ae6020' },
       COMPLETED: { label: '🎉 Hoàn Tất', color: '#27ae60', bg: '#27ae6020' },
       CANCELLED: { label: '❌ Đã Hủy', color: '#e74c3c', bg: '#e74c3c20' },
     };
     return statusMap[status] || { label: status, color: '#7f8c8d', bg: '#7f8c8d20' };
+  };
+
+  // Xử lý xác nhận đã thanh toán cho shipper
+  const handleConfirmPaidToShipper = async (orderId) => {
+    if (!window.confirm('Bạn đã thanh toán tiền cho shipper chưa?')) {
+      return;
+    }
+
+    try {
+      setConfirmingPayment(orderId);
+      setError('');
+      await orderService.confirmPaidToShipper(orderId);
+      setSuccess('✅ Bạn đã xác nhận thanh toán cho shipper!');
+      await loadOrders();
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Xác nhận thất bại');
+      console.error(err);
+    } finally {
+      setConfirmingPayment(null);
+    }
+  };
+
+  // Lọc đơn hàng
+  const getFilteredOrders = () => {
+    if (filterStatus === 'ALL') return orders;
+    if (filterStatus === 'COMPLETED') {
+      return orders.filter(order => order.status === 'COMPLETED');
+    }
+    if (filterStatus === 'NOT_COMPLETED') {
+      return orders.filter(order => !['COMPLETED', 'CANCELLED'].includes(order.status));
+    }
+    return orders;
   };
 
   if (loading) {
@@ -164,6 +200,62 @@ const MyOrdersPage = () => {
         </div>
       )}
 
+      {/* Filter */}
+      {orders.length > 0 && (
+        <div style={{
+          display: 'flex',
+          gap: '0.5rem',
+          marginBottom: '1.5rem',
+          flexWrap: 'wrap'
+        }}>
+          <button
+            onClick={() => setFilterStatus('ALL')}
+            style={{
+              padding: '0.5rem 1rem',
+              background: filterStatus === 'ALL' ? '#667eea' : 'white',
+              color: filterStatus === 'ALL' ? 'white' : '#7f8c8d',
+              border: '2px solid #667eea',
+              borderRadius: '20px',
+              cursor: 'pointer',
+              fontWeight: '600',
+              transition: 'all 0.3s ease'
+            }}
+          >
+            📋 Tất cả ({orders.length})
+          </button>
+          <button
+            onClick={() => setFilterStatus('NOT_COMPLETED')}
+            style={{
+              padding: '0.5rem 1rem',
+              background: filterStatus === 'NOT_COMPLETED' ? '#f39c12' : 'white',
+              color: filterStatus === 'NOT_COMPLETED' ? 'white' : '#7f8c8d',
+              border: '2px solid #f39c12',
+              borderRadius: '20px',
+              cursor: 'pointer',
+              fontWeight: '600',
+              transition: 'all 0.3s ease'
+            }}
+          >
+            ⏳ Chưa hoàn thành ({orders.filter(o => !['COMPLETED', 'CANCELLED'].includes(o.status)).length})
+          </button>
+          <button
+            onClick={() => setFilterStatus('COMPLETED')}
+            style={{
+              padding: '0.5rem 1rem',
+              background: filterStatus === 'COMPLETED' ? '#27ae60' : 'white',
+              color: filterStatus === 'COMPLETED' ? 'white' : '#7f8c8d',
+              border: '2px solid #27ae60',
+              borderRadius: '20px',
+              cursor: 'pointer',
+              fontWeight: '600',
+              transition: 'all 0.3s ease'
+            }}
+          >
+            ✅ Đã hoàn thành ({orders.filter(o => o.status === 'COMPLETED').length})
+          </button>
+        </div>
+      )}
+
       {orders.length === 0 ? (
         <div style={{
           textAlign: 'center',
@@ -189,7 +281,7 @@ const MyOrdersPage = () => {
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          {orders.map((order) => {
+          {getFilteredOrders().map((order) => {
             const statusInfo = getStatusBadge(order.status);
             return (
               <div key={order._id} style={{
@@ -413,8 +505,31 @@ const MyOrdersPage = () => {
                   background: '#f8f9fa',
                   display: 'flex',
                   justifyContent: 'flex-end',
-                  gap: '1rem'
+                  gap: '1rem',
+                  flexWrap: 'wrap'
                 }}>
+                  {/* Nút xác nhận đã thanh toán cho shipper - chỉ hiện khi đơn hàng ARRIVED và là COD */}
+                  {order.status === 'ARRIVED' && order.paymentMethod === 'COD' && (
+                    <button
+                      onClick={() => handleConfirmPaidToShipper(order._id)}
+                      disabled={confirmingPayment === order._id}
+                      style={{
+                        padding: '0.75rem 1.5rem',
+                        background: confirmingPayment === order._id ? '#27ae60' : 'linear-gradient(135deg, #27ae60 0%, #229954 100%)',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '8px',
+                        cursor: confirmingPayment === order._id ? 'not-allowed' : 'pointer',
+                        fontWeight: '600',
+                        opacity: confirmingPayment === order._id ? 0.6 : 1,
+                        transition: 'all 0.3s ease',
+                        boxShadow: '0 2px 8px rgba(39, 174, 96, 0.3)'
+                      }}
+                    >
+                      {confirmingPayment === order._id ? '⏳ Đang xác nhận...' : '💵 Đã Thanh Toán Cho Shipper'}
+                    </button>
+                  )}
+
                   {order.status === 'PENDING' && (
                     <button
                       onClick={() => handleCancelOrder(order._id)}

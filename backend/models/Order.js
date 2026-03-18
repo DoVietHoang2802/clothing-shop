@@ -79,9 +79,10 @@ const orderSchema = new mongoose.Schema({
     default: 'PENDING',
   },
   // Trạng thái đơn hàng
+  // Flow: PENDING → SHIPPING → PAID_TO_SHIPPER → COMPLETED
   status: {
     type: String,
-    enum: ['PENDING', 'CONFIRMED', 'SHIPPED', 'DELIVERING', 'ARRIVED', 'COMPLETED', 'CANCELLED'],
+    enum: ['PENDING', 'CONFIRMED', 'SHIPPED', 'DELIVERING', 'ARRIVED', 'PAID_TO_SHIPPER', 'COMPLETED', 'CANCELLED'],
     default: 'PENDING',
   },
   // Thông báo đã hiển thị cho user

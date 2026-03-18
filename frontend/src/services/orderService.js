@@ -21,6 +21,11 @@ const orderService = {
     return api.put(`/orders/${id}/status`, { status });
   },
 
+  // User xác nhận đã thanh toán cho shipper (COD)
+  confirmPaidToShipper: (id) => {
+    return api.put(`/orders/${id}/paid-to-shipper`);
+  },
+
   cancelOrder: (id) => {
     return api.put(`/orders/${id}/cancel`);
   },

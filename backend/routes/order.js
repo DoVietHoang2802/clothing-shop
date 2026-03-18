@@ -5,6 +5,7 @@ const {
   getOrderById,
   getAllOrders,
   updateOrderStatus,
+  confirmPaidToShipper,
   cancelOrder,
   deleteOrder,
   deleteOrderAdmin,
@@ -18,6 +19,9 @@ router.post('/', verifyToken, authorizeRoles('USER', 'STAFF', 'ADMIN'), createOr
 
 // GET /api/orders/my - Lấy đơn hàng của tôi (USER)
 router.get('/my', verifyToken, authorizeRoles('USER', 'STAFF', 'ADMIN'), getMyOrders);
+
+// PUT /api/orders/:id/paid-to-shipper - User xác nhận đã thanh toán cho shipper
+router.put('/:id/paid-to-shipper', verifyToken, authorizeRoles('USER'), confirmPaidToShipper);
 
 // PUT /api/orders/:id/cancel - Hủy đơn hàng của user (phải trước GET /:id)
 router.put('/:id/cancel', verifyToken, authorizeRoles('USER', 'STAFF', 'ADMIN'), cancelOrder);

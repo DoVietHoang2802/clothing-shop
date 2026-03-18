@@ -260,7 +260,7 @@ const updateOrderStatus = asyncHandler(async (req, res, next) => {
     });
   }
 
-  const validStatuses = ['PENDING', 'CONFIRMED', 'SHIPPED', 'DELIVERING', 'ARRIVED', 'COMPLETED', 'CANCELLED'];
+  const validStatuses = ['PENDING', 'CONFIRMED', 'SHIPPED', 'DELIVERING', 'ARRIVED', 'PAID_TO_SHIPPER', 'COMPLETED', 'CANCELLED'];
   if (!validStatuses.includes(status)) {
     return res.status(400).json({
       success: false,
@@ -450,12 +450,72 @@ const deleteOrderAdmin = asyncHandler(async (req, res, next) => {
   });
 });
 
+// @desc    User xác nhận đã thanh toán cho shipper (COD)
+// @route   PUT /api/orders/:id/paid-to-shipper
+// @access  Private/USER
+const confirmPaidToShipper = asyncHandler(async (req, res, next) => {
+  const { id } = req.params;
+  const userId = req.user.id;
+
+  const order = await Order.findById(id);
+
+  if (!order) {
+    return res.status(404).json({
+      success: false,
+      message: 'Đơn hàng không tìm thấy',
+      data: null,
+    });
+  }
+
+  // Check authorization - user can only update their own orders
+  if (order.user.toString() !== userId) {
+    return res.status(403).json({
+      success: false,
+      message: 'Bạn không có quyền cập nhật đơn hàng này',
+      data: null,
+    });
+  }
+
+  // Validate status - only ARRIVED orders can be marked as PAID_TO_SHIPPER
+  if (order.status !== 'ARRIVED') {
+    return res.status(400).json({
+      success: false,
+      message: 'Chỉ có thể xác nhận thanh toán khi đơn hàng đã đến nơi',
+      data: null,
+    });
+  }
+
+  // Validate payment method - only COD
+  if (order.paymentMethod !== 'COD') {
+    return res.status(400).json({
+      success: false,
+      message: 'Chức năng này chỉ áp dụng cho đơn hàng COD',
+      data: null,
+    });
+  }
+
+  // Update status
+  order.status = 'PAID_TO_SHIPPER';
+  order.paymentStatus = 'PAID';
+  order = await order.save();
+
+  await order.populate('user', 'name email');
+  await order.populate('items.product', 'name price image');
+
+  res.status(200).json({
+    success: true,
+    message: 'Bạn đã xác nhận thanh toán cho shipper',
+    data: order,
+  });
+});
+
 module.exports = {
   createOrder,
   getMyOrders,
   getOrderById,
   getAllOrders,
   updateOrderStatus,
+  confirmPaidToShipper,
   cancelOrder,
   deleteOrder,
   deleteOrderAdmin,

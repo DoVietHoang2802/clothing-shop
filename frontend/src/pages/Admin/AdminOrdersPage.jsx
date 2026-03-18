@@ -80,15 +80,24 @@ const AdminOrdersPage = () => {
       SHIPPED: { label: '📦 Đã Giao Cho ĐVVC', color: '#9b59b6', bg: '#9b59b620' },
       DELIVERING: { label: '🚚 Đang Giao Hàng', color: '#e67e22', bg: '#e67e2220' },
       ARRIVED: { label: '🏪 Đã Đến Nơi', color: '#e74c3c', bg: '#e74c3c20' },
+      PAID_TO_SHIPPER: { label: '💵 Đã Thanh Toán Cho Shipper', color: '#27ae60', bg: '#27ae6020' },
       COMPLETED: { label: '🎉 Hoàn Tất', color: '#27ae60', bg: '#27ae6020' },
       CANCELLED: { label: '❌ Đã Hủy', color: '#e74c3c', bg: '#e74c3c20' },
     };
     return statusMap[status] || { label: status, color: '#7f8c8d', bg: '#7f8c8d20' };
   };
 
-  const filteredOrders = filterStatus === 'ALL'
-    ? orders
-    : orders.filter(order => order.status === filterStatus);
+  // Lọc đơn hàng
+  const getFilteredOrders = () => {
+    if (filterStatus === 'ALL') return orders;
+    if (filterStatus === 'COMPLETED') {
+      return orders.filter(order => order.status === 'COMPLETED');
+    }
+    if (filterStatus === 'NOT_COMPLETED') {
+      return orders.filter(order => !['COMPLETED', 'CANCELLED'].includes(order.status));
+    }
+    return orders.filter(order => order.status === filterStatus);
+  };
 
   if (loading) {
     return (
@@ -182,7 +191,7 @@ const AdminOrdersPage = () => {
         marginBottom: '1.5rem',
         flexWrap: 'wrap'
       }}>
-        {['ALL', 'PENDING', 'CONFIRMED', 'SHIPPED', 'DELIVERING', 'ARRIVED', 'COMPLETED', 'CANCELLED'].map((status) => (
+        {['ALL', 'NOT_COMPLETED', 'COMPLETED'].map((status) => (
           <button
             key={status}
             onClick={() => setFilterStatus(status)}
@@ -197,20 +206,22 @@ const AdminOrdersPage = () => {
               transition: 'all 0.3s ease'
             }}
           >
-            {status === 'ALL' ? '📋 Tất cả' : getStatusBadge(status).label}
+            {status === 'ALL' ? `📋 Tất cả (${orders.length})` :
+             status === 'NOT_COMPLETED' ? `⏳ Chưa hoàn thành (${orders.filter(o => !['COMPLETED', 'CANCELLED'].includes(o.status)).length})` :
+             `✅ Đã hoàn thành (${orders.filter(o => o.status === 'COMPLETED').length})`}
           </button>
         ))}
       </div>
 
       {/* Orders */}
-      {filteredOrders.length === 0 ? (
+      {getFilteredOrders().length === 0 ? (
         <div style={{ textAlign: 'center', padding: '4rem', background: 'white', borderRadius: '16px' }}>
           <div style={{ fontSize: '4rem' }}>📦</div>
           <h2 style={{ color: '#2c3e50' }}>Không có đơn hàng nào</h2>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          {filteredOrders.map((order) => {
+          {getFilteredOrders().map((order) => {
             const statusInfo = getStatusBadge(order.status);
             return (
               <div key={order._id} style={{
@@ -326,9 +337,24 @@ const AdminOrdersPage = () => {
                       <option value="SHIPPED">📦 Đã Giao Cho ĐVVC</option>
                       <option value="DELIVERING">🚚 Đang Giao Hàng</option>
                       <option value="ARRIVED">🏪 Đã Đến Nơi</option>
+                      <option value="PAID_TO_SHIPPER">💵 Đã Thanh Toán Cho Shipper</option>
                       <option value="COMPLETED">🎉 Hoàn Tất</option>
                       <option value="CANCELLED">❌ Hủy</option>
                     </select>
+
+                    {/* Hiển thị label đặc biệt khi khách đã thanh toán cho shipper */}
+                    {order.status === 'PAID_TO_SHIPPER' && (
+                      <span style={{
+                        padding: '0.5rem 1rem',
+                        background: '#27ae60',
+                        color: 'white',
+                        borderRadius: '8px',
+                        fontWeight: '600',
+                        fontSize: '0.85rem'
+                      }}>
+                        ✅ Khách đã thanh toán cho shipper
+                      </span>
+                    )}
 
                     {['CANCELLED', 'COMPLETED'].includes(order.status) && (
                       <button
