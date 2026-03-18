@@ -15,6 +15,7 @@ import UserProfilePage from './pages/UserProfilePage';
 import ChangePasswordPage from './pages/ChangePasswordPage';
 import WishlistPage from './pages/WishlistPage';
 import PaymentResultPage from './pages/PaymentResultPage';
+import MockPaymentPage from './pages/MockPaymentPage';
 
 // Admin Pages
 import AdminDashboard from './pages/Admin/AdminDashboard';
@@ -41,6 +42,7 @@ function App() {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/payment-result" element={<PaymentResultPage />} />
+            <Route path="/mock-payment" element={<MockPaymentPage />} />
 
             {/* User Routes */}
             <Route

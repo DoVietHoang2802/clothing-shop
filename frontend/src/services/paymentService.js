@@ -1,9 +1,14 @@
 import api from './api';
 
 const paymentService = {
-  // Tạo link thanh toán VNPay
-  createVNPayPayment: (orderId) => {
+  // Tạo link thanh toán Mock (giả lập VNPay)
+  createMockPayment: (orderId) => {
     return api.post('/payment/vnpay/create', { orderId });
+  },
+
+  // Xác nhận thanh toán mock
+  confirmMockPayment: (orderId) => {
+    return api.post('/payment/mock/confirm', { orderId });
   },
 
   // Kiểm tra trạng thái thanh toán

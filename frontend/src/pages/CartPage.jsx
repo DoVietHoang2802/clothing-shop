@@ -104,21 +104,21 @@ const CartPage = () => {
 
       const orderId = orderRes.data.data._id;
 
-      // Nếu là VNPay, chuyển sang trang thanh toán
+      // Nếu là VNPay, chuyển sang trang thanh toán mock
       if (paymentMethod === 'VNPAY') {
         try {
           const paymentRes = await import('../services/paymentService').then(module =>
-            module.default.createVNPayPayment(orderId)
+            module.default.createMockPayment(orderId)
           );
 
           if (paymentRes.data.success && paymentRes.data.data.paymentUrl) {
-            // Redirect đến VNPay
+            // Redirect đến trang thanh toán mock
             window.location.href = paymentRes.data.data.paymentUrl;
             return;
           }
         } catch (payErr) {
           console.error('Payment error:', payErr);
-          setError('Lỗi khi tạo link thanh toán VNPay');
+          setError('Lỗi khi tạo link thanh toán');
           setLoading(false);
           return;
         }
