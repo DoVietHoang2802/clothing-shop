@@ -11,6 +11,16 @@ const CartPage = () => {
   const [success, setSuccess] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState(null);
 
+  // Shipping address state
+  const [shippingAddress, setShippingAddress] = useState({
+    fullName: '',
+    phone: '',
+    address: '',
+  });
+
+  // Payment method state
+  const [paymentMethod, setPaymentMethod] = useState('COD');
+
   useEffect(() => {
     loadCart();
   }, []);
@@ -61,6 +71,20 @@ const CartPage = () => {
       return;
     }
 
+    // Validate shipping address for COD
+    if (paymentMethod === 'COD') {
+      if (!shippingAddress.fullName || !shippingAddress.phone || !shippingAddress.address) {
+        setError('Vui lòng nhập đầy đủ thông tin giao hàng');
+        return;
+      }
+
+      // Validate phone number
+      if (!/^0\d{9}$/.test(shippingAddress.phone)) {
+        setError('Số điện thoại không hợp lệ (phải bắt đầu bằng 0 và có 10 số)');
+        return;
+      }
+    }
+
     const items = cart.map((item) => ({
       productId: item.productId,
       quantity: item.quantity,
@@ -69,7 +93,12 @@ const CartPage = () => {
     try {
       setLoading(true);
       setError('');
-      await orderService.createOrder(items, appliedCoupon?.code);
+      await orderService.createOrder(
+        items,
+        appliedCoupon?.code,
+        paymentMethod === 'COD' ? shippingAddress : null,
+        paymentMethod
+      );
       setSuccess('Tạo đơn hàng thành công!');
       localStorage.removeItem('cart');
       setCart([]);
@@ -348,6 +377,123 @@ const CartPage = () => {
               onCouponRemoved={handleCouponRemoved}
             />
 
+            {/* Payment Method Selection */}
+            <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '2px solid #f0f0f0' }}>
+              <h4 style={{ margin: '0 0 1rem 0', fontSize: '1rem', color: '#2c3e50' }}>
+                💳 Phương Thức Thanh Toán
+              </h4>
+
+              <div style={{ display: 'flex', gap: '0.75rem' }}>
+                {/* COD Option */}
+                <label style={{
+                  flex: 1,
+                  padding: '1rem',
+                  border: paymentMethod === 'COD' ? '2px solid #27ae60' : '2px solid #ddd',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  background: paymentMethod === 'COD' ? '#f0f9f0' : 'white',
+                  transition: 'all 0.3s ease',
+                  textAlign: 'center'
+                }}>
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    value="COD"
+                    checked={paymentMethod === 'COD'}
+                    onChange={(e) => setPaymentMethod(e.target.value)}
+                    style={{ display: 'none' }}
+                  />
+                  <div style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>📦</div>
+                  <div style={{ fontWeight: '600', color: '#2c3e50' }}>COD</div>
+                  <div style={{ fontSize: '0.8rem', color: '#7f8c8d' }}>Thanh toán khi nhận hàng</div>
+                </label>
+
+                {/* VNPay Option (Coming Soon) */}
+                <label style={{
+                  flex: 1,
+                  padding: '1rem',
+                  border: paymentMethod === 'VNPAY' ? '2px solid #3498db' : '2px solid #ddd',
+                  borderRadius: '8px',
+                  cursor: paymentMethod === 'VNPAY' ? 'pointer' : 'not-allowed',
+                  background: paymentMethod === 'VNPAY' ? '#f0f7fc' : '#f5f5f5',
+                  transition: 'all 0.3s ease',
+                  textAlign: 'center',
+                  opacity: 0.7
+                }}>
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    value="VNPAY"
+                    checked={paymentMethod === 'VNPAY'}
+                    onChange={(e) => setPaymentMethod(e.target.value)}
+                    disabled
+                    style={{ display: 'none' }}
+                  />
+                  <div style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>🏦</div>
+                  <div style={{ fontWeight: '600', color: '#2c3e50' }}>VNPay</div>
+                  <div style={{ fontSize: '0.8rem', color: '#7f8c8d' }}>Thanh toán online (sắp có)</div>
+                </label>
+              </div>
+            </div>
+
+            {/* Shipping Address Form - Only show for COD */}
+            {paymentMethod === 'COD' && (
+              <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '2px solid #f0f0f0' }}>
+                <h4 style={{ margin: '0 0 1rem 0', fontSize: '1rem', color: '#2c3e50' }}>
+                  📍 Địa Chỉ Giao Hàng
+                </h4>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  <input
+                    type="text"
+                    placeholder="Họ và tên"
+                    value={shippingAddress.fullName}
+                    onChange={(e) => setShippingAddress({ ...shippingAddress, fullName: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem 1rem',
+                      border: '2px solid #ddd',
+                      borderRadius: '8px',
+                      fontSize: '0.95rem',
+                      transition: 'all 0.3s ease'
+                    }}
+                  />
+
+                  <input
+                    type="tel"
+                    placeholder="Số điện thoại (VD: 0123456789)"
+                    value={shippingAddress.phone}
+                    onChange={(e) => setShippingAddress({ ...shippingAddress, phone: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem 1rem',
+                      border: '2px solid #ddd',
+                      borderRadius: '8px',
+                      fontSize: '0.95rem',
+                      transition: 'all 0.3s ease'
+                    }}
+                  />
+
+                  <textarea
+                    placeholder="Địa chỉ chi tiết (số nhà, đường, phường/xã, quận/huyện, thành phố)"
+                    value={shippingAddress.address}
+                    onChange={(e) => setShippingAddress({ ...shippingAddress, address: e.target.value })}
+                    rows={3}
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem 1rem',
+                      border: '2px solid #ddd',
+                      borderRadius: '8px',
+                      fontSize: '0.95rem',
+                      transition: 'all 0.3s ease',
+                      resize: 'vertical',
+                      fontFamily: 'inherit'
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+
             {/* Summary */}
             <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '2px solid #f0f0f0' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem', color: '#7f8c8d' }}>
@@ -406,7 +552,7 @@ const CartPage = () => {
                   marginBottom: '0.75rem'
                 }}
               >
-                {loading ? '⏳ Đang Xử Lý...' : '💳 Thanh Toán'}
+                {loading ? '⏳ Đang Xử Lý...' : paymentMethod === 'COD' ? '📦 Đặt Hàng (COD)' : '💳 Thanh Toán'}
               </button>
 
               <button

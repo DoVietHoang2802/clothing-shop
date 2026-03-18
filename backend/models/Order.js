@@ -13,6 +13,10 @@ const orderSchema = new mongoose.Schema({
         ref: 'Product',
         required: true,
       },
+      name: {
+        type: String,
+        required: true,
+      },
       quantity: {
         type: Number,
         required: true,
@@ -22,6 +26,8 @@ const orderSchema = new mongoose.Schema({
         type: Number,
         required: true,
       },
+      size: String,
+      color: String,
       _id: false,
     },
   ],
@@ -46,10 +52,42 @@ const orderSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
+  // Thông tin vận chuyển
+  shippingAddress: {
+    fullName: {
+      type: String,
+      required: true,
+    },
+    phone: {
+      type: String,
+      required: true,
+    },
+    address: {
+      type: String,
+      required: true,
+    },
+  },
+  // Thông tin thanh toán
+  paymentMethod: {
+    type: String,
+    enum: ['COD', 'VNPAY'],
+    default: 'COD',
+  },
+  paymentStatus: {
+    type: String,
+    enum: ['PENDING', 'PAID', 'FAILED', 'REFUNDED'],
+    default: 'PENDING',
+  },
+  // Trạng thái đơn hàng
   status: {
     type: String,
-    enum: ['PENDING', 'CONFIRMED', 'SHIPPED', 'COMPLETED', 'CANCELLED'],
+    enum: ['PENDING', 'CONFIRMED', 'SHIPPED', 'DELIVERING', 'ARRIVED', 'COMPLETED', 'CANCELLED'],
     default: 'PENDING',
+  },
+  // Thông báo đã hiển thị cho user
+  notificationSent: {
+    type: Boolean,
+    default: false,
   },
   createdAt: {
     type: Date,

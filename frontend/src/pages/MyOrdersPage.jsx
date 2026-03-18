@@ -84,7 +84,9 @@ const MyOrdersPage = () => {
     const statusMap = {
       PENDING: { label: '⏳ Chờ Xác Nhận', color: '#f39c12', bg: '#f39c1220' },
       CONFIRMED: { label: '✅ Đã Xác Nhận', color: '#3498db', bg: '#3498db20' },
-      SHIPPED: { label: '📦 Đang Giao', color: '#9b59b6', bg: '#9b59b620' },
+      SHIPPED: { label: '📦 Đã Giao Cho ĐVVC', color: '#9b59b6', bg: '#9b59b620' },
+      DELIVERING: { label: '🚚 Đang Giao Hàng', color: '#e67e22', bg: '#e67e2220' },
+      ARRIVED: { label: '🏪 Đã Đến Nơi - Chờ Thanh Toán', color: '#e74c3c', bg: '#e74c3c20' },
       COMPLETED: { label: '🎉 Hoàn Tất', color: '#27ae60', bg: '#27ae6020' },
       CANCELLED: { label: '❌ Đã Hủy', color: '#e74c3c', bg: '#e74c3c20' },
     };
@@ -293,6 +295,24 @@ const MyOrdersPage = () => {
 
                 {/* Order Items */}
                 <div style={{ padding: '1.5rem' }}>
+                  {/* Special notification for ARRIVED orders (COD payment) */}
+                  {order.status === 'ARRIVED' && (
+                    <div style={{
+                      padding: '1rem',
+                      marginBottom: '1rem',
+                      background: 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)',
+                      borderRadius: '12px',
+                      color: 'white',
+                      textAlign: 'center'
+                    }}>
+                      <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🔔</div>
+                      <h4 style={{ margin: '0 0 0.5rem 0' }}>Đơn Hàng Đã Đến Nơi!</h4>
+                      <p style={{ margin: 0, fontSize: '0.95rem', opacity: 0.9 }}>
+                        Vui lòng thanh toán <strong>{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(order.finalPrice || order.totalPrice)}</strong> cho nhân viên giao hàng
+                      </p>
+                    </div>
+                  )}
+
                   <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead>
                       <tr style={{ borderBottom: '2px solid #f0f0f0' }}>
@@ -317,9 +337,16 @@ const MyOrdersPage = () => {
                                   borderRadius: '8px'
                                 }}
                               />
-                              <span style={{ fontWeight: '500', color: '#2c3e50' }}>
-                                {item.product?.name || 'Sản phẩm'}
-                              </span>
+                              <div>
+                                <span style={{ fontWeight: '500', color: '#2c3e50' }}>
+                                  {item.product?.name || item.name || 'Sản phẩm'}
+                                </span>
+                                {(item.size || item.color) && (
+                                  <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.8rem', color: '#7f8c8d' }}>
+                                    {item.size && `Size: ${item.size}`} {item.color && `| Màu: ${item.color}`}
+                                  </p>
+                                )}
+                              </div>
                             </div>
                           </td>
                           <td style={{ textAlign: 'center', padding: '1rem 0.75rem', color: '#2c3e50' }}>
@@ -341,6 +368,43 @@ const MyOrdersPage = () => {
                       ))}
                     </tbody>
                   </table>
+
+                  {/* Shipping Address & Payment Method */}
+                  {(order.shippingAddress || order.paymentMethod) && (
+                    <div style={{
+                      marginTop: '1.5rem',
+                      padding: '1rem',
+                      background: '#f8f9fa',
+                      borderRadius: '8px',
+                      display: 'grid',
+                      gridTemplateColumns: '1fr 1fr',
+                      gap: '1rem'
+                    }}>
+                      {order.shippingAddress && (
+                        <div>
+                          <h5 style={{ margin: '0 0 0.5rem 0', color: '#2c3e50', fontSize: '0.9rem' }}>
+                            📍 Địa Chỉ Giao Hàng
+                          </h5>
+                          <p style={{ margin: 0, color: '#7f8c8d', fontSize: '0.85rem' }}>
+                            {order.shippingAddress.fullName}<br />
+                            {order.shippingAddress.phone}<br />
+                            {order.shippingAddress.address}
+                          </p>
+                        </div>
+                      )}
+                      {order.paymentMethod && (
+                        <div>
+                          <h5 style={{ margin: '0 0 0.5rem 0', color: '#2c3e50', fontSize: '0.9rem' }}>
+                            💳 Phương Thức Thanh Toán
+                          </h5>
+                          <p style={{ margin: 0, color: '#7f8c8d', fontSize: '0.85rem' }}>
+                            {order.paymentMethod === 'COD' ? '📦 Thanh toán khi nhận hàng (COD)' :
+                              order.paymentMethod === 'VNPAY' ? '🏦 Thanh toán VNPay' : order.paymentMethod}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Action Buttons */}

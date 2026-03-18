@@ -1,8 +1,8 @@
 import api from './api';
 
 const orderService = {
-  createOrder: (items, couponCode = null) => {
-    return api.post('/orders', { items, couponCode });
+  createOrder: (items, couponCode = null, shippingAddress = null, paymentMethod = 'COD') => {
+    return api.post('/orders', { items, couponCode, shippingAddress, paymentMethod });
   },
 
   getMyOrders: () => {

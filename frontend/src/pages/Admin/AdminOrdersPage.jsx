@@ -77,7 +77,9 @@ const AdminOrdersPage = () => {
     const statusMap = {
       PENDING: { label: '⏳ Chờ Xác Nhận', color: '#f39c12', bg: '#f39c1220' },
       CONFIRMED: { label: '✅ Đã Xác Nhận', color: '#3498db', bg: '#3498db20' },
-      SHIPPED: { label: '📦 Đang Giao', color: '#9b59b6', bg: '#9b59b620' },
+      SHIPPED: { label: '📦 Đã Giao Cho ĐVVC', color: '#9b59b6', bg: '#9b59b620' },
+      DELIVERING: { label: '🚚 Đang Giao Hàng', color: '#e67e22', bg: '#e67e2220' },
+      ARRIVED: { label: '🏪 Đã Đến Nơi', color: '#e74c3c', bg: '#e74c3c20' },
       COMPLETED: { label: '🎉 Hoàn Tất', color: '#27ae60', bg: '#27ae6020' },
       CANCELLED: { label: '❌ Đã Hủy', color: '#e74c3c', bg: '#e74c3c20' },
     };
@@ -180,7 +182,7 @@ const AdminOrdersPage = () => {
         marginBottom: '1.5rem',
         flexWrap: 'wrap'
       }}>
-        {['ALL', 'PENDING', 'CONFIRMED', 'SHIPPED', 'COMPLETED', 'CANCELLED'].map((status) => (
+        {['ALL', 'PENDING', 'CONFIRMED', 'SHIPPED', 'DELIVERING', 'ARRIVED', 'COMPLETED', 'CANCELLED'].map((status) => (
           <button
             key={status}
             onClick={() => setFilterStatus(status)}
@@ -274,12 +276,34 @@ const AdminOrdersPage = () => {
                       <p style={{ margin: '0.25rem 0 0 0', fontWeight: '600', color: '#2c3e50' }}>
                         {order.user?.name || 'Không xác định'}
                       </p>
+                      {order.shippingAddress && (
+                        <>
+                          <p style={{ margin: '0.5rem 0 0 0', color: '#7f8c8d', fontSize: '0.9rem' }}>Địa chỉ giao hàng</p>
+                          <p style={{ margin: '0.25rem 0 0 0', fontWeight: '500', color: '#2c3e50', fontSize: '0.9rem' }}>
+                            {order.shippingAddress.fullName} - {order.shippingAddress.phone}
+                            <br />
+                            {order.shippingAddress.address}
+                          </p>
+                        </>
+                      )}
                     </div>
                     <div style={{ textAlign: 'right' }}>
                       <p style={{ margin: 0, color: '#7f8c8d', fontSize: '0.9rem' }}>Sản phẩm</p>
                       <p style={{ margin: '0.25rem 0 0 0', fontWeight: '600', color: '#2c3e50' }}>
                         {order.items?.length || 0} sản phẩm
                       </p>
+                      {order.paymentMethod && (
+                        <>
+                          <p style={{ margin: '0.5rem 0 0 0', color: '#7f8c8d', fontSize: '0.9rem' }}>Thanh toán</p>
+                          <p style={{
+                            margin: '0.25rem 0 0 0',
+                            fontWeight: '600',
+                            color: order.paymentMethod === 'COD' ? '#e67e22' : '#3498db'
+                          }}>
+                            {order.paymentMethod === 'COD' ? '📦 COD (Khi nhận hàng)' : '🏦 VNPay'}
+                          </p>
+                        </>
+                      )}
                     </div>
                   </div>
 
@@ -299,7 +323,9 @@ const AdminOrdersPage = () => {
                     >
                       <option value="PENDING">⏳ Chờ Xác Nhận</option>
                       <option value="CONFIRMED">✅ Đã Xác Nhận</option>
-                      <option value="SHIPPED">📦 Đang Giao</option>
+                      <option value="SHIPPED">📦 Đã Giao Cho ĐVVC</option>
+                      <option value="DELIVERING">🚚 Đang Giao Hàng</option>
+                      <option value="ARRIVED">🏪 Đã Đến Nơi</option>
                       <option value="COMPLETED">🎉 Hoàn Tất</option>
                       <option value="CANCELLED">❌ Hủy</option>
                     </select>

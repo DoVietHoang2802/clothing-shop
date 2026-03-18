@@ -7,7 +7,7 @@ const asyncHandler = require('../utils/asyncHandler');
 // @route   POST /api/orders
 // @access  Private/USER
 const createOrder = asyncHandler(async (req, res, next) => {
-  const { items, couponCode } = req.body;
+  const { items, couponCode, shippingAddress, paymentMethod } = req.body;
   const userId = req.user.id;
 
   if (!items || items.length === 0) {
@@ -16,6 +16,17 @@ const createOrder = asyncHandler(async (req, res, next) => {
       message: 'Giỏ hàng không được trống',
       data: null,
     });
+  }
+
+  // Validate shipping address cho COD
+  if (paymentMethod === 'COD') {
+    if (!shippingAddress || !shippingAddress.fullName || !shippingAddress.phone || !shippingAddress.address) {
+      return res.status(400).json({
+        success: false,
+        message: 'Vui lòng cung cấp địa chỉ giao hàng đầy đủ',
+        data: null,
+      });
+    }
   }
 
   let totalPrice = 0;
@@ -46,8 +57,11 @@ const createOrder = asyncHandler(async (req, res, next) => {
 
     orderItems.push({
       product: product._id,
+      name: product.name,
       quantity: item.quantity,
       price: price,
+      size: item.size || null,
+      color: item.color || null,
     });
 
     productsToUpdate.push({
@@ -120,6 +134,9 @@ const createOrder = asyncHandler(async (req, res, next) => {
 
   // Create order
   let order;
+  const paymentMethodVal = paymentMethod || 'COD';
+  const paymentStatusVal = paymentMethodVal === 'VNPAY' ? 'PENDING' : 'PENDING';
+
   try {
     order = await Order.create({
       user: userId,
@@ -128,6 +145,9 @@ const createOrder = asyncHandler(async (req, res, next) => {
       coupon: couponData,
       discountAmount,
       finalPrice,
+      shippingAddress: shippingAddress || null,
+      paymentMethod: paymentMethodVal,
+      paymentStatus: paymentStatusVal,
     });
   } catch (err) {
     console.error('Order creation failed:', err);
@@ -240,7 +260,7 @@ const updateOrderStatus = asyncHandler(async (req, res, next) => {
     });
   }
 
-  const validStatuses = ['PENDING', 'CONFIRMED', 'SHIPPED', 'COMPLETED', 'CANCELLED'];
+  const validStatuses = ['PENDING', 'CONFIRMED', 'SHIPPED', 'DELIVERING', 'ARRIVED', 'COMPLETED', 'CANCELLED'];
   if (!validStatuses.includes(status)) {
     return res.status(400).json({
       success: false,
