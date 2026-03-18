@@ -16,6 +16,7 @@ import ChangePasswordPage from './pages/ChangePasswordPage';
 import WishlistPage from './pages/WishlistPage';
 import PaymentResultPage from './pages/PaymentResultPage';
 import MockPaymentPage from './pages/MockPaymentPage';
+import WithdrawalPage from './pages/WithdrawalPage';
 
 // Admin Pages
 import AdminDashboard from './pages/Admin/AdminDashboard';
@@ -24,6 +25,7 @@ import AdminCategoriesPage from './pages/Admin/AdminCategoriesPage';
 import AdminProductsPage from './pages/Admin/AdminProductsPage';
 import AdminOrdersPage from './pages/Admin/AdminOrdersPage';
 import AdminCouponsPage from './pages/Admin/AdminCouponsPage';
+import AdminWithdrawalsPage from './pages/Admin/AdminWithdrawalsPage';
 
 // Staff Pages
 import StaffProductsPage from './pages/Staff/StaffProductsPage';
@@ -85,6 +87,14 @@ function App() {
                 </PrivateRoute>
               }
             />
+            <Route
+              path="/withdrawal"
+              element={
+                <PrivateRoute allowedRoles={['USER', 'ADMIN', 'STAFF']}>
+                  <WithdrawalPage />
+                </PrivateRoute>
+              }
+            />
 
             {/* Staff Routes */}
             <Route
@@ -142,6 +152,14 @@ function App() {
               element={
                 <PrivateRoute allowedRoles={['ADMIN']}>
                   <AdminCouponsPage />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/admin/withdrawals"
+              element={
+                <PrivateRoute allowedRoles={['ADMIN']}>
+                  <AdminWithdrawalsPage />
                 </PrivateRoute>
               }
             />

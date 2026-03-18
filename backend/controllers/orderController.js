@@ -385,11 +385,12 @@ const cancelOrder = asyncHandler(async (req, res, next) => {
     });
   }
 
-  // Can only cancel PENDING orders
-  if (order.status !== 'PENDING') {
+  // Can only cancel PENDING orders (NOT COMPLETED, NOT PAID_TO_SHIPPER)
+  const cancellableStatuses = ['PENDING', 'CONFIRMED'];
+  if (!cancellableStatuses.includes(order.status)) {
     return res.status(400).json({
       success: false,
-      message: `Không thể hủy đơn hàng có trạng thái: ${order.status}. Chỉ có thể hủy đơn hàng ở trạng thái PENDING`,
+      message: `Không thể hủy đơn hàng đã hoàn thành hoặc đang giao hàng. Trạng thái hiện tại: ${order.status}`,
       data: null,
     });
   }
@@ -445,11 +446,13 @@ const deleteOrder = asyncHandler(async (req, res, next) => {
     });
   }
 
-  // Only allow deleting CANCELLED or COMPLETED orders
-  if (!['CANCELLED', 'COMPLETED'].includes(order.status)) {
+  // Allow user to delete their own orders (any status except PENDING, CONFIRMED, SHIPPED, DELIVERING, ARRIVED)
+  // Cannot delete orders that are in progress
+  const deletableStatuses = ['CANCELLED', 'COMPLETED', 'PAID_TO_SHIPPER'];
+  if (!deletableStatuses.includes(order.status)) {
     return res.status(400).json({
       success: false,
-      message: `Chỉ có thể xóa đơn hàng đã hủy hoặc hoàn thành`,
+      message: `Không thể xóa đơn hàng đang xử lý hoặc đang giao. Trạng thái hiện tại: ${order.status}`,
       data: null,
     });
   }

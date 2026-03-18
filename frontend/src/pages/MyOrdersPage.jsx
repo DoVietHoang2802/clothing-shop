@@ -10,6 +10,7 @@ const MyOrdersPage = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [cancelling, setCancelling] = useState(null);
+  const [deleting, setDeleting] = useState(null);
   const [confirmingPayment, setConfirmingPayment] = useState(null);
   const [expandedOrder, setExpandedOrder] = useState(null);
   const [filterStatus, setFilterStatus] = useState('ALL');
@@ -79,6 +80,26 @@ const MyOrdersPage = () => {
       console.error(err);
     } finally {
       setConfirmingPayment(null);
+    }
+  };
+
+  const handleDeleteOrder = async (orderId) => {
+    if (!window.confirm('Bạn chắc chắn muốn xóa đơn hàng này? Hành động này không thể hoàn tác.')) {
+      return;
+    }
+
+    try {
+      setDeleting(orderId);
+      setError('');
+      await orderService.deleteOrder(orderId);
+      setSuccess('Xóa đơn hàng thành công!');
+      await loadOrders();
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Xóa đơn hàng thất bại');
+      console.error(err);
+    } finally {
+      setDeleting(null);
     }
   };
 
@@ -422,8 +443,8 @@ const MyOrdersPage = () => {
                         </button>
                       )}
 
-                      {/* Nút hủy đơn - chỉ PENDING mới được hủy */}
-                      {order.status === 'PENDING' && (
+                      {/* Nút hủy đơn - chỉ PENDING và CONFIRMED mới được hủy */}
+                      {(order.status === 'PENDING' || order.status === 'CONFIRMED') && (
                         <button
                           onClick={(e) => { e.stopPropagation(); handleCancelOrder(order._id); }}
                           disabled={cancelling === order._id}
@@ -440,6 +461,27 @@ const MyOrdersPage = () => {
                           }}
                         >
                           {cancelling === order._id ? '⏳ Đang hủy...' : '❌ Hủy Đơn'}
+                        </button>
+                      )}
+
+                      {/* Nút xóa đơn - chỉ COMPLETED, PAID_TO_SHIPPER, CANCELLED mới được xóa */}
+                      {(order.status === 'COMPLETED' || order.status === 'PAID_TO_SHIPPER' || order.status === 'CANCELLED') && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleDeleteOrder(order._id); }}
+                          disabled={deleting === order._id}
+                          style={{
+                            padding: '0.6rem 1rem',
+                            background: '#fee',
+                            color: '#e74c3c',
+                            border: '2px solid #e74c3c',
+                            borderRadius: '6px',
+                            cursor: deleting === order._id ? 'not-allowed' : 'pointer',
+                            fontWeight: '600',
+                            fontSize: '0.85rem',
+                            opacity: deleting === order._id ? 0.6 : 1
+                          }}
+                        >
+                          {deleting === order._id ? '⏳ Đang xóa...' : '🗑️ Xóa Đơn'}
                         </button>
                       )}
                     </div>

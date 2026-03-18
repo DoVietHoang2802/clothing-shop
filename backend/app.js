@@ -12,6 +12,7 @@ const wishlistRoutes = require('./routes/wishlist');
 const couponRoutes = require('./routes/coupon');
 const adminRoutes = require('./routes/admin');
 const paymentRoutes = require('./routes/payment');
+const withdrawalRoutes = require('./routes/withdrawal');
 
 // Import middlewares
 const errorHandler = require('./middlewares/errorHandler');
@@ -52,6 +53,7 @@ app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/coupons', couponRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/payment', paymentRoutes);
+app.use('/api/withdrawals', withdrawalRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
