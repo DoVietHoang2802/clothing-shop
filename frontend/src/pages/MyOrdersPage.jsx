@@ -97,14 +97,15 @@ const MyOrdersPage = () => {
   };
 
   const getFilteredOrders = () => {
-    if (filterStatus === 'ALL') return orders;
-    if (filterStatus === 'COMPLETED') {
-      return orders.filter(order => ['COMPLETED', 'CANCELLED'].includes(order.status));
+    let filtered = orders;
+    if (filterStatus === 'ALL') filtered = orders;
+    else if (filterStatus === 'COMPLETED') {
+      filtered = orders.filter(order => ['COMPLETED', 'CANCELLED'].includes(order.status));
+    } else if (filterStatus === 'NOT_COMPLETED') {
+      filtered = orders.filter(order => !['COMPLETED', 'CANCELLED'].includes(order.status));
     }
-    if (filterStatus === 'NOT_COMPLETED') {
-      return orders.filter(order => !['COMPLETED', 'CANCELLED'].includes(order.status));
-    }
-    return orders;
+    // Sort by newest first (createdAt descending)
+    return filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   };
 
   const toggleExpand = (orderId) => {
@@ -286,13 +287,16 @@ const MyOrdersPage = () => {
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <span style={{ fontSize: '1.5rem' }}>{isExpanded ? '▼' : '▶'}</span>
+                    <span style={{ fontSize: '1.2rem', color: '#667eea' }}>{isExpanded ? '▼' : '▶'}</span>
                     <div>
-                      <div style={{ fontWeight: '700', color: '#2c3e50', fontSize: '1rem' }}>
-                        #{order._id.substring(0, 8).toUpperCase()}
+                      <div style={{ fontWeight: '600', color: '#2c3e50', fontSize: '0.95rem' }}>
+                        🕒 {new Date(order.createdAt).toLocaleString('vi-VN', {
+                          day: '2-digit', month: '2-digit', year: 'numeric',
+                          hour: '2-digit', minute: '2-digit'
+                        })}
                       </div>
-                      <div style={{ color: '#7f8c8d', fontSize: '0.85rem', marginTop: '0.25rem' }}>
-                        🕒 {new Date(order.createdAt).toLocaleDateString('vi-VN')}
+                      <div style={{ color: '#7f8c8d', fontSize: '0.8rem', marginTop: '0.25rem' }}>
+                        📦 {order.items?.length || 0} sản phẩm
                       </div>
                     </div>
                   </div>
@@ -308,12 +312,9 @@ const MyOrdersPage = () => {
                     }}>
                       {statusInfo.label}
                     </span>
-                    <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontWeight: '700', color: '#e74c3c', fontSize: '1.1rem' }}>
+                    <div style={{ textAlign: 'right', minWidth: '100px' }}>
+                      <div style={{ fontWeight: '700', color: '#e74c3c', fontSize: '1rem' }}>
                         {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(order.finalPrice || order.totalPrice)}
-                      </div>
-                      <div style={{ color: '#7f8c8d', fontSize: '0.8rem' }}>
-                        {order.items?.length || 0} sản phẩm
                       </div>
                     </div>
                   </div>

@@ -87,16 +87,19 @@ const AdminOrdersPage = () => {
     return statusMap[status] || { label: status, color: '#7f8c8d', bg: '#7f8c8d20' };
   };
 
-  // Lọc đơn hàng
+  // Lọc đơn hàng + sắp xếp mới nhất trước
   const getFilteredOrders = () => {
-    if (filterStatus === 'ALL') return orders;
-    if (filterStatus === 'COMPLETED') {
-      return orders.filter(order => order.status === 'COMPLETED');
+    let filtered = orders;
+    if (filterStatus === 'ALL') filtered = orders;
+    else if (filterStatus === 'COMPLETED') {
+      filtered = orders.filter(order => order.status === 'COMPLETED');
+    } else if (filterStatus === 'NOT_COMPLETED') {
+      filtered = orders.filter(order => !['COMPLETED', 'CANCELLED'].includes(order.status));
+    } else {
+      filtered = orders.filter(order => order.status === filterStatus);
     }
-    if (filterStatus === 'NOT_COMPLETED') {
-      return orders.filter(order => !['COMPLETED', 'CANCELLED'].includes(order.status));
-    }
-    return orders.filter(order => order.status === filterStatus);
+    // Sort by newest first (createdAt descending)
+    return filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   };
 
   if (loading) {
@@ -254,43 +257,47 @@ const AdminOrdersPage = () => {
                       📦
                     </div>
                     <div>
-                      <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#2c3e50' }}>
-                        Đơn hàng #{order._id.substring(0, 8).toUpperCase()}
+                      <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '600', color: '#2c3e50' }}>
+                        {order.user?.name || 'Không xác định'}
                       </h3>
-                      <p style={{ margin: '0.25rem 0 0 0', color: '#7f8c8d', fontSize: '0.9rem' }}>
-                        🕒 {new Date(order.createdAt).toLocaleString('vi-VN')}
+                      <p style={{ margin: '0.25rem 0 0 0', color: '#7f8c8d', fontSize: '0.85rem' }}>
+                        🕒 {new Date(order.createdAt).toLocaleString('vi-VN', {
+                          day: '2-digit', month: '2-digit', year: 'numeric',
+                          hour: '2-digit', minute: '2-digit'
+                        })}
                       </p>
                     </div>
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                     <span style={{
-                      padding: '0.5rem 1rem',
-                      borderRadius: '20px',
+                      padding: '0.4rem 0.8rem',
+                      borderRadius: '15px',
                       background: statusInfo.bg,
                       color: statusInfo.color,
-                      fontWeight: '600'
+                      fontWeight: '600',
+                      fontSize: '0.8rem'
                     }}>
                       {statusInfo.label}
                     </span>
-                    <h3 style={{ margin: 0, color: '#e74c3c', fontSize: '1.3rem' }}>
+                    <span style={{ fontWeight: '700', color: '#e74c3c', fontSize: '1.1rem' }}>
                       {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(order.finalPrice || order.totalPrice)}
-                    </h3>
+                    </span>
                   </div>
                 </div>
 
                 {/* Order Body */}
-                <div style={{ padding: '1.5rem' }}>
+                <div style={{ padding: '1.5rem', borderTop: '1px solid #eee' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
                     <div>
-                      <p style={{ margin: 0, color: '#7f8c8d', fontSize: '0.9rem' }}>Khách hàng</p>
+                      <p style={{ margin: 0, color: '#7f8c8d', fontSize: '0.85rem' }}>👤 Khách hàng</p>
                       <p style={{ margin: '0.25rem 0 0 0', fontWeight: '600', color: '#2c3e50' }}>
                         {order.user?.name || 'Không xác định'}
                       </p>
                       {order.shippingAddress && (
                         <>
-                          <p style={{ margin: '0.5rem 0 0 0', color: '#7f8c8d', fontSize: '0.9rem' }}>Địa chỉ giao hàng</p>
-                          <p style={{ margin: '0.25rem 0 0 0', fontWeight: '500', color: '#2c3e50', fontSize: '0.9rem' }}>
+                          <p style={{ margin: '0.5rem 0 0 0', color: '#7f8c8d', fontSize: '0.85rem' }}>📍 Địa chỉ giao hàng</p>
+                          <p style={{ margin: '0.25rem 0 0 0', fontWeight: '500', color: '#2c3e50', fontSize: '0.85rem' }}>
                             {order.shippingAddress.fullName} - {order.shippingAddress.phone}
                             <br />
                             {order.shippingAddress.address}
@@ -299,7 +306,7 @@ const AdminOrdersPage = () => {
                       )}
                     </div>
                     <div style={{ textAlign: 'right' }}>
-                      <p style={{ margin: 0, color: '#7f8c8d', fontSize: '0.9rem' }}>Sản phẩm</p>
+                      <p style={{ margin: 0, color: '#7f8c8d', fontSize: '0.85rem' }}>📦 Sản phẩm</p>
                       <p style={{ margin: '0.25rem 0 0 0', fontWeight: '600', color: '#2c3e50' }}>
                         {order.items?.length || 0} sản phẩm
                       </p>
