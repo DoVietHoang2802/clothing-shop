@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
-import adminOrderService from '../../services/adminOrderService';
+import orderService from '../../services/orderService';
 import categoryService from '../../services/categoryService';
 import productService from '../../services/productService';
 import { useAuth } from '../../context/AuthContext';
@@ -62,7 +62,7 @@ const StaffDashboard = () => {
   const loadOrders = async () => {
     try {
       setOrdersLoading(true);
-      const res = await adminOrderService.getAllOrders();
+      const res = await orderService.getAllOrders();
       setOrders(res.data.data);
     } catch (err) {
       console.error('Error loading orders:', err);
@@ -112,7 +112,7 @@ const StaffDashboard = () => {
     if (!window.confirm(`Cập nhật trạng thái đơn hàng thành "${newStatus}"?`)) return;
     try {
       setUpdatingId(orderId);
-      await adminOrderService.updateOrderStatus(orderId, newStatus);
+      await orderService.updateOrderStatus(orderId, newStatus);
       loadOrders();
     } catch (err) {
       console.error('Error updating order:', err);
