@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import orderService from '../services/orderService';
+import socketService from '../config/socket';
 import { useNotifications } from '../context/NotificationContext';
+import { toast } from '../components/ToastNotification';
 
 const MyOrdersPage = () => {
   const { markOrdersRead, setOrderNotificationCount } = useNotifications();
@@ -17,6 +19,31 @@ const MyOrdersPage = () => {
 
   useEffect(() => {
     loadOrders();
+
+    // Listen for real-time order updates
+    socketService.onOrderUpdate((data) => {
+      console.log('📦 Received order update:', data);
+
+      // Update the specific order in the list
+      setOrders(prevOrders => {
+        const index = prevOrders.findIndex(o => o._id === data.orderId);
+        if (index !== -1) {
+          const newOrders = [...prevOrders];
+          newOrders[index] = { ...newOrders[index], ...data.order };
+          return newOrders;
+        }
+        return prevOrders;
+      });
+
+      // Show toast notification
+      if (data.message) {
+        toast.success(data.message);
+      }
+    });
+
+    return () => {
+      socketService.offOrderUpdate();
+    };
   }, []);
 
   const loadOrders = async () => {

@@ -350,6 +350,39 @@ const updateOrderStatus = asyncHandler(async (req, res, next) => {
   await order.populate('user', 'name email');
   await order.populate('items.product', 'name price image');
 
+  // Gửi thông báo real-time qua Socket.io
+  const io = req.app.get('io');
+  if (io) {
+    const userId = order.user._id.toString();
+    const statusLabels = {
+      PENDING: 'Chờ xác nhận', CONFIRMED: 'Đã xác nhận',
+      SHIPPED: 'Đã giao ĐVVC', DELIVERING: 'Đang giao',
+      ARRIVED: 'Đã đến nơi', PAID_TO_SHIPPER: 'Đã thanh toán',
+      COMPLETED: 'Hoàn thành', CANCELLED: 'Đã hủy',
+    };
+
+    // Gửi cho user
+    io.to(`user_${userId}`).emit('order_updated', {
+      type: 'ORDER_STATUS_CHANGED',
+      orderId: order._id,
+      oldStatus,
+      newStatus: status,
+      statusLabel: statusLabels[status],
+      order: order,
+      message: `Đơn hàng #${order._id.toString().slice(-6).toUpperCase()} đã được cập nhật: ${statusLabels[status]}`,
+    });
+
+    // Gửi cho tất cả admin/staff
+    io.emit('admin_order_updated', {
+      type: 'ORDER_STATUS_CHANGED',
+      orderId: order._id,
+      oldStatus,
+      newStatus: status,
+      statusLabel: statusLabels[status],
+      order: order,
+    });
+  }
+
   res.status(200).json({
     success: true,
     message: 'Cập nhật trạng thái đơn hàng thành công',
