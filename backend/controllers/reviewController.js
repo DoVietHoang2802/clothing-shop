@@ -1,5 +1,6 @@
 const Review = require('../models/Review');
 const Product = require('../models/Product');
+const mongoose = require('mongoose');
 const asyncHandler = require('../utils/asyncHandler');
 
 // @desc    Lấy review của sản phẩm
@@ -162,7 +163,7 @@ const getAverageRating = asyncHandler(async (req, res, next) => {
   const { productId } = req.params;
 
   // Validate ObjectId
-  if (!require('mongoose').Types.ObjectId.isValid(productId)) {
+  if (!mongoose.Types.ObjectId.isValid(productId)) {
     return res.status(200).json({
       success: true,
       message: 'Lấy rating trung bình thành công',
@@ -171,7 +172,7 @@ const getAverageRating = asyncHandler(async (req, res, next) => {
   }
 
   const result = await Review.aggregate([
-    { $match: { product: require('mongoose').Types.ObjectId(productId) } },
+    { $match: { product: new mongoose.Types.ObjectId(productId) } },
     {
       $group: {
         _id: null,
