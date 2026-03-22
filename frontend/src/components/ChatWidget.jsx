@@ -33,19 +33,32 @@ const ChatWidget = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Auto refresh conversations
+  // Auto refresh conversations - only refresh conversations list, not messages
   useEffect(() => {
     if (isAuthenticated && isOpen) {
-      const interval = setInterval(() => {
-        if (isAdminOrStaff && selectedUser) {
-          loadMessages(selectedUser._id);
-        }
-        loadUnreadCount();
+      // Refresh conversations list every 10 seconds
+      const conversationInterval = setInterval(() => {
         if (isAdminOrStaff) {
           loadConversations();
         }
-      }, 5000);
-      return () => clearInterval(interval);
+        loadUnreadCount();
+      }, 10000);
+
+      // Refresh messages only when actively viewing a chat
+      const messageInterval = setInterval(() => {
+        if (isAdminOrStaff && selectedUser) {
+          const currentLength = messages.length;
+          loadMessages(selectedUser._id).then(() => {
+            // Only scroll if new messages arrived
+            // Don't force scroll to prevent jumping
+          });
+        }
+      }, 8000);
+
+      return () => {
+        clearInterval(conversationInterval);
+        clearInterval(messageInterval);
+      };
     }
   }, [isAuthenticated, isOpen, isAdminOrStaff, selectedUser]);
 
@@ -183,6 +196,12 @@ const ChatWidget = () => {
     return { name: 'Người dùng', role: 'USER' };
   };
 
+  // Check if message is from admin/staff (show on RIGHT)
+  const isAdminMessage = (msg) => {
+    const sender = getSenderInfo(msg);
+    return sender.role === 'ADMIN' || sender.role === 'STAFF';
+  };
+
   if (!isAuthenticated) return null;
 
   return (
@@ -309,8 +328,13 @@ const ChatWidget = () => {
                   <>
                     {messages.map((msg) => {
                       const isMe = isMyMessage(msg);
+                      const isAdmin = isAdminMessage(msg);
                       const sender = getSenderInfo(msg);
                       const senderRole = getRoleBadge(sender.role);
+
+                      // Message position: User -> LEFT (white), Admin/Staff -> RIGHT (purple)
+                      const isRightSide = isAdmin;
+                      const isLeftSide = !isAdmin;
 
                       return (
                         <div
@@ -318,12 +342,12 @@ const ChatWidget = () => {
                           style={{
                             display: 'flex',
                             flexDirection: 'column',
-                            alignItems: isMe ? 'flex-end' : 'flex-start',
+                            alignItems: isRightSide ? 'flex-end' : 'flex-start',
                             marginBottom: '12px',
                           }}
                         >
-                          {/* Sender info */}
-                          {!isMe && (
+                          {/* Sender info - only show if not Admin/Staff */}
+                          {isLeftSide && (
                             <div style={{
                               display: 'flex',
                               alignItems: 'center',
@@ -349,11 +373,11 @@ const ChatWidget = () => {
                           <div style={{
                             maxWidth: '80%',
                             display: 'flex',
-                            flexDirection: isMe ? 'row-reverse' : 'row',
+                            flexDirection: isRightSide ? 'row-reverse' : 'row',
                             alignItems: 'flex-end',
                             gap: '6px',
                           }}>
-                            {isMe ? (
+                            {isRightSide ? (
                               <>
                                 <div style={{
                                   background: '#667eea',
