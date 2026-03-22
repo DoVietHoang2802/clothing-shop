@@ -21,6 +21,7 @@ const StaffProductsPage = () => {
     image: '',
     category: '',
   });
+  const [imagePreview, setImagePreview] = useState('');
 
   useEffect(() => {
     loadData();
@@ -89,10 +90,11 @@ const StaffProductsPage = () => {
       price: product.price,
       stock: product.stock,
       image: product.image,
-      category: product.category._id,
+      category: product.category?._id || product.category,
     });
     setEditingId(product._id);
     setShowForm(true);
+    setImagePreview(product.image || '');
   };
 
   const handleCancel = () => {
@@ -106,6 +108,7 @@ const StaffProductsPage = () => {
       category: '',
     });
     setEditingId(null);
+    setImagePreview('');
   };
 
   if (loading) {
@@ -146,6 +149,8 @@ const StaffProductsPage = () => {
         setFormData={setFormData}
         categories={categories}
         editingId={editingId}
+        imagePreview={imagePreview}
+        setImagePreview={setImagePreview}
       />
 
       {products.length === 0 ? (
