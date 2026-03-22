@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { toast } from '../components/ToastNotification';
 
 const RegisterPage = () => {
   const [name, setName] = useState('');
@@ -8,36 +9,35 @@ const RegisterPage = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
 
   const { register } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
 
     if (!name || !email || !password || !confirmPassword) {
-      setError('Vui lòng điền đầy đủ thông tin');
+      toast.error('Vui lòng điền đầy đủ thông tin');
       return;
     }
 
     if (password !== confirmPassword) {
-      setError('Mật khẩu không khớp');
+      toast.error('Mật khẩu không khớp');
       return;
     }
 
     if (password.length < 6) {
-      setError('Mật khẩu phải có ít nhất 6 ký tự');
+      toast.error('Mật khẩu phải có ít nhất 6 ký tự');
       return;
     }
 
     try {
       setLoading(true);
       await register(name, email, password);
+      toast.success('Đăng ký thành công!');
       navigate('/');
     } catch (err) {
-      setError(err.message || 'Đăng ký thất bại');
+      toast.error(err.message || 'Đăng ký thất bại');
     } finally {
       setLoading(false);
     }
@@ -50,8 +50,6 @@ const RegisterPage = () => {
     >
       <div className="card" style={{ width: '100%', maxWidth: '400px', padding: '2rem' }}>
         <h1 style={{ textAlign: 'center', marginBottom: '2rem' }}>Đăng Ký</h1>
-
-        {error && <div className="alert alert-error">{error}</div>}
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">

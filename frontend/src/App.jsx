@@ -19,6 +19,7 @@ import MockPaymentPage from './pages/MockPaymentPage';
 import WithdrawalPage from './pages/WithdrawalPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
+import { ToastContainer } from './components/ToastNotification';
 
 // Admin Pages
 import AdminDashboard from './pages/Admin/AdminDashboard';
@@ -183,6 +184,7 @@ function App() {
         </MainLayout>
         </NotificationProvider>
       </AuthProvider>
+      <ToastContainer />
     </Router>
   );
 }

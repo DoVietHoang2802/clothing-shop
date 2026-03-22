@@ -3,53 +3,53 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { signInWithPopup } from 'firebase/auth';
 import { auth, googleProvider } from '../config/firebase';
+import { toast } from '../components/ToastNotification';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const [error, setError] = useState('');
 
   const { login, googleLogin } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
 
     if (!email || !password) {
-      setError('Vui lòng điền đầy đủ thông tin');
+      toast.error('Vui lòng điền đầy đủ thông tin');
       return;
     }
 
     try {
       setLoading(true);
       await login(email, password);
+      toast.success('Đăng nhập thành công!');
       navigate('/');
     } catch (err) {
-      setError(err.message || 'Đăng nhập thất bại');
+      toast.error(err.message || 'Đăng nhập thất bại');
     } finally {
       setLoading(false);
     }
   };
 
   const handleGoogleLogin = async () => {
-    setError('');
     setGoogleLoading(true);
 
     try {
       const result = await signInWithPopup(auth, googleProvider);
       const googleToken = await result.user.getIdToken();
       await googleLogin(googleToken);
+      toast.success('Đăng nhập thành công!');
       navigate('/');
     } catch (err) {
       if (err.code === 'auth/popup-closed-by-user') {
-        setError('Bạn đã đóng cửa sổ đăng nhập');
+        toast.warning('Bạn đã đóng cửa sổ đăng nhập');
       } else if (err.code === 'auth/network-request-failed') {
-        setError('Lỗi kết nối mạng. Vui lòng thử lại');
+        toast.error('Lỗi kết nối mạng. Vui lòng thử lại');
       } else {
-        setError('Đăng nhập bằng Google thất bại');
+        toast.error('Đăng nhập bằng Google thất bại');
       }
     } finally {
       setGoogleLoading(false);
@@ -77,8 +77,6 @@ const LoginPage = () => {
         <h1 style={{ textAlign: 'center', marginBottom: '2rem' }}>
           Đăng Nhập
         </h1>
-
-        {error && <div className="alert alert-error">{error}</div>}
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">
