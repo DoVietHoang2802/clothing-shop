@@ -72,34 +72,54 @@ const getMessages = asyncHandler(async (req, res, next) => {
   const currentUserId = req.user.id;
   const { limit = 50, before } = req.query;
 
-  const query = {
-    $or: [
-      { sender: currentUserId, receiver: userId },
-      { sender: userId, receiver: currentUserId },
-    ],
-  };
-
-  if (before) {
-    query.createdAt = { $lt: new Date(before) };
+  // Validate userId
+  if (!userId || userId === 'undefined' || userId === 'null') {
+    return res.status(400).json({
+      success: false,
+      message: 'ID người dùng không hợp lệ',
+      data: null,
+    });
   }
 
-  const messages = await Message.find(query)
-    .populate('sender', 'name email avatar role')
-    .populate('receiver', 'name email avatar role')
-    .sort({ createdAt: -1 })
-    .limit(parseInt(limit));
+  try {
+    const userIdObj = new mongoose.Types.ObjectId(userId);
+    const currentUserIdObj = new mongoose.Types.ObjectId(currentUserId);
 
-  // Đánh dấu tin nhắn đã đọc
-  await Message.updateMany(
-    { sender: userId, receiver: currentUserId, read: false },
-    { $set: { read: true } }
-  );
+    const query = {
+      $or: [
+        { sender: currentUserIdObj, receiver: userIdObj },
+        { sender: userIdObj, receiver: currentUserIdObj },
+      ],
+    };
 
-  res.status(200).json({
-    success: true,
-    message: 'Lấy tin nhắn thành công',
-    data: messages.reverse(),
-  });
+    if (before) {
+      query.createdAt = { $lt: new Date(before) };
+    }
+
+    const messages = await Message.find(query)
+      .populate('sender', 'name email avatar role')
+      .populate('receiver', 'name email avatar role')
+      .sort({ createdAt: -1 })
+      .limit(parseInt(limit));
+
+    // Đánh dấu tin nhắn đã đọc
+    await Message.updateMany(
+      { sender: userIdObj, receiver: currentUserIdObj, read: false },
+      { $set: { read: true } }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: 'Lấy tin nhắn thành công',
+      data: messages.reverse(),
+    });
+  } catch (err) {
+    return res.status(400).json({
+      success: false,
+      message: 'ID người dùng không hợp lệ',
+      data: null,
+    });
+  }
 });
 
 // @desc    Lấy danh sách cuộc trò chuyện

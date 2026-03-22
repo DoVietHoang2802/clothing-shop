@@ -39,7 +39,7 @@ const ChatWidget = () => {
         if (isAdminOrStaff) {
           loadConversations();
         } else if (adminInfo?._id) {
-          loadMessages(adminInfo.userId);
+          loadMessages(adminInfo._id);
         }
         loadUnreadCount();
       }, 5000);
@@ -308,7 +308,8 @@ const ChatWidget = () => {
                       </div>
                     ) : (
                       messages.map((msg) => {
-                        const isMe = msg.sender._id === user._id;
+                        const senderId = typeof msg.sender === 'object' ? msg.sender._id : msg.sender;
+                        const isMe = senderId === user._id;
                         return (
                           <div
                             key={msg._id}
@@ -326,8 +327,8 @@ const ChatWidget = () => {
                               gap: '8px',
                             }}>
                               <img
-                                src={getAvatar(msg.sender)}
-                                alt={msg.sender.name}
+                                src={getAvatar(typeof msg.sender === 'object' ? msg.sender : { name: 'User' })}
+                                alt="avatar"
                                 style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover' }}
                               />
                               <div style={{
