@@ -10,6 +10,13 @@ const createOrder = asyncHandler(async (req, res, next) => {
   const { items, couponCode, shippingAddress, paymentMethod } = req.body;
   const userId = req.user.id;
 
+  console.log('📦 Create order request:', {
+    itemsCount: items?.length,
+    couponCode: couponCode,
+    paymentMethod: paymentMethod,
+    hasShippingAddress: !!shippingAddress
+  });
+
   if (!items || items.length === 0) {
     return res.status(400).json({
       success: false,
@@ -209,6 +216,14 @@ const createOrder = asyncHandler(async (req, res, next) => {
 
   await order.populate('user', 'name email');
   await order.populate('items.product', 'name price');
+
+  console.log('✅ Order created:', {
+    orderId: order._id,
+    totalPrice: order.totalPrice,
+    discountAmount: order.discountAmount,
+    finalPrice: order.finalPrice,
+    coupon: order.coupon
+  });
 
   res.status(201).json({
     success: true,
