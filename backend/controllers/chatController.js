@@ -162,8 +162,13 @@ const getConversations = asyncHandler(async (req, res, next) => {
     let query = {};
 
     if (isAdminOrStaff) {
-      // Admin/Staff thấy TẤT CẢ cuộc trò chuyện với mọi người
-      query = {};
+      // Admin/Staff: chỉ thấy cuộc trò chuyện MÀ HỌ tham gia
+      query = {
+        $or: [
+          { sender: currentUserIdObj },
+          { receiver: currentUserIdObj },
+        ]
+      };
     } else {
       // User thường chỉ thấy cuộc trò chuyện với admin/staff
       const adminStaffUsers = await User.find({ role: { $in: ['ADMIN', 'STAFF'] } }).select('_id');
