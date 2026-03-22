@@ -383,10 +383,12 @@ const ChatWidget = () => {
                 ) : (
                   <>
                     {messages.map((msg) => {
-                      const isAdmin = isAdminMessage(msg);
                       const sender = getSenderInfo(msg);
-                      const isRightSide = isAdmin;
+                      const isMe = msg.sender._id === user._id || msg.sender === user._id;
                       const isImage = msg.messageType === 'image';
+
+                      // Tin nhắn của mình -> bên phải, tin nhắn của người khác -> bên trái
+                      const isRightSide = isMe;
 
                       return (
                         <div
@@ -398,19 +400,18 @@ const ChatWidget = () => {
                             marginBottom: '12px',
                           }}
                         >
-                          {!isAdmin && (
-                            <div style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '6px',
-                              marginBottom: '4px',
-                            }}>
-                              <img src={getAvatar(sender)} alt="" style={{ width: '24px', height: '24px', borderRadius: '50%' }} />
-                              <span style={{ fontSize: '0.75rem', fontWeight: '600', color: getRoleBadge(sender.role).color }}>
-                                {sender.name} • {getRoleBadge(sender.role).label}
-                              </span>
-                            </div>
-                          )}
+                          {/* LUÔN hiển thị avatar và tên người gửi */}
+                          <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            marginBottom: '4px',
+                          }}>
+                            <img src={getAvatar(sender)} alt="" style={{ width: '24px', height: '24px', borderRadius: '50%' }} />
+                            <span style={{ fontSize: '0.75rem', fontWeight: '600', color: getRoleBadge(sender.role).color }}>
+                              {isMe ? 'Bạn' : sender.name} • {getRoleBadge(sender.role).label}
+                            </span>
+                          </div>
 
                           <div style={{
                             maxWidth: '85%',

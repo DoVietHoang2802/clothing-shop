@@ -81,6 +81,8 @@ const sendMessage = asyncHandler(async (req, res, next) => {
 const getMessages = asyncHandler(async (req, res, next) => {
   const { userId } = req.params;
   const currentUserId = req.user.id;
+  const currentUserRole = req.user.role;
+  const isAdminOrStaff = currentUserRole === 'ADMIN' || currentUserRole === 'STAFF';
   const { limit = 50, before } = req.query;
 
   // Validate userId
@@ -96,12 +98,25 @@ const getMessages = asyncHandler(async (req, res, next) => {
     const userIdObj = new mongoose.Types.ObjectId(userId);
     const currentUserIdObj = new mongoose.Types.ObjectId(currentUserId);
 
-    const query = {
-      $or: [
-        { sender: currentUserIdObj, receiver: userIdObj },
-        { sender: userIdObj, receiver: currentUserIdObj },
-      ],
-    };
+    let query;
+
+    if (isAdminOrStaff) {
+      // Admin: lấy TẤT CẢ tin nhắn liên quan đến user này
+      query = {
+        $or: [
+          { sender: userIdObj },
+          { receiver: userIdObj },
+        ],
+      };
+    } else {
+      // User thường: chỉ lấy tin nhắn giữa họ và user kia
+      query = {
+        $or: [
+          { sender: currentUserIdObj, receiver: userIdObj },
+          { sender: userIdObj, receiver: currentUserIdObj },
+        ],
+      };
+    }
 
     if (before) {
       query.createdAt = { $lt: new Date(before) };
@@ -110,10 +125,10 @@ const getMessages = asyncHandler(async (req, res, next) => {
     const messages = await Message.find(query)
       .populate('sender', 'name email avatar role')
       .populate('receiver', 'name email avatar role')
-      .sort({ createdAt: -1 })
+      .sort({ createdAt: 1 }) // Sắp xếp tăng dần để hiển thị đúng thứ tự
       .limit(parseInt(limit));
 
-    // Đánh dấu tin nhắn đã đọc
+    // Đánh dấu tin nhắn đã đọc (chỉ đánh dấu tin nhắn gửi đến current user)
     await Message.updateMany(
       { sender: userIdObj, receiver: currentUserIdObj, read: false },
       { $set: { read: true } }
@@ -122,7 +137,7 @@ const getMessages = asyncHandler(async (req, res, next) => {
     res.status(200).json({
       success: true,
       message: 'Lấy tin nhắn thành công',
-      data: messages.reverse(),
+      data: messages,
     });
   } catch (err) {
     return res.status(400).json({
@@ -138,43 +153,85 @@ const getMessages = asyncHandler(async (req, res, next) => {
 // @access  Private
 const getConversations = asyncHandler(async (req, res, next) => {
   const currentUserId = req.user.id;
+  const currentUserRole = req.user.role;
+  const isAdminOrStaff = currentUserRole === 'ADMIN' || currentUserRole === 'STAFF';
 
   try {
     const currentUserIdObj = new mongoose.Types.ObjectId(currentUserId);
 
-    // Lấy tất cả tin nhắn liên quan đến user hiện tại
-    const messages = await Message.find({
-      $or: [
-        { sender: currentUserIdObj },
-        { receiver: currentUserIdObj },
-      ]
-    })
+    let query = {};
+
+    if (isAdminOrStaff) {
+      // Admin/Staff thấy TẤT CẢ cuộc trò chuyện với mọi người
+      query = {};
+    } else {
+      // User thường chỉ thấy cuộc trò chuyện với admin/staff
+      const adminStaffUsers = await User.find({ role: { $in: ['ADMIN', 'STAFF'] } }).select('_id');
+      const adminStaffIds = adminStaffUsers.map(u => u._id);
+
+      query = {
+        $or: [
+          { sender: currentUserIdObj },
+          { receiver: currentUserIdObj },
+        ]
+      };
+    }
+
+    // Lấy tất cả tin nhắn theo query
+    const messages = await Message.find(query)
     .populate('sender', 'name email avatar role')
     .populate('receiver', 'name email avatar role')
     .sort({ createdAt: -1 })
-    .limit(100);
+    .limit(200);
 
     // Gom nhóm theo người chat (người còn lại trong cuộc trò chuyện)
     const conversationMap = new Map();
 
     for (const msg of messages) {
       // Xác định người chat còn lại
-      const otherUser = msg.sender._id.toString() === currentUserId
-        ? msg.receiver
-        : msg.sender;
+      let otherUser;
+      let conversationKey;
 
-      const otherUserId = otherUser._id.toString();
+      if (isAdminOrStaff) {
+        // Admin: nhóm theo user mà admin đang chat cùng
+        // Nếu tin nhắn do admin gửi → otherUser = receiver
+        // Nếu user gửi đến admin → otherUser = sender
+        if (msg.sender._id.toString() === currentUserId) {
+          otherUser = msg.receiver;
+          conversationKey = `admin_${currentUserId}_user_${msg.receiver._id.toString()}`;
+        } else {
+          otherUser = msg.sender;
+          conversationKey = `user_${msg.sender._id.toString()}`;
+        }
+      } else {
+        // User thường: xác định người còn lại
+        otherUser = msg.sender._id.toString() === currentUserId
+          ? msg.receiver
+          : msg.sender;
+        conversationKey = otherUser._id.toString();
+      }
 
       // Chỉ lấy tin nhắn đầu tiên (mới nhất) cho mỗi người
-      if (!conversationMap.has(otherUserId)) {
-        // Đếm tin nhắn chưa đọc
-        const unreadCount = await Message.countDocuments({
-          sender: otherUser._id,
-          receiver: currentUserIdObj,
-          read: false,
-        });
+      if (!conversationMap.has(conversationKey)) {
+        // Đếm tin nhắn chưa đọc (admin chỉ đếm tin nhắn từ user gửi đến)
+        let unreadQuery;
+        if (isAdminOrStaff) {
+          unreadQuery = {
+            sender: otherUser._id,
+            receiver: currentUserIdObj,
+            read: false,
+          };
+        } else {
+          unreadQuery = {
+            sender: otherUser._id,
+            receiver: currentUserIdObj,
+            read: false,
+          };
+        }
 
-        conversationMap.set(otherUserId, {
+        const unreadCount = await Message.countDocuments(unreadQuery);
+
+        conversationMap.set(conversationKey, {
           user: {
             _id: otherUser._id,
             name: otherUser.name,
@@ -187,6 +244,8 @@ const getConversations = asyncHandler(async (req, res, next) => {
             content: msg.content,
             sender: msg.sender,
             receiver: msg.receiver,
+            messageType: msg.messageType,
+            image: msg.image,
             createdAt: msg.createdAt,
           },
           unreadCount: unreadCount,
