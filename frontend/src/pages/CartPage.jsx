@@ -65,6 +65,10 @@ const CartPage = () => {
     return 0;
   };
 
+  const getCouponCode = () => {
+    return appliedCoupon?.coupon?.code || null;
+  };
+
   const handleCheckout = async () => {
     if (cart.length === 0) {
       setError('Giỏ hàng trống');
@@ -95,14 +99,15 @@ const CartPage = () => {
       // Tạo đơn hàng trước
       console.log('🛒 Creating order with:', {
         items,
-        couponCode: appliedCoupon?.code,
+        couponCode: appliedCoupon?.coupon?.code,
+        appliedCoupon: appliedCoupon,
         shippingAddress,
         paymentMethod
       });
 
       const orderRes = await orderService.createOrder(
         items,
-        appliedCoupon?.code || null,
+        appliedCoupon?.coupon?.code || null,
         shippingAddress, // Always require shipping address
         paymentMethod
       );
