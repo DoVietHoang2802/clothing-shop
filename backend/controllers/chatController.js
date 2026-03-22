@@ -193,43 +193,41 @@ const getConversations = asyncHandler(async (req, res, next) => {
       let conversationKey;
 
       if (isAdminOrStaff) {
-        // Admin: nhóm theo user mà admin đang chat cùng
-        // Nếu tin nhắn do admin gửi → otherUser = receiver
-        // Nếu user gửi đến admin → otherUser = sender
-        if (msg.sender._id.toString() === currentUserId) {
-          otherUser = msg.receiver;
-          conversationKey = `admin_${currentUserId}_user_${msg.receiver._id.toString()}`;
-        } else {
+        // Admin/Staff: gom nhóm theo USER (không phải admin-user pair)
+        // Nếu người gửi là user thường → otherUser = sender
+        // Nếu người gửi là admin/staff → bỏ qua admin gửi cho admin, lấy receiver là user
+        const senderRole = msg.sender.role;
+        const receiverRole = msg.receiver.role;
+
+        if (senderRole === 'USER') {
+          // User gửi tin nhắn → otherUser = sender
           otherUser = msg.sender;
           conversationKey = `user_${msg.sender._id.toString()}`;
+        } else if (receiverRole === 'USER') {
+          // Admin gửi cho user → otherUser = receiver
+          otherUser = msg.receiver;
+          conversationKey = `user_${msg.receiver._id.toString()}`;
         }
+        // Admin gửi cho admin → bỏ qua
       } else {
         // User thường: xác định người còn lại
-        otherUser = msg.sender._id.toString() === currentUserId
-          ? msg.receiver
-          : msg.sender;
-        conversationKey = otherUser._id.toString();
+        if (msg.sender._id.toString() === currentUserId) {
+          otherUser = msg.receiver;
+          conversationKey = otherUser._id.toString();
+        } else if (msg.receiver._id.toString() === currentUserId) {
+          otherUser = msg.sender;
+          conversationKey = otherUser._id.toString();
+        }
       }
 
-      // Chỉ lấy tin nhắn đầu tiên (mới nhất) cho mỗi người
-      if (!conversationMap.has(conversationKey)) {
-        // Đếm tin nhắn chưa đọc (admin chỉ đếm tin nhắn từ user gửi đến)
-        let unreadQuery;
-        if (isAdminOrStaff) {
-          unreadQuery = {
-            sender: otherUser._id,
-            receiver: currentUserIdObj,
-            read: false,
-          };
-        } else {
-          unreadQuery = {
-            sender: otherUser._id,
-            receiver: currentUserIdObj,
-            read: false,
-          };
-        }
-
-        const unreadCount = await Message.countDocuments(unreadQuery);
+      // Chỉ lấy tin nhắn đầu tiên (mới nhất) cho mỗi user
+      if (otherUser && !conversationMap.has(conversationKey)) {
+        // Đếm tin nhắn chưa đọc từ otherUser gửi đến currentUser
+        const unreadCount = await Message.countDocuments({
+          sender: otherUser._id,
+          receiver: currentUserIdObj,
+          read: false,
+        });
 
         conversationMap.set(conversationKey, {
           user: {
