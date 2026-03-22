@@ -85,20 +85,47 @@ const createOrder = asyncHandler(async (req, res, next) => {
   let finalPrice = totalPrice;
 
   if (couponCode) {
-    const coupon = await Coupon.findOne({
+    console.log('🔍 Looking for coupon:', couponCode.toUpperCase());
+
+    // First try to find without date check
+    let coupon = await Coupon.findOne({
       code: couponCode.toUpperCase(),
-      isActive: true,
-      $or: [
-        { expiresAt: { $gt: new Date() } },
-        { expiresAt: null },
-        { expiresAt: { $exists: false } },
-      ],
     });
+
+    console.log('📋 Coupon found:', coupon);
 
     if (!coupon) {
       return res.status(400).json({
         success: false,
-        message: 'Mã coupon không hợp lệ hoặc đã hết hạn',
+        message: 'Mã coupon không tồn tại',
+        data: null,
+      });
+    }
+
+    console.log('📋 Coupon details:', {
+      code: coupon.code,
+      isActive: coupon.isActive,
+      expiresAt: coupon.expiresAt,
+      discountType: coupon.discountType,
+      discountValue: coupon.discountValue,
+      usageLimit: coupon.usageLimit,
+      usageCount: coupon.usageCount,
+    });
+
+    // Check if active
+    if (!coupon.isActive) {
+      return res.status(400).json({
+        success: false,
+        message: 'Mã coupon đã bị vô hiệu hóa',
+        data: null,
+      });
+    }
+
+    // Check expiry
+    if (coupon.expiresAt && new Date(coupon.expiresAt) < new Date()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Mã coupon đã hết hạn',
         data: null,
       });
     }
