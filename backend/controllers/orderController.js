@@ -14,7 +14,8 @@ const createOrder = asyncHandler(async (req, res, next) => {
     itemsCount: items?.length,
     couponCode: couponCode,
     paymentMethod: paymentMethod,
-    hasShippingAddress: !!shippingAddress
+    hasShippingAddress: !!shippingAddress,
+    fullBody: req.body
   });
 
   if (!items || items.length === 0) {

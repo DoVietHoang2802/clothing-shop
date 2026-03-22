@@ -93,9 +93,16 @@ const CartPage = () => {
       setError('');
 
       // Tạo đơn hàng trước
+      console.log('🛒 Creating order with:', {
+        items,
+        couponCode: appliedCoupon?.code,
+        shippingAddress,
+        paymentMethod
+      });
+
       const orderRes = await orderService.createOrder(
         items,
-        appliedCoupon?.code,
+        appliedCoupon?.code || null,
         shippingAddress, // Always require shipping address
         paymentMethod
       );
