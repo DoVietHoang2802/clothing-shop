@@ -6,6 +6,7 @@ const {
   getChatUsers,
   markAsRead,
   getUnreadCount,
+  deleteMessage,
 } = require('../controllers/chatController');
 const { verifyToken } = require('../middlewares/auth');
 
@@ -31,5 +32,8 @@ router.put('/read/:userId', markAsRead);
 
 // Lấy số tin nhắn chưa đọc
 router.get('/unread/count', getUnreadCount);
+
+// Xóa tin nhắn
+router.delete('/message/:id', deleteMessage);
 
 module.exports = router;

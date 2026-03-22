@@ -277,6 +277,42 @@ const getUnreadCount = asyncHandler(async (req, res, next) => {
   }
 });
 
+// @desc    Xóa tin nhắn
+// @route   DELETE /api/chat/message/:id
+// @access  Private
+const deleteMessage = asyncHandler(async (req, res, next) => {
+  const { id } = req.params;
+  const userId = req.user.id;
+
+  const message = await Message.findById(id);
+
+  if (!message) {
+    return res.status(404).json({
+      success: false,
+      message: 'Tin nhắn không tìm thấy',
+      data: null,
+    });
+  }
+
+  // Chỉ người gửi mới được xóa
+  const senderId = typeof message.sender === 'object' ? message.sender.toString() : message.sender.toString();
+  if (senderId !== userId) {
+    return res.status(403).json({
+      success: false,
+      message: 'Bạn không có quyền xóa tin nhắn này',
+      data: null,
+    });
+  }
+
+  await Message.findByIdAndDelete(id);
+
+  res.status(200).json({
+    success: true,
+    message: 'Xóa tin nhắn thành công',
+    data: null,
+  });
+});
+
 module.exports = {
   sendMessage,
   getMessages,
@@ -284,4 +320,5 @@ module.exports = {
   getChatUsers,
   markAsRead,
   getUnreadCount,
+  deleteMessage,
 };

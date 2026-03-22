@@ -40,6 +40,11 @@ const chatService = {
   getUnreadCount: () => {
     return api.get('/chat/unread/count');
   },
+
+  // Xóa tin nhắn
+  deleteMessage: (messageId) => {
+    return api.delete(`/chat/message/${messageId}`);
+  },
 };
 
 export default chatService;

@@ -334,9 +334,19 @@ const MyOrdersPage = () => {
                       {statusInfo.label}
                     </span>
                     <div style={{ textAlign: 'right', minWidth: '100px' }}>
+                      {order.discountAmount > 0 && (
+                        <div style={{ fontSize: '0.75rem', color: '#999', textDecoration: 'line-through' }}>
+                          {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(order.totalPrice)}
+                        </div>
+                      )}
                       <div style={{ fontWeight: '700', color: '#e74c3c', fontSize: '1rem' }}>
                         {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(order.finalPrice || order.totalPrice)}
                       </div>
+                      {order.discountAmount > 0 && (
+                        <div style={{ fontSize: '0.7rem', color: '#27ae60', fontWeight: '600' }}>
+                          🎫 -{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(order.discountAmount)}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -418,6 +428,37 @@ const MyOrdersPage = () => {
                           </div>
                         </div>
                       )}
+                    </div>
+
+                    {/* Coupon & Price Summary */}
+                    <div style={{
+                      padding: '0.75rem',
+                      background: order.discountAmount > 0 ? '#f0fff4' : '#f8f9fa',
+                      borderRadius: '8px',
+                      marginBottom: '1rem'
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                        <span style={{ color: '#7f8c8d', fontSize: '0.85rem' }}>Tạm tính:</span>
+                        <span style={{ color: '#7f8c8d', fontSize: '0.85rem' }}>
+                          {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(order.totalPrice)}
+                        </span>
+                      </div>
+                      {order.discountAmount > 0 && (
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                          <span style={{ color: '#27ae60', fontSize: '0.85rem' }}>
+                            🎫 Giảm giá {order.coupon?.code && `(Mã: ${order.coupon.code})`}:
+                          </span>
+                          <span style={{ color: '#27ae60', fontSize: '0.85rem', fontWeight: '600' }}>
+                            -{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(order.discountAmount)}
+                          </span>
+                        </div>
+                      )}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px dashed #ddd', paddingTop: '0.5rem', marginTop: '0.5rem' }}>
+                        <span style={{ fontWeight: '700', color: '#2c3e50', fontSize: '0.95rem' }}>Tổng cộng:</span>
+                        <span style={{ fontWeight: '700', color: '#e74c3c', fontSize: '0.95rem' }}>
+                          {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(order.finalPrice)}
+                        </span>
+                      </div>
                     </div>
 
                     {/* Action Buttons */}

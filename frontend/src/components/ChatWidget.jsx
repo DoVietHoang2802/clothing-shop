@@ -127,6 +127,30 @@ const ChatWidget = () => {
     }
   };
 
+  // Load unread count (for non-admin users)
+  const loadUnreadCount = async () => {
+    if (isAdminOrStaff) return;
+    try {
+      const res = await chatService.getUnreadCount();
+      setUnreadCount(res.data.data?.unreadCount || 0);
+    } catch (err) {
+      console.error('Error loading unread count:', err);
+    }
+  };
+
+  // Delete a message
+  const handleDeleteMessage = async (messageId) => {
+    if (!window.confirm('Bạn có chắc muốn xóa tin nhắn này?')) return;
+    try {
+      await chatService.deleteMessage(messageId);
+      // Update local messages
+      setMessages(messages.filter(msg => msg._id !== messageId));
+    } catch (err) {
+      console.error('Error deleting message:', err);
+      alert('Lỗi khi xóa tin nhắn');
+    }
+  };
+
   // Handle image selection
   const handleImageSelect = (e) => {
     const file = e.target.files[0];
@@ -410,11 +434,43 @@ const ChatWidget = () => {
                                     {msg.content}
                                   </div>
                                 )}
-                                <span style={{ fontSize: '0.65rem', color: '#999' }}>{formatTime(msg.createdAt)}</span>
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
+                                  <span style={{ fontSize: '0.65rem', color: '#999' }}>{formatTime(msg.createdAt)}</span>
+                                  <button
+                                    onClick={() => handleDeleteMessage(msg._id)}
+                                    style={{
+                                      background: 'none',
+                                      border: 'none',
+                                      color: '#999',
+                                      cursor: 'pointer',
+                                      fontSize: '0.7rem',
+                                      padding: '2px 4px',
+                                    }}
+                                    title="Xóa tin nhắn"
+                                  >
+                                    🗑️
+                                  </button>
+                                </div>
                               </>
                             ) : (
                               <>
-                                <span style={{ fontSize: '0.65rem', color: '#999' }}>{formatTime(msg.createdAt)}</span>
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '2px' }}>
+                                  <span style={{ fontSize: '0.65rem', color: '#999' }}>{formatTime(msg.createdAt)}</span>
+                                  <button
+                                    onClick={() => handleDeleteMessage(msg._id)}
+                                    style={{
+                                      background: 'none',
+                                      border: 'none',
+                                      color: '#999',
+                                      cursor: 'pointer',
+                                      fontSize: '0.7rem',
+                                      padding: '2px 4px',
+                                    }}
+                                    title="Xóa tin nhắn"
+                                  >
+                                    🗑️
+                                  </button>
+                                </div>
                                 {isImage ? (
                                   <img
                                     src={msg.image}
