@@ -37,26 +37,13 @@ const LoginPage = () => {
   const handleGoogleLogin = async () => {
     setError('');
     setGoogleLoading(true);
-    console.log('Starting Google login...');
 
     try {
-      console.log('Opening Firebase popup...');
       const result = await signInWithPopup(auth, googleProvider);
-
-      console.log('Firebase login success:', result.user.email);
-
       const googleToken = await result.user.getIdToken();
-      console.log('Got Google token:', googleToken.slice(0, 50) + '...');
-
-      console.log('Calling backend googleLogin...');
       await googleLogin(googleToken);
-
-      console.log('Backend returned OK');
-
       navigate('/');
     } catch (err) {
-      console.error('Full error:', err);
-
       if (err.code === 'auth/popup-closed-by-user') {
         setError('Bạn đã đóng cửa sổ đăng nhập');
       } else if (err.code === 'auth/network-request-failed') {

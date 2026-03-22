@@ -10,14 +10,6 @@ const createOrder = asyncHandler(async (req, res, next) => {
   const { items, couponCode, shippingAddress, paymentMethod } = req.body;
   const userId = req.user.id;
 
-  console.log('📦 Create order request:', {
-    itemsCount: items?.length,
-    couponCode: couponCode,
-    paymentMethod: paymentMethod,
-    hasShippingAddress: !!shippingAddress,
-    fullBody: req.body
-  });
-
   if (!items || items.length === 0) {
     return res.status(400).json({
       success: false,
@@ -26,24 +18,13 @@ const createOrder = asyncHandler(async (req, res, next) => {
     });
   }
 
-  // Validate shipping address cho COD (không bắt buộc với VNPAY)
-  if (paymentMethod === 'COD') {
-    if (!shippingAddress || !shippingAddress.fullName || !shippingAddress.phone || !shippingAddress.address) {
-      return res.status(400).json({
-        success: false,
-        message: 'Vui lòng cung cấp địa chỉ giao hàng đầy đủ',
-        data: null,
-      });
-    }
-  } else {
-    // VNPAY - vẫn cần shippingAddress để giao hàng
-    if (!shippingAddress || !shippingAddress.fullName || !shippingAddress.phone || !shippingAddress.address) {
-      return res.status(400).json({
-        success: false,
-        message: 'Vui lòng cung cấp địa chỉ giao hàng đầy đủ',
-        data: null,
-      });
-    }
+  // Validate shipping address
+  if (!shippingAddress || !shippingAddress.fullName || !shippingAddress.phone || !shippingAddress.address) {
+    return res.status(400).json({
+      success: false,
+      message: 'Vui lòng cung cấp địa chỉ giao hàng đầy đủ',
+      data: null,
+    });
   }
 
   let totalPrice = 0;
@@ -93,14 +74,9 @@ const createOrder = asyncHandler(async (req, res, next) => {
   let finalPrice = totalPrice;
 
   if (couponCode) {
-    console.log('🔍 Looking for coupon:', couponCode.toUpperCase());
-
-    // First try to find without date check
-    let coupon = await Coupon.findOne({
+    const coupon = await Coupon.findOne({
       code: couponCode.toUpperCase(),
     });
-
-    console.log('📋 Coupon found:', coupon);
 
     if (!coupon) {
       return res.status(400).json({
@@ -109,16 +85,6 @@ const createOrder = asyncHandler(async (req, res, next) => {
         data: null,
       });
     }
-
-    console.log('📋 Coupon details:', {
-      code: coupon.code,
-      isActive: coupon.isActive,
-      expiresAt: coupon.expiresAt,
-      discountType: coupon.discountType,
-      discountValue: coupon.discountValue,
-      usageLimit: coupon.usageLimit,
-      usageCount: coupon.usageCount,
-    });
 
     // Check if active
     if (!coupon.isActive) {
@@ -183,7 +149,6 @@ const createOrder = asyncHandler(async (req, res, next) => {
   // Create order
   let order;
   const paymentMethodVal = paymentMethod || 'COD';
-  const paymentStatusVal = paymentMethodVal === 'VNPAY' ? 'PENDING' : 'PENDING';
 
   try {
     order = await Order.create({
@@ -195,7 +160,7 @@ const createOrder = asyncHandler(async (req, res, next) => {
       finalPrice,
       shippingAddress: shippingAddress || null,
       paymentMethod: paymentMethodVal,
-      paymentStatus: paymentStatusVal,
+      paymentStatus: 'PENDING',
     });
   } catch (err) {
     console.error('Order creation failed:', err);
@@ -216,15 +181,7 @@ const createOrder = asyncHandler(async (req, res, next) => {
   }
 
   await order.populate('user', 'name email');
-  await order.populate('items.product', 'name price');
-
-  console.log('✅ Order created:', {
-    orderId: order._id,
-    totalPrice: order.totalPrice,
-    discountAmount: order.discountAmount,
-    finalPrice: order.finalPrice,
-    coupon: order.coupon
-  });
+  await order.populate('items.product', 'name price image');
 
   res.status(201).json({
     success: true,
@@ -367,29 +324,23 @@ const updateOrderStatus = asyncHandler(async (req, res, next) => {
 
   // Handle stock rollback when cancelling order
   if (status === 'CANCELLED' && oldStatus !== 'CANCELLED') {
-    // Trả lại stock khi hủy đơn
-    console.log(`🔄 Hoàn lại stock cho đơn hàng ${id}`);
     for (const item of order.items) {
       await Product.findByIdAndUpdate(
         item.product,
-        { $inc: { stock: item.quantity } }, // Increase stock back
+        { $inc: { stock: item.quantity } },
         { new: true }
       );
-      console.log(`✅ Hoàn lại ${item.quantity} sản phẩm`);
     }
   }
 
   // Handle stock adjustment if order is being un-cancelled
   if (oldStatus === 'CANCELLED' && status !== 'CANCELLED') {
-    // Giảm stock lại khi không hủy nữa
-    console.log(`📉 Giảm stock lại cho đơn hàng ${id}`);
     for (const item of order.items) {
       await Product.findByIdAndUpdate(
         item.product,
-        { $inc: { stock: -item.quantity } }, // Decrease stock
+        { $inc: { stock: -item.quantity } },
         { new: true }
       );
-      console.log(`📉 Giảm ${item.quantity} sản phẩm`);
     }
   }
 
@@ -443,14 +394,12 @@ const cancelOrder = asyncHandler(async (req, res, next) => {
   }
 
   // Return stock for all items
-  console.log(`🔄 Hủy đơn hàng ${id} - Hoàn lại stock`);
   for (const item of order.items) {
     await Product.findByIdAndUpdate(
       item.product,
       { $inc: { stock: item.quantity } },
       { new: true }
     );
-    console.log(`✅ Hoàn lại ${item.quantity} sản phẩm`);
   }
 
   // HOÀN COUPON: Giảm usageCount để coupon có thể được sử dụng lại
@@ -459,7 +408,6 @@ const cancelOrder = asyncHandler(async (req, res, next) => {
       { code: order.coupon.code },
       { $inc: { usageCount: -1 } }
     );
-    console.log(`✅ Hoàn lại coupon: ${order.coupon.code}`);
   }
 
   // Update status
