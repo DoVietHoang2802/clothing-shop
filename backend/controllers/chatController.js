@@ -239,21 +239,31 @@ const markAsRead = asyncHandler(async (req, res, next) => {
 });
 
 // @desc    Lấy số tin nhắn chưa đọc
-// @route   GET /api/chat/unread
+// @route   GET /api/chat/unread/count
 // @access  Private
 const getUnreadCount = asyncHandler(async (req, res, next) => {
   const currentUserId = req.user.id;
 
-  const count = await Message.countDocuments({
-    receiver: currentUserId,
-    read: false,
-  });
+  try {
+    const userIdObj = new mongoose.Types.ObjectId(currentUserId);
 
-  res.status(200).json({
-    success: true,
-    message: 'Lấy số tin nhắn chưa đọc thành công',
-    data: { unreadCount: count },
-  });
+    const count = await Message.countDocuments({
+      receiver: userIdObj,
+      read: false,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Lấy số tin nhắn chưa đọc thành công',
+      data: { unreadCount: count },
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi khi đếm tin nhắn',
+      data: { unreadCount: 0 },
+    });
+  }
 });
 
 module.exports = {

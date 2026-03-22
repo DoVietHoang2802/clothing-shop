@@ -61,7 +61,9 @@ const ChatWidget = () => {
 
   const loadConversations = async () => {
     try {
+      console.log('🔍 Admin: Loading conversations...');
       const res = await chatService.getConversations();
+      console.log('📨 Conversations response:', res.data);
       const unread = res.data.data.reduce((sum, c) => sum + c.unreadCount, 0);
       setUnreadCount(unread);
       if (res.data.data.length > 0) {
