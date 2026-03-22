@@ -123,78 +123,84 @@ const getMessages = asyncHandler(async (req, res, next) => {
 });
 
 // @desc    Lấy danh sách cuộc trò chuyện
-// @route   GET /api/chat/conversations
+// @route   GET /api/chat/conversations/all
 // @access  Private
 const getConversations = asyncHandler(async (req, res, next) => {
   const currentUserId = req.user.id;
-  const userIdObj = new mongoose.Types.ObjectId(currentUserId);
 
-  // Lấy tin nhắn cuối cùng của mỗi cuộc trò chuyện
-  const messages = await Message.aggregate([
-    {
-      $match: {
-        $or: [
-          { sender: userIdObj },
-          { receiver: userIdObj },
-        ],
-      },
-    },
-    {
-      $sort: { createdAt: -1 },
-    },
-    {
-      $group: {
-        _id: {
-          $cond: {
-            if: { $eq: [{ $toString: '$sender' }, currentUserId] },
-            then: '$receiver',
-            else: '$sender',
+  try {
+    const currentUserIdObj = new mongoose.Types.ObjectId(currentUserId);
+
+    // Lấy tất cả tin nhắn liên quan đến user hiện tại
+    const messages = await Message.find({
+      $or: [
+        { sender: currentUserIdObj },
+        { receiver: currentUserIdObj },
+      ]
+    })
+    .populate('sender', 'name email avatar role')
+    .populate('receiver', 'name email avatar role')
+    .sort({ createdAt: -1 })
+    .limit(100);
+
+    // Gom nhóm theo người chat (người còn lại trong cuộc trò chuyện)
+    const conversationMap = new Map();
+
+    for (const msg of messages) {
+      // Xác định người chat còn lại
+      const otherUser = msg.sender._id.toString() === currentUserId
+        ? msg.receiver
+        : msg.sender;
+
+      const otherUserId = otherUser._id.toString();
+
+      // Chỉ lấy tin nhắn đầu tiên (mới nhất) cho mỗi người
+      if (!conversationMap.has(otherUserId)) {
+        // Đếm tin nhắn chưa đọc
+        const unreadCount = await Message.countDocuments({
+          sender: otherUser._id,
+          receiver: currentUserIdObj,
+          read: false,
+        });
+
+        conversationMap.set(otherUserId, {
+          user: {
+            _id: otherUser._id,
+            name: otherUser.name,
+            email: otherUser.email,
+            avatar: otherUser.avatar,
+            role: otherUser.role,
           },
-        },
-        lastMessage: { $first: '$$ROOT' },
-        unreadCount: {
-          $sum: {
-            $cond: {
-              if: {
-                $and: [
-                  { $eq: [{ $toString: '$receiver' }, currentUserId] },
-                  { $eq: ['$read', false] },
-                ],
-              },
-              then: 1,
-              else: 0,
-            },
+          lastMessage: {
+            _id: msg._id,
+            content: msg.content,
+            sender: msg.sender,
+            receiver: msg.receiver,
+            createdAt: msg.createdAt,
           },
-        },
-      },
-    },
-    { $sort: { 'lastMessage.createdAt': -1 } },
-  ]);
+          unreadCount: unreadCount,
+        });
+      }
+    }
 
-  // Populate thông tin user
-  const userIds = messages.map((m) => m._id);
-  const users = await User.find({ _id: { $in: userIds } }).select('name email avatar role');
+    // Chuyển Map thành array và sắp xếp theo thời gian
+    const conversations = Array.from(conversationMap.values())
+      .sort((a, b) => new Date(b.lastMessage.createdAt) - new Date(a.lastMessage.createdAt));
 
-  const conversations = messages.map((m) => {
-    const user = users.find((u) => u._id.toString() === m._id.toString());
-    return {
-      user: user ? {
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        avatar: user.avatar,
-        role: user.role,
-      } : null,
-      lastMessage: m.lastMessage,
-      unreadCount: m.unreadCount,
-    };
-  }).filter(c => c.user);
+    res.status(200).json({
+      success: true,
+      message: 'Lấy danh sách cuộc trò chuyện thành công',
+      data: conversations,
+    });
 
-  res.status(200).json({
-    success: true,
-    message: 'Lấy danh sách cuộc trò chuyện thành công',
-    data: conversations,
-  });
+  } catch (err) {
+    console.error('Error in getConversations:', err);
+    return res.status(500).json({
+      success: false,
+      message: 'Lỗi khi lấy danh sách cuộc trò chuyện',
+      data: [],
+    });
+  }
 });
 
 // @desc    Lấy danh sách admin/staff để chat
