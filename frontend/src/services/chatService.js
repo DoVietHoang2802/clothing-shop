@@ -1,9 +1,29 @@
 import api from './api';
 
 const chatService = {
-  // Gửi tin nhắn
+  // Gửi tin nhắn text
   sendMessage: (receiverId, content) => {
     return api.post('/chat/send', { receiverId, content });
+  },
+
+  // Gửi tin nhắn với ảnh
+  sendImageMessage: (receiverId, imageBase64, content = '') => {
+    return api.post('/chat/send', {
+      receiverId,
+      content,
+      image: imageBase64,
+      messageType: 'image'
+    });
+  },
+
+  // Gửi QR code
+  sendQRMessage: (receiverId, qrImage, content = '') => {
+    return api.post('/chat/send', {
+      receiverId,
+      content,
+      image: qrImage,
+      messageType: 'qr'
+    });
   },
 
   // Lấy tin nhắn với một người

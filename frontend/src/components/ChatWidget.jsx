@@ -13,7 +13,14 @@ const ChatWidget = () => {
   const [sending, setSending] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [adminList, setAdminList] = useState([]);
+  const [showImageUpload, setShowImageUpload] = useState(false);
+  const [previewImage, setPreviewImage] = useState(null);
+  const [showQRModal, setShowQRModal] = useState(false);
+  const [qrAmount, setQrAmount] = useState('');
+  const [qrImage, setQrImage] = useState(null);
+  const [lastMessageId, setLastMessageId] = useState(null);
   const messagesEndRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   const isAdminOrStaff = user?.role === 'ADMIN' || user?.role === 'STAFF';
 
@@ -28,39 +35,41 @@ const ChatWidget = () => {
     }
   }, [isAuthenticated, isOpen, isAdminOrStaff]);
 
-  // Scroll to bottom
+  // Scroll to bottom only on new messages
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (messages.length > 0) {
+      const latestMessage = messages[messages.length - 1];
+      if (latestMessage._id !== lastMessageId) {
+        setLastMessageId(latestMessage._id);
+        setTimeout(() => {
+          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
+      }
+    }
   }, [messages]);
 
-  // Auto refresh conversations - only refresh conversations list, not messages
+  // Refresh data periodically but smarter
   useEffect(() => {
     if (isAuthenticated && isOpen) {
-      // Refresh conversations list every 10 seconds
-      const conversationInterval = setInterval(() => {
+      const interval = setInterval(() => {
         if (isAdminOrStaff) {
           loadConversations();
         }
         loadUnreadCount();
-      }, 10000);
-
-      // Refresh messages only when actively viewing a chat
-      const messageInterval = setInterval(() => {
-        if (isAdminOrStaff && selectedUser) {
-          const currentLength = messages.length;
-          loadMessages(selectedUser._id).then(() => {
-            // Only scroll if new messages arrived
-            // Don't force scroll to prevent jumping
+        // Only load messages if viewing a chat and there are new ones
+        if (selectedUser) {
+          const prevLength = messages.length;
+          loadMessagesSilent(selectedUser._id).then(newMessages => {
+            if (newMessages.length > prevLength) {
+              setMessages(newMessages);
+            }
           });
         }
       }, 8000);
 
-      return () => {
-        clearInterval(conversationInterval);
-        clearInterval(messageInterval);
-      };
+      return () => clearInterval(interval);
     }
-  }, [isAuthenticated, isOpen, isAdminOrStaff, selectedUser]);
+  }, [isAuthenticated, isOpen, isAdminOrStaff, selectedUser, messages.length]);
 
   // Load admin/staff list
   const loadAdminList = async () => {
@@ -68,7 +77,6 @@ const ChatWidget = () => {
       const res = await chatService.getChatUsers();
       const admins = res.data.data || [];
       setAdminList(admins);
-      // Auto-select first admin and load messages
       if (admins.length > 0 && !selectedUser) {
         setSelectedUser(admins[0]);
         loadMessages(admins[0]._id);
@@ -78,7 +86,7 @@ const ChatWidget = () => {
     }
   };
 
-  // Load conversations for admin/staff
+  // Load conversations
   const loadConversations = async () => {
     try {
       const res = await chatService.getConversations();
@@ -91,16 +99,18 @@ const ChatWidget = () => {
     }
   };
 
-  // Load messages with specific user
+  // Load messages with loading state
   const loadMessages = async (userId) => {
     if (!userId) return;
     try {
       setLoading(true);
       const res = await chatService.getMessages(userId);
-      setMessages(res.data.data || []);
-      // Mark as read
+      const msgs = res.data.data || [];
+      setMessages(msgs);
+      if (msgs.length > 0) {
+        setLastMessageId(msgs[msgs.length - 1]._id);
+      }
       await chatService.markAsRead(userId);
-      // Refresh conversations to update unread count
       loadConversations();
     } catch (err) {
       console.error('Error loading messages:', err);
@@ -109,29 +119,93 @@ const ChatWidget = () => {
     }
   };
 
-  // Select a conversation to view
-  const handleSelectConversation = (conv) => {
-    setSelectedUser(conv.user);
-    loadMessages(conv.user._id);
+  // Load messages silently (no loading indicator)
+  const loadMessagesSilent = async (userId) => {
+    if (!userId) return [];
+    try {
+      const res = await chatService.getMessages(userId);
+      return res.data.data || [];
+    } catch (err) {
+      return messages;
+    }
   };
 
-  // Back to list
-  const handleBack = () => {
-    setSelectedUser(null);
-    setMessages([]);
+  // Handle image selection
+  const handleImageSelect = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        alert('Kích thước ảnh quá lớn. Vui lòng chọn ảnh dưới 5MB.');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setPreviewImage(event.target.result);
+        setShowImageUpload(true);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
-  // Send message
-  const handleSendMessage = async (e) => {
-    e.preventDefault();
-
-    // Determine receiver
+  // Send message with image
+  const handleSendImage = async () => {
     let receiverId;
     if (isAdminOrStaff && selectedUser) {
-      // Admin/Staff replying to selected user
       receiverId = selectedUser._id;
     } else if (!isAdminOrStaff && adminList.length > 0) {
-      // User chatting with first available admin/staff
+      receiverId = adminList[0]._id;
+    }
+
+    if (!receiverId || !previewImage) return;
+
+    try {
+      setSending(true);
+      await chatService.sendImageMessage(receiverId, previewImage, newMessage);
+      setNewMessage('');
+      setPreviewImage(null);
+      setShowImageUpload(false);
+      loadMessages(receiverId);
+    } catch (err) {
+      console.error('Error sending image:', err);
+      alert('Lỗi khi gửi ảnh');
+    } finally {
+      setSending(false);
+    }
+  };
+
+  // Send QR code
+  const handleSendQR = async () => {
+    let receiverId;
+    if (isAdminOrStaff && selectedUser) {
+      receiverId = selectedUser._id;
+    } else if (!isAdminOrStaff && adminList.length > 0) {
+      receiverId = adminList[0]._id;
+    }
+
+    if (!receiverId || !qrImage) return;
+
+    try {
+      setSending(true);
+      await chatService.sendQRMessage(receiverId, qrImage, `Yêu cầu thanh toán: ${qrAmount ? formatCurrency(parseInt(qrAmount)) : ''}`);
+      setShowQRModal(false);
+      setQrAmount('');
+      setQrImage(null);
+      loadMessages(receiverId);
+    } catch (err) {
+      console.error('Error sending QR:', err);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  // Send text message
+  const handleSendMessage = async (e) => {
+    e?.preventDefault();
+
+    let receiverId;
+    if (isAdminOrStaff && selectedUser) {
+      receiverId = selectedUser._id;
+    } else if (!isAdminOrStaff && adminList.length > 0) {
       receiverId = adminList[0]._id;
     }
 
@@ -144,13 +218,23 @@ const ChatWidget = () => {
       loadMessages(receiverId);
     } catch (err) {
       console.error('Error sending message:', err);
-      alert(err.response?.data?.message || 'Lỗi khi gửi tin nhắn');
     } finally {
       setSending(false);
     }
   };
 
-  // Format time
+  // Generate QR placeholder (in real app, would call a QR API)
+  const generateQR = () => {
+    // Create a simple QR placeholder using a service
+    const amount = qrAmount || '100000';
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=STK:123456789&BANK=VCB&AMOUNT=${amount}`;
+    setQrImage(qrUrl);
+  };
+
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(amount);
+  };
+
   const formatTime = (date) => {
     if (!date) return '';
     const d = new Date(date);
@@ -164,42 +248,32 @@ const ChatWidget = () => {
     return d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
   };
 
-  // Get avatar
   const getAvatar = (u) => {
     if (u?.avatar) return u.avatar;
     return `https://ui-avatars.com/api/?name=${encodeURIComponent(u?.name?.[0] || 'U')}&background=667eea&color=fff&size=128&bold=true`;
   };
 
-  // Get role badge
   const getRoleBadge = (role) => {
     switch (role) {
-      case 'ADMIN':
-        return { label: '👑 Admin', color: '#e74c3c' };
-      case 'STAFF':
-        return { label: '👔 NV', color: '#3498db' };
-      default:
-        return { label: '👤 Khách', color: '#27ae60' };
+      case 'ADMIN': return { label: '👑 Admin', color: '#e74c3c' };
+      case 'STAFF': return { label: '👔 NV', color: '#3498db' };
+      default: return { label: '👤 Khách', color: '#27ae60' };
     }
   };
 
-  // Check if message is from me
   const isMyMessage = (msg) => {
     const senderId = typeof msg.sender === 'object' ? msg.sender._id : msg.sender;
     return senderId === user._id;
   };
 
-  // Get sender info
-  const getSenderInfo = (msg) => {
-    if (typeof msg.sender === 'object') {
-      return msg.sender;
-    }
-    return { name: 'Người dùng', role: 'USER' };
+  const isAdminMessage = (msg) => {
+    const sender = typeof msg.sender === 'object' ? msg.sender : { role: 'USER' };
+    return sender.role === 'ADMIN' || sender.role === 'STAFF';
   };
 
-  // Check if message is from admin/staff (show on RIGHT)
-  const isAdminMessage = (msg) => {
-    const sender = getSenderInfo(msg);
-    return sender.role === 'ADMIN' || sender.role === 'STAFF';
+  const getSenderInfo = (msg) => {
+    if (typeof msg.sender === 'object') return msg.sender;
+    return { name: 'Người dùng', role: 'USER' };
   };
 
   if (!isAuthenticated) return null;
@@ -260,7 +334,7 @@ const ChatWidget = () => {
           bottom: '90px',
           left: '20px',
           width: '380px',
-          height: '520px',
+          height: '550px',
           background: 'white',
           borderRadius: '16px',
           boxShadow: '0 5px 40px rgba(0,0,0,0.15)',
@@ -278,7 +352,7 @@ const ChatWidget = () => {
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               {selectedUser && (
                 <button
-                  onClick={handleBack}
+                  onClick={() => { setSelectedUser(null); setMessages([]); }}
                   style={{
                     background: 'rgba(255,255,255,0.2)',
                     border: 'none',
@@ -294,18 +368,10 @@ const ChatWidget = () => {
               )}
               <div>
                 <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: '600' }}>
-                  {selectedUser
-                    ? `💬 ${selectedUser.name}`
-                    : isAdminOrStaff
-                      ? '💬 Hộp thư'
-                      : '💬 Hỗ trợ'}
+                  {selectedUser ? `💬 ${selectedUser.name}` : isAdminOrStaff ? '💬 Hộp thư' : '💬 Hỗ trợ'}
                 </h3>
                 <p style={{ margin: '2px 0 0 0', fontSize: '0.75rem', opacity: 0.9 }}>
-                  {selectedUser
-                    ? getRoleBadge(selectedUser.role).label
-                    : isAdminOrStaff
-                      ? `${conversations.length} cuộc trò chuyện`
-                      : 'Gửi tin nhắn để được hỗ trợ'}
+                  {selectedUser ? getRoleBadge(selectedUser.role).label : isAdminOrStaff ? `${conversations.length} cuộc trò chuyện` : 'Gửi tin nhắn để được hỗ trợ'}
                 </p>
               </div>
             </div>
@@ -330,11 +396,9 @@ const ChatWidget = () => {
                       const isMe = isMyMessage(msg);
                       const isAdmin = isAdminMessage(msg);
                       const sender = getSenderInfo(msg);
-                      const senderRole = getRoleBadge(sender.role);
-
-                      // Message position: User -> LEFT (white), Admin/Staff -> RIGHT (purple)
                       const isRightSide = isAdmin;
-                      const isLeftSide = !isAdmin;
+                      const isImage = msg.messageType === 'image';
+                      const isQR = msg.messageType === 'qr';
 
                       return (
                         <div
@@ -346,32 +410,22 @@ const ChatWidget = () => {
                             marginBottom: '12px',
                           }}
                         >
-                          {/* Sender info - only show if not Admin/Staff */}
-                          {isLeftSide && (
+                          {!isAdmin && (
                             <div style={{
                               display: 'flex',
                               alignItems: 'center',
                               gap: '6px',
                               marginBottom: '4px',
                             }}>
-                              <img
-                                src={getAvatar(sender)}
-                                alt={sender.name}
-                                style={{ width: '24px', height: '24px', borderRadius: '50%' }}
-                              />
-                              <span style={{
-                                fontSize: '0.75rem',
-                                fontWeight: '600',
-                                color: senderRole.color
-                              }}>
-                                {sender.name} • {senderRole.label}
+                              <img src={getAvatar(sender)} alt="" style={{ width: '24px', height: '24px', borderRadius: '50%' }} />
+                              <span style={{ fontSize: '0.75rem', fontWeight: '600', color: getRoleBadge(sender.role).color }}>
+                                {sender.name} • {getRoleBadge(sender.role).label}
                               </span>
                             </div>
                           )}
 
-                          {/* Message bubble */}
                           <div style={{
-                            maxWidth: '80%',
+                            maxWidth: '85%',
                             display: 'flex',
                             flexDirection: isRightSide ? 'row-reverse' : 'row',
                             alignItems: 'flex-end',
@@ -379,40 +433,88 @@ const ChatWidget = () => {
                           }}>
                             {isRightSide ? (
                               <>
-                                <div style={{
-                                  background: '#667eea',
-                                  color: 'white',
-                                  padding: '8px 12px',
-                                  borderRadius: '16px',
-                                  borderBottomRightRadius: '4px',
-                                  fontSize: '0.9rem',
-                                  lineHeight: '1.4',
-                                  wordBreak: 'break-word',
-                                }}>
-                                  {msg.content}
-                                </div>
-                                <span style={{ fontSize: '0.65rem', color: '#999' }}>
-                                  {formatTime(msg.createdAt)}
-                                </span>
+                                {isImage ? (
+                                  <img
+                                    src={msg.image}
+                                    alt=""
+                                    style={{
+                                      maxWidth: '200px',
+                                      borderRadius: '12px',
+                                      cursor: 'pointer',
+                                    }}
+                                    onClick={() => window.open(msg.image, '_blank')}
+                                  />
+                                ) : isQR ? (
+                                  <div style={{
+                                    background: 'white',
+                                    padding: '8px',
+                                    borderRadius: '12px',
+                                    textAlign: 'center',
+                                    maxWidth: '220px',
+                                  }}>
+                                    <img src={msg.image} alt="QR" style={{ width: '200px', borderRadius: '8px' }} />
+                                    {msg.content && (
+                                      <p style={{ margin: '8px 0 0 0', fontWeight: '600', color: '#27ae60' }}>{msg.content}</p>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <div style={{
+                                    background: '#667eea',
+                                    color: 'white',
+                                    padding: '8px 12px',
+                                    borderRadius: '16px',
+                                    borderBottomRightRadius: '4px',
+                                    fontSize: '0.9rem',
+                                    wordBreak: 'break-word',
+                                  }}>
+                                    {msg.content}
+                                  </div>
+                                )}
+                                <span style={{ fontSize: '0.65rem', color: '#999' }}>{formatTime(msg.createdAt)}</span>
                               </>
                             ) : (
                               <>
-                                <span style={{ fontSize: '0.65rem', color: '#999' }}>
-                                  {formatTime(msg.createdAt)}
-                                </span>
-                                <div style={{
-                                  background: 'white',
-                                  color: '#333',
-                                  padding: '8px 12px',
-                                  borderRadius: '16px',
-                                  borderBottomLeftRadius: '4px',
-                                  fontSize: '0.9rem',
-                                  lineHeight: '1.4',
-                                  boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
-                                  wordBreak: 'break-word',
-                                }}>
-                                  {msg.content}
-                                </div>
+                                <span style={{ fontSize: '0.65rem', color: '#999' }}>{formatTime(msg.createdAt)}</span>
+                                {isImage ? (
+                                  <img
+                                    src={msg.image}
+                                    alt=""
+                                    style={{
+                                      maxWidth: '200px',
+                                      borderRadius: '12px',
+                                      cursor: 'pointer',
+                                      boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                                    }}
+                                    onClick={() => window.open(msg.image, '_blank')}
+                                  />
+                                ) : isQR ? (
+                                  <div style={{
+                                    background: 'white',
+                                    padding: '8px',
+                                    borderRadius: '12px',
+                                    textAlign: 'center',
+                                    maxWidth: '220px',
+                                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                                  }}>
+                                    <img src={msg.image} alt="QR" style={{ width: '200px', borderRadius: '8px' }} />
+                                    {msg.content && (
+                                      <p style={{ margin: '8px 0 0 0', fontWeight: '600', color: '#27ae60' }}>{msg.content}</p>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <div style={{
+                                    background: 'white',
+                                    color: '#333',
+                                    padding: '8px 12px',
+                                    borderRadius: '16px',
+                                    borderBottomLeftRadius: '4px',
+                                    fontSize: '0.9rem',
+                                    boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
+                                    wordBreak: 'break-word',
+                                  }}>
+                                    {msg.content}
+                                  </div>
+                                )}
                               </>
                             )}
                           </div>
@@ -424,185 +526,320 @@ const ChatWidget = () => {
                 )}
               </div>
 
-              {/* Message Input */}
-              <form onSubmit={handleSendMessage} style={{
-                padding: '12px 16px',
-                borderTop: '1px solid #eee',
-                display: 'flex',
-                gap: '8px',
-                background: 'white',
-              }}>
-                <input
-                  type="text"
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  placeholder={isAdminOrStaff ? 'Trả lời tin nhắn...' : 'Nhập tin nhắn...'}
-                  style={{
-                    flex: 1,
-                    padding: '10px 14px',
-                    border: '2px solid #eee',
-                    borderRadius: '20px',
-                    outline: 'none',
-                    fontSize: '0.9rem',
-                  }}
-                />
-                <button
-                  type="submit"
-                  disabled={sending || !newMessage.trim()}
-                  style={{
-                    width: '40px',
-                    height: '40px',
-                    borderRadius: '50%',
-                    background: sending || !newMessage.trim() ? '#ccc' : '#667eea',
-                    color: 'white',
-                    border: 'none',
-                    cursor: sending || !newMessage.trim() ? 'not-allowed' : 'pointer',
-                    fontSize: '1.1rem',
-                  }}
-                >
-                  ➤
-                </button>
-              </form>
+              {/* Image Preview */}
+              {showImageUpload && previewImage && (
+                <div style={{
+                  padding: '8px 16px',
+                  background: '#f0f0f0',
+                  borderTop: '1px solid #ddd',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                }}>
+                  <img src={previewImage} alt="" style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '8px' }} />
+                  <input
+                    type="text"
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    placeholder="Thêm ghi chú (tùy chọn)..."
+                    style={{ flex: 1, padding: '8px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '0.85rem' }}
+                  />
+                  <button
+                    onClick={handleSendImage}
+                    disabled={sending}
+                    style={{
+                      padding: '8px 16px',
+                      background: '#27ae60',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '8px',
+                      cursor: sending ? 'not-allowed' : 'pointer',
+                    }}
+                  >
+                    {sending ? '...' : 'Gửi'}
+                  </button>
+                  <button
+                    onClick={() => { setShowImageUpload(false); setPreviewImage(null); }}
+                    style={{
+                      padding: '8px 12px',
+                      background: '#eee',
+                      border: 'none',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
+
+              {/* Input Area */}
+              {!showImageUpload && (
+                <form onSubmit={handleSendMessage} style={{
+                  padding: '12px 16px',
+                  borderTop: '1px solid #eee',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  background: 'white',
+                }}>
+                  {/* Image upload button */}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    ref={fileInputRef}
+                    onChange={handleImageSelect}
+                    style={{ display: 'none' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    style={{
+                      width: '36px',
+                      height: '36px',
+                      borderRadius: '50%',
+                      background: '#f0f0f0',
+                      border: 'none',
+                      cursor: 'pointer',
+                      fontSize: '1.1rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    📷
+                  </button>
+
+                  {/* QR button */}
+                  {isAdminOrStaff && (
+                    <button
+                      type="button"
+                      onClick={() => setShowQRModal(true)}
+                      style={{
+                        width: '36px',
+                        height: '36px',
+                        borderRadius: '50%',
+                        background: '#f0f0f0',
+                        border: 'none',
+                        cursor: 'pointer',
+                        fontSize: '1rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      💳
+                    </button>
+                  )}
+
+                  <input
+                    type="text"
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    placeholder={isAdminOrStaff ? 'Trả lời...' : 'Nhắn tin...'}
+                    style={{
+                      flex: 1,
+                      padding: '10px 14px',
+                      border: '2px solid #eee',
+                      borderRadius: '20px',
+                      outline: 'none',
+                      fontSize: '0.9rem',
+                    }}
+                  />
+                  <button
+                    type="submit"
+                    disabled={sending || !newMessage.trim()}
+                    style={{
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '50%',
+                      background: sending || !newMessage.trim() ? '#ccc' : '#667eea',
+                      color: 'white',
+                      border: 'none',
+                      cursor: sending || !newMessage.trim() ? 'not-allowed' : 'pointer',
+                      fontSize: '1.1rem',
+                    }}
+                  >
+                    ➤
+                  </button>
+                </form>
+              )}
             </>
           ) : isAdminOrStaff ? (
-            // Admin/Staff - Conversations list
+            // Conversations list
             <div style={{ flex: 1, overflowY: 'auto' }}>
               {conversations.length === 0 ? (
                 <div style={{ padding: '3rem 2rem', textAlign: 'center', color: '#999' }}>
                   <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📭</div>
-                  <p style={{ margin: 0, fontWeight: '600', color: '#666' }}>Chưa có tin nhắn nào</p>
-                  <p style={{ fontSize: '0.85rem', marginTop: '0.5rem' }}>Tin nhắn từ khách hàng sẽ hiển thị ở đây</p>
+                  <p style={{ fontWeight: '600', color: '#666' }}>Chưa có tin nhắn nào</p>
                 </div>
               ) : (
-                conversations.map((conv) => {
-                  const roleInfo = getRoleBadge(conv.user?.role);
-                  return (
-                    <div
-                      key={conv.user?._id}
-                      onClick={() => handleSelectConversation(conv)}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '12px',
-                        padding: '14px 16px',
-                        cursor: 'pointer',
-                        borderBottom: '1px solid #f0f0f0',
-                        background: conv.unreadCount > 0 ? '#f0f4ff' : 'white',
-                      }}
-                    >
-                      <div style={{ position: 'relative' }}>
-                        <img
-                          src={getAvatar(conv.user)}
-                          alt={conv.user?.name}
-                          style={{ width: '48px', height: '48px', borderRadius: '50%' }}
-                        />
-                        {conv.unreadCount > 0 && (
-                          <span style={{
-                            position: 'absolute',
-                            top: '-4px',
-                            right: '-4px',
-                            background: '#e74c3c',
-                            color: 'white',
-                            borderRadius: '50%',
-                            width: '18px',
-                            height: '18px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontSize: '10px',
-                            fontWeight: 'bold',
-                          }}>
-                            {conv.unreadCount}
-                          </span>
-                        )}
+                conversations.map((conv) => (
+                  <div
+                    key={conv.user?._id}
+                    onClick={() => { setSelectedUser(conv.user); loadMessages(conv.user._id); }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      padding: '14px 16px',
+                      cursor: 'pointer',
+                      borderBottom: '1px solid #f0f0f0',
+                      background: conv.unreadCount > 0 ? '#f0f4ff' : 'white',
+                    }}
+                  >
+                    <div style={{ position: 'relative' }}>
+                      <img src={getAvatar(conv.user)} alt="" style={{ width: '48px', height: '48px', borderRadius: '50%' }} />
+                      {conv.unreadCount > 0 && (
+                        <span style={{
+                          position: 'absolute',
+                          top: '-4px',
+                          right: '-4px',
+                          background: '#e74c3c',
+                          color: 'white',
+                          borderRadius: '50%',
+                          width: '18px',
+                          height: '18px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '10px',
+                          fontWeight: 'bold',
+                        }}>
+                          {conv.unreadCount}
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ fontWeight: conv.unreadCount > 0 ? '700' : '600', fontSize: '0.9rem' }}>
+                          {conv.user?.name || 'Người dùng'}
+                        </span>
+                        <span style={{ fontSize: '0.7rem', color: '#999' }}>
+                          {formatTime(conv.lastMessage?.createdAt)}
+                        </span>
                       </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span style={{
-                            fontWeight: conv.unreadCount > 0 ? '700' : '600',
-                            fontSize: '0.9rem',
-                            color: '#333'
-                          }}>
-                            {conv.user?.name || 'Người dùng'}
-                          </span>
-                          <span style={{ fontSize: '0.7rem', color: '#999' }}>
-                            {formatTime(conv.lastMessage?.createdAt)}
-                          </span>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
-                          <span style={{
-                            fontSize: '0.7rem',
-                            color: roleInfo.color,
-                            fontWeight: '600'
-                          }}>
-                            {roleInfo.label}
-                          </span>
-                          <span style={{
-                            fontSize: '0.8rem',
-                            color: conv.unreadCount > 0 ? '#333' : '#888',
-                            fontWeight: conv.unreadCount > 0 ? '500' : '400',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                            maxWidth: '150px'
-                          }}>
-                            • {conv.lastMessage?.content}
-                          </span>
-                        </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
+                        <span style={{ fontSize: '0.7rem', color: getRoleBadge(conv.user?.role).color, fontWeight: '600' }}>
+                          {getRoleBadge(conv.user?.role).label}
+                        </span>
+                        <span style={{ fontSize: '0.8rem', color: '#888', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '120px' }}>
+                          • {conv.lastMessage?.content?.substring(0, 30) || 'Tin nhắn mới'}
+                        </span>
                       </div>
                     </div>
-                  );
-                })
+                  </div>
+                ))
               )}
             </div>
           ) : (
-            // User - Simple chat (should not reach here as selectedUser is auto-set)
+            // User - loading state
             <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#999' }}>
               <p>Đang kết nối...</p>
             </div>
           )}
+        </div>
+      )}
 
-          {/* User input area (outside selectedUser check) */}
-          {!selectedUser && !isAdminOrStaff && adminList.length > 0 && (
-            <form onSubmit={handleSendMessage} style={{
-              padding: '12px 16px',
-              borderTop: '1px solid #eee',
-              display: 'flex',
-              gap: '8px',
+      {/* QR Modal */}
+      {showQRModal && (
+        <div
+          onClick={() => setShowQRModal(false)}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 10000,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
               background: 'white',
-            }}>
-              <input
-                type="text"
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                placeholder="Nhập tin nhắn..."
-                style={{
-                  flex: 1,
-                  padding: '10px 14px',
-                  border: '2px solid #eee',
-                  borderRadius: '20px',
-                  outline: 'none',
-                  fontSize: '0.9rem',
-                }}
-              />
+              padding: '24px',
+              borderRadius: '16px',
+              width: '320px',
+              textAlign: 'center',
+            }}
+          >
+            <h3 style={{ margin: '0 0 16px 0' }}>💳 Gửi mã QR thanh toán</h3>
+            <input
+              type="number"
+              value={qrAmount}
+              onChange={(e) => setQrAmount(e.target.value)}
+              placeholder="Nhập số tiền (VNĐ)"
+              style={{
+                width: '100%',
+                padding: '12px',
+                border: '2px solid #ddd',
+                borderRadius: '8px',
+                fontSize: '1rem',
+                marginBottom: '12px',
+                boxSizing: 'border-box',
+              }}
+            />
+            <button
+              onClick={generateQR}
+              style={{
+                width: '100%',
+                padding: '12px',
+                background: '#667eea',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontSize: '1rem',
+                marginBottom: '12px',
+              }}
+            >
+              Tạo mã QR
+            </button>
+            {qrImage && (
+              <div style={{ marginBottom: '12px' }}>
+                <img src={qrImage} alt="QR" style={{ width: '200px', borderRadius: '8px' }} />
+              </div>
+            )}
+            {qrImage && (
               <button
-                type="submit"
-                disabled={sending || !newMessage.trim()}
+                onClick={handleSendQR}
+                disabled={sending}
                 style={{
-                  width: '40px',
-                  height: '40px',
-                  borderRadius: '50%',
-                  background: sending || !newMessage.trim() ? '#ccc' : '#667eea',
+                  width: '100%',
+                  padding: '12px',
+                  background: '#27ae60',
                   color: 'white',
                   border: 'none',
-                  cursor: sending || !newMessage.trim() ? 'not-allowed' : 'pointer',
-                  fontSize: '1.1rem',
+                  borderRadius: '8px',
+                  cursor: sending ? 'not-allowed' : 'pointer',
+                  fontSize: '1rem',
                 }}
               >
-                ➤
+                {sending ? 'Đang gửi...' : 'Gửi QR'}
               </button>
-            </form>
-          )}
+            )}
+            <button
+              onClick={() => setShowQRModal(false)}
+              style={{
+                width: '100%',
+                padding: '12px',
+                background: '#eee',
+                color: '#666',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontSize: '1rem',
+                marginTop: '8px',
+              }}
+            >
+              Đóng
+            </button>
+          </div>
         </div>
       )}
     </>

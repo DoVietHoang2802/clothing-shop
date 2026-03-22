@@ -11,13 +11,22 @@ const asyncHandler = require('../utils/asyncHandler');
 // @route   POST /api/chat/send
 // @access  Private
 const sendMessage = asyncHandler(async (req, res, next) => {
-  const { receiverId, content } = req.body;
+  const { receiverId, content, image, messageType } = req.body;
   const senderId = req.user.id;
 
-  if (!receiverId || !content) {
+  if (!receiverId) {
     return res.status(400).json({
       success: false,
-      message: 'Thiếu thông tin người nhận hoặc nội dung',
+      message: 'Thiếu thông tin người nhận',
+      data: null,
+    });
+  }
+
+  // Phải có content hoặc image
+  if (!content && !image) {
+    return res.status(400).json({
+      success: false,
+      message: 'Tin nhắn không được trống',
       data: null,
     });
   }
@@ -44,7 +53,9 @@ const sendMessage = asyncHandler(async (req, res, next) => {
   const message = await Message.create({
     sender: senderId,
     receiver: receiverId,
-    content,
+    content: content || '',
+    image: image || null,
+    messageType: image ? (messageType || 'image') : 'text',
   });
 
   await message.populate('sender', 'name email avatar role');

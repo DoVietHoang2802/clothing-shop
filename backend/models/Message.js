@@ -13,8 +13,17 @@ const messageSchema = new mongoose.Schema({
   },
   content: {
     type: String,
-    required: true,
     trim: true,
+    default: '',
+  },
+  image: {
+    type: String, // URL ảnh (base64 hoặc URL)
+    default: null,
+  },
+  messageType: {
+    type: String,
+    enum: ['text', 'image', 'qr'],
+    default: 'text',
   },
   read: {
     type: Boolean,
