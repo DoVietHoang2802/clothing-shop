@@ -71,15 +71,18 @@ const ChatWidget = () => {
   // Load admin/staff list
   const loadAdminList = async () => {
     try {
+      setLoading(true);
       const res = await chatService.getChatUsers();
       const admins = res.data.data || [];
       setAdminList(admins);
-      if (admins.length > 0 && !selectedUser) {
+      if (admins.length > 0) {
         setSelectedUser(admins[0]);
         loadMessages(admins[0]._id);
       }
     } catch (err) {
       console.error('Error loading admin list:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -205,7 +208,14 @@ const ChatWidget = () => {
       receiverId = adminList[0]._id;
     }
 
-    if (!newMessage.trim() || !receiverId) return;
+    if (!newMessage.trim()) {
+      return;
+    }
+
+    if (!receiverId) {
+      alert('Không tìm thấy người nhận. Vui lòng thử lại.');
+      return;
+    }
 
     try {
       setSending(true);
@@ -214,6 +224,7 @@ const ChatWidget = () => {
       loadMessages(receiverId);
     } catch (err) {
       console.error('Error sending message:', err);
+      alert(err.response?.data?.message || 'Lỗi khi gửi tin nhắn');
     } finally {
       setSending(false);
     }
