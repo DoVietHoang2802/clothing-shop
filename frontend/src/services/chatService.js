@@ -16,16 +16,6 @@ const chatService = {
     });
   },
 
-  // Gửi QR code
-  sendQRMessage: (receiverId, qrImage, content = '') => {
-    return api.post('/chat/send', {
-      receiverId,
-      content,
-      image: qrImage,
-      messageType: 'qr'
-    });
-  },
-
   // Lấy tin nhắn với một người
   getMessages: (userId, limit = 50, before = null) => {
     return api.get(`/chat/${userId}`, { params: { limit, before } });

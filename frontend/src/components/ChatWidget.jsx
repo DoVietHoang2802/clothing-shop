@@ -15,9 +15,6 @@ const ChatWidget = () => {
   const [adminList, setAdminList] = useState([]);
   const [showImageUpload, setShowImageUpload] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
-  const [showQRModal, setShowQRModal] = useState(false);
-  const [qrAmount, setQrAmount] = useState('');
-  const [qrImage, setQrImage] = useState(null);
   const [lastMessageId, setLastMessageId] = useState(null);
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -173,31 +170,6 @@ const ChatWidget = () => {
     }
   };
 
-  // Send QR code
-  const handleSendQR = async () => {
-    let receiverId;
-    if (isAdminOrStaff && selectedUser) {
-      receiverId = selectedUser._id;
-    } else if (!isAdminOrStaff && adminList.length > 0) {
-      receiverId = adminList[0]._id;
-    }
-
-    if (!receiverId || !qrImage) return;
-
-    try {
-      setSending(true);
-      await chatService.sendQRMessage(receiverId, qrImage, `Yêu cầu thanh toán: ${qrAmount ? formatCurrency(parseInt(qrAmount)) : ''}`);
-      setShowQRModal(false);
-      setQrAmount('');
-      setQrImage(null);
-      loadMessages(receiverId);
-    } catch (err) {
-      console.error('Error sending QR:', err);
-    } finally {
-      setSending(false);
-    }
-  };
-
   // Send text message
   const handleSendMessage = async (e) => {
     e?.preventDefault();
@@ -221,18 +193,6 @@ const ChatWidget = () => {
     } finally {
       setSending(false);
     }
-  };
-
-  // Generate QR placeholder (in real app, would call a QR API)
-  const generateQR = () => {
-    // Create a simple QR placeholder using a service
-    const amount = qrAmount || '100000';
-    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=STK:123456789&BANK=VCB&AMOUNT=${amount}`;
-    setQrImage(qrUrl);
-  };
-
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(amount);
   };
 
   const formatTime = (date) => {
@@ -259,11 +219,6 @@ const ChatWidget = () => {
       case 'STAFF': return { label: '👔 NV', color: '#3498db' };
       default: return { label: '👤 Khách', color: '#27ae60' };
     }
-  };
-
-  const isMyMessage = (msg) => {
-    const senderId = typeof msg.sender === 'object' ? msg.sender._id : msg.sender;
-    return senderId === user._id;
   };
 
   const isAdminMessage = (msg) => {
@@ -393,12 +348,10 @@ const ChatWidget = () => {
                 ) : (
                   <>
                     {messages.map((msg) => {
-                      const isMe = isMyMessage(msg);
                       const isAdmin = isAdminMessage(msg);
                       const sender = getSenderInfo(msg);
                       const isRightSide = isAdmin;
                       const isImage = msg.messageType === 'image';
-                      const isQR = msg.messageType === 'qr';
 
                       return (
                         <div
@@ -444,19 +397,6 @@ const ChatWidget = () => {
                                     }}
                                     onClick={() => window.open(msg.image, '_blank')}
                                   />
-                                ) : isQR ? (
-                                  <div style={{
-                                    background: 'white',
-                                    padding: '8px',
-                                    borderRadius: '12px',
-                                    textAlign: 'center',
-                                    maxWidth: '220px',
-                                  }}>
-                                    <img src={msg.image} alt="QR" style={{ width: '200px', borderRadius: '8px' }} />
-                                    {msg.content && (
-                                      <p style={{ margin: '8px 0 0 0', fontWeight: '600', color: '#27ae60' }}>{msg.content}</p>
-                                    )}
-                                  </div>
                                 ) : (
                                   <div style={{
                                     background: '#667eea',
@@ -487,20 +427,6 @@ const ChatWidget = () => {
                                     }}
                                     onClick={() => window.open(msg.image, '_blank')}
                                   />
-                                ) : isQR ? (
-                                  <div style={{
-                                    background: 'white',
-                                    padding: '8px',
-                                    borderRadius: '12px',
-                                    textAlign: 'center',
-                                    maxWidth: '220px',
-                                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                                  }}>
-                                    <img src={msg.image} alt="QR" style={{ width: '200px', borderRadius: '8px' }} />
-                                    {msg.content && (
-                                      <p style={{ margin: '8px 0 0 0', fontWeight: '600', color: '#27ae60' }}>{msg.content}</p>
-                                    )}
-                                  </div>
                                 ) : (
                                   <div style={{
                                     background: 'white',
@@ -609,28 +535,6 @@ const ChatWidget = () => {
                   >
                     📷
                   </button>
-
-                  {/* QR button */}
-                  {isAdminOrStaff && (
-                    <button
-                      type="button"
-                      onClick={() => setShowQRModal(true)}
-                      style={{
-                        width: '36px',
-                        height: '36px',
-                        borderRadius: '50%',
-                        background: '#f0f0f0',
-                        border: 'none',
-                        cursor: 'pointer',
-                        fontSize: '1rem',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
-                    >
-                      💳
-                    </button>
-                  )}
 
                   <input
                     type="text"
@@ -741,107 +645,6 @@ const ChatWidget = () => {
         </div>
       )}
 
-      {/* QR Modal */}
-      {showQRModal && (
-        <div
-          onClick={() => setShowQRModal(false)}
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'rgba(0,0,0,0.5)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 10000,
-          }}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              background: 'white',
-              padding: '24px',
-              borderRadius: '16px',
-              width: '320px',
-              textAlign: 'center',
-            }}
-          >
-            <h3 style={{ margin: '0 0 16px 0' }}>💳 Gửi mã QR thanh toán</h3>
-            <input
-              type="number"
-              value={qrAmount}
-              onChange={(e) => setQrAmount(e.target.value)}
-              placeholder="Nhập số tiền (VNĐ)"
-              style={{
-                width: '100%',
-                padding: '12px',
-                border: '2px solid #ddd',
-                borderRadius: '8px',
-                fontSize: '1rem',
-                marginBottom: '12px',
-                boxSizing: 'border-box',
-              }}
-            />
-            <button
-              onClick={generateQR}
-              style={{
-                width: '100%',
-                padding: '12px',
-                background: '#667eea',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontSize: '1rem',
-                marginBottom: '12px',
-              }}
-            >
-              Tạo mã QR
-            </button>
-            {qrImage && (
-              <div style={{ marginBottom: '12px' }}>
-                <img src={qrImage} alt="QR" style={{ width: '200px', borderRadius: '8px' }} />
-              </div>
-            )}
-            {qrImage && (
-              <button
-                onClick={handleSendQR}
-                disabled={sending}
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  background: '#27ae60',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  cursor: sending ? 'not-allowed' : 'pointer',
-                  fontSize: '1rem',
-                }}
-              >
-                {sending ? 'Đang gửi...' : 'Gửi QR'}
-              </button>
-            )}
-            <button
-              onClick={() => setShowQRModal(false)}
-              style={{
-                width: '100%',
-                padding: '12px',
-                background: '#eee',
-                color: '#666',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontSize: '1rem',
-                marginTop: '8px',
-              }}
-            >
-              Đóng
-            </button>
-          </div>
-        </div>
-      )}
     </>
   );
 };
