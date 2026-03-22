@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
+  BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
 import adminService from '../../services/adminService';
@@ -348,7 +348,7 @@ const AdminDashboard = () => {
       {/* Charts Section */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(2, 1fr)',
+        gridTemplateColumns: '1fr 1fr 1fr',
         gap: '1.5rem',
         marginBottom: '2rem'
       }}>
@@ -406,35 +406,7 @@ const AdminDashboard = () => {
           </ResponsiveContainer>
         </div>
 
-        {/* Users Growth Chart */}
-        <div style={{
-          background: 'white',
-          borderRadius: '16px',
-          padding: '1.5rem',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
-        }}>
-          <h3 style={{ margin: '0 0 1rem 0', color: '#2c3e50', fontSize: '1.1rem' }}>
-            👥 Người dùng mới
-          </h3>
-          <ResponsiveContainer width="100%" height={250}>
-            <LineChart data={chartData?.usersByMonth || []}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-              <YAxis tick={{ fontSize: 11 }} />
-              <Tooltip />
-              <Line
-                type="monotone"
-                dataKey="users"
-                stroke="#27ae60"
-                strokeWidth={3}
-                dot={{ fill: '#27ae60', r: 5 }}
-                name="Người dùng"
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Top Products */}
+        {/* Top Products - Improved */}
         <div style={{
           background: 'white',
           borderRadius: '16px',
@@ -445,15 +417,46 @@ const AdminDashboard = () => {
             🏆 Top sản phẩm bán chạy
           </h3>
           {chartData?.topProducts?.length > 0 ? (
-            <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={chartData?.topProducts || []} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis type="number" tick={{ fontSize: 11 }} />
-                <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 11 }} />
-                <Tooltip formatter={(value, name) => name === 'sold' ? [value, 'Đã bán'] : [formatCurrency(value), 'Doanh thu']} />
-                <Bar dataKey="sold" fill="#fa709a" radius={[0, 8, 8, 0]} name="sold" />
-              </BarChart>
-            </ResponsiveContainer>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              {(chartData?.topProducts || []).map((product, index) => {
+                const maxSold = chartData?.topProducts?.[0]?.sold || 1;
+                const percentage = (product.sold / maxSold) * 100;
+                const shortName = product.name.length > 25 ? product.name.substring(0, 22) + '...' : product.name;
+
+                return (
+                  <div key={index} style={{ position: 'relative' }}>
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      marginBottom: '0.25rem',
+                      fontSize: '0.85rem'
+                    }}>
+                      <span style={{ color: '#2c3e50', fontWeight: '500', maxWidth: '70%' }}>
+                        {index + 1}. {shortName}
+                      </span>
+                      <span style={{ color: '#fa709a', fontWeight: '700' }}>
+                        {product.sold} đã bán
+                      </span>
+                    </div>
+                    <div style={{
+                      width: '100%',
+                      height: '8px',
+                      background: '#f0f0f0',
+                      borderRadius: '4px',
+                      overflow: 'hidden'
+                    }}>
+                      <div style={{
+                        width: `${percentage}%`,
+                        height: '100%',
+                        background: 'linear-gradient(90deg, #fa709a 0%, #fee140 100%)',
+                        borderRadius: '4px',
+                        transition: 'width 0.5s ease'
+                      }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           ) : (
             <div style={{ textAlign: 'center', padding: '3rem 0', color: '#999' }}>
               <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>📊</div>
