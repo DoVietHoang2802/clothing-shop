@@ -367,7 +367,7 @@ const cancelOrder = asyncHandler(async (req, res, next) => {
   const userId = req.user.id;
 
   let order = await Order.findById(id);
-  
+
   if (!order) {
     return res.status(404).json({
       success: false,
@@ -404,6 +404,15 @@ const cancelOrder = asyncHandler(async (req, res, next) => {
       { new: true }
     );
     console.log(`✅ Hoàn lại ${item.quantity} sản phẩm`);
+  }
+
+  // HOÀN COUPON: Giảm usageCount để coupon có thể được sử dụng lại
+  if (order.coupon && order.coupon.code) {
+    await Coupon.findOneAndUpdate(
+      { code: order.coupon.code },
+      { $inc: { usageCount: -1 } }
+    );
+    console.log(`✅ Hoàn lại coupon: ${order.coupon.code}`);
   }
 
   // Update status

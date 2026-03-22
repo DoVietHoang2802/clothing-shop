@@ -229,84 +229,143 @@ const AdminCouponsPage = () => {
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.5rem' }}>
-          {coupons.map((coupon) => (
-            <div key={coupon._id} style={{
-              background: 'white',
-              borderRadius: '16px',
-              padding: '1.5rem',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-              border: coupon.isActive ? '2px solid #43e97b' : '2px solid #ddd',
-              position: 'relative'
-            }}>
-              <div style={{
-                position: 'absolute',
-                top: '1rem',
-                right: '1rem',
-                padding: '0.25rem 0.75rem',
-                borderRadius: '20px',
-                background: coupon.isActive ? '#43e97b20' : '#ddd',
-                color: coupon.isActive ? '#27ae60' : '#7f8c8d',
-                fontWeight: '600',
-                fontSize: '0.85rem'
+          {coupons.map((coupon) => {
+            // Check if expired
+            const isExpired = coupon.expiresAt && new Date(coupon.expiresAt) < new Date();
+            // Calculate remaining usage
+            const usedCount = coupon.usageCount || 0;
+            const totalLimit = coupon.usageLimit;
+            const remainingUsage = totalLimit ? totalLimit - usedCount : null;
+            const isOutOfUsage = totalLimit && remainingUsage <= 0;
+
+            return (
+              <div key={coupon._id} style={{
+                background: 'white',
+                borderRadius: '16px',
+                padding: '1.5rem',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                border: isExpired || !coupon.isActive ? '2px solid #ddd' : '2px solid #43e97b',
+                opacity: isExpired || !coupon.isActive ? 0.7 : 1,
+                position: 'relative'
               }}>
-                {coupon.isActive ? '✅ Hoạt động' : '⏸ Tạm dừng'}
-              </div>
+                {/* Status badges */}
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
+                  {isExpired && (
+                    <span style={{
+                      padding: '0.25rem 0.75rem',
+                      borderRadius: '20px',
+                      background: '#fee',
+                      color: '#e74c3c',
+                      fontWeight: '600',
+                      fontSize: '0.8rem'
+                    }}>
+                      ⏰ Hết hạn
+                    </span>
+                  )}
+                  {!coupon.isActive && (
+                    <span style={{
+                      padding: '0.25rem 0.75rem',
+                      borderRadius: '20px',
+                      background: '#ddd',
+                      color: '#7f8c8d',
+                      fontWeight: '600',
+                      fontSize: '0.8rem'
+                    }}>
+                      ⏸ Tạm dừng
+                    </span>
+                  )}
+                  {coupon.isActive && !isExpired && (
+                    <span style={{
+                      padding: '0.25rem 0.75rem',
+                      borderRadius: '20px',
+                      background: '#d4edda',
+                      color: '#27ae60',
+                      fontWeight: '600',
+                      fontSize: '0.8rem'
+                    }}>
+                      ✅ Hoạt động
+                    </span>
+                  )}
+                </div>
 
-              <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🎫</div>
-              <h3 style={{ margin: '0 0 0.5rem 0', color: '#2c3e50', fontSize: '1.3rem' }}>
-                {coupon.code}
-              </h3>
+                <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🎫</div>
+                <h3 style={{ margin: '0 0 0.5rem 0', color: '#2c3e50', fontSize: '1.3rem' }}>
+                  {coupon.code}
+                </h3>
 
-              <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#e74c3c', marginBottom: '1rem' }}>
-                {coupon.discountType === 'PERCENTAGE'
-                  ? `${coupon.discountValue}%`
-                  : new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(coupon.discountValue)}
-              </div>
+                <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#e74c3c', marginBottom: '1rem' }}>
+                  {coupon.discountType === 'PERCENTAGE'
+                    ? `${coupon.discountValue}%`
+                    : new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(coupon.discountValue)}
+                </div>
 
-              <div style={{ color: '#7f8c8d', fontSize: '0.9rem', marginBottom: '0.5rem' }}>
-                {coupon.minOrderValue > 0 && `Đơn tối thiểu: ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(coupon.minOrderValue)}`}
-              </div>
+                {/* Usage info */}
+                <div style={{ marginBottom: '0.5rem' }}>
+                  {totalLimit ? (
+                    <div style={{
+                      color: isOutOfUsage ? '#e74c3c' : '#27ae60',
+                      fontSize: '0.9rem',
+                      fontWeight: '600'
+                    }}>
+                      📊 Còn lại: <strong>{remainingUsage}</strong> / {totalLimit} lần
+                    </div>
+                  ) : (
+                    <div style={{ color: '#27ae60', fontSize: '0.9rem', fontWeight: '600' }}>
+                      📊 Không giới hạn số lần
+                    </div>
+                  )}
+                </div>
 
-              <div style={{ color: '#7f8c8d', fontSize: '0.9rem', marginBottom: '1rem' }}>
-                {coupon.expiresAt
-                  ? `Hết hạn: ${new Date(coupon.expiresAt).toLocaleDateString('vi-VN')}`
-                  : 'Không hết hạn'}
-              </div>
+                <div style={{ color: '#7f8c8d', fontSize: '0.85rem', marginBottom: '0.25rem' }}>
+                  {coupon.minOrderValue > 0 && `Đơn tối thiểu: ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(coupon.minOrderValue)}`}
+                </div>
 
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <button
-                  onClick={() => handleEdit(coupon)}
-                  style={{
-                    flex: 1,
-                    padding: '0.75rem',
-                    background: '#43e97b20',
-                    color: '#27ae60',
-                    border: 'none',
-                    borderRadius: '8px',
-                    fontWeight: '600',
-                    cursor: 'pointer'
-                  }}
-                >
-                  ✏️ Sửa
-                </button>
-                <button
-                  onClick={() => handleDelete(coupon._id)}
-                  style={{
-                    flex: 1,
-                    padding: '0.75rem',
-                    background: '#fee',
-                    color: '#e74c3c',
-                    border: 'none',
-                    borderRadius: '8px',
-                    fontWeight: '600',
-                    cursor: 'pointer'
-                  }}
-                >
-                  🗑️ Xóa
-                </button>
+                <div style={{
+                  color: isExpired ? '#e74c3c' : '#7f8c8d',
+                  fontSize: '0.85rem',
+                  marginBottom: '1rem',
+                  fontWeight: isExpired ? '600' : '400'
+                }}>
+                  {coupon.expiresAt
+                    ? `⏰ Hết hạn: ${new Date(coupon.expiresAt).toLocaleDateString('vi-VN')}`
+                    : '⏰ Không hết hạn'}
+                </div>
+
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <button
+                    onClick={() => handleEdit(coupon)}
+                    style={{
+                      flex: 1,
+                      padding: '0.75rem',
+                      background: '#43e97b20',
+                      color: '#27ae60',
+                      border: 'none',
+                      borderRadius: '8px',
+                      fontWeight: '600',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    ✏️ Sửa
+                  </button>
+                  <button
+                    onClick={() => handleDelete(coupon._id)}
+                    style={{
+                      flex: 1,
+                      padding: '0.75rem',
+                      background: '#fee',
+                      color: '#e74c3c',
+                      border: 'none',
+                      borderRadius: '8px',
+                      fontWeight: '600',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    🗑️ Xóa
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
