@@ -23,7 +23,7 @@ const StaffDashboard = () => {
     price: '',
     stock: '',
     category: '',
-    images: [''],
+    image: '',
   });
 
   // Orders state
@@ -78,7 +78,7 @@ const StaffDashboard = () => {
         ...productForm,
         price: parseFloat(productForm.price),
         stock: parseInt(productForm.stock),
-        images: productForm.images.filter(img => img.trim() !== ''),
+        image: productForm.image,
       };
 
       if (editingProduct) {
@@ -89,7 +89,7 @@ const StaffDashboard = () => {
 
       setShowModal(false);
       setEditingProduct(null);
-      setProductForm({ name: '', description: '', price: '', stock: '', category: '', images: [''] });
+      setProductForm({ name: '', description: '', price: '', stock: '', category: '', image: '' });
       loadProducts();
     } catch (err) {
       console.error('Error saving product:', err);
@@ -191,7 +191,7 @@ const StaffDashboard = () => {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
             <h2 style={{ margin: 0, color: '#2c3e50' }}>Danh sách sản phẩm</h2>
             <button
-              onClick={() => { setEditingProduct(null); setProductForm({ name: '', description: '', price: '', stock: '', category: '', images: [''] }); setShowModal(true); }}
+              onClick={() => { setEditingProduct(null); setProductForm({ name: '', description: '', price: '', stock: '', category: '', image: '' }); setShowModal(true); }}
               style={{ padding: '0.75rem 1.5rem', background: '#667eea', color: 'white', border: 'none', borderRadius: '8px', fontWeight: '600', cursor: 'pointer' }}
             >
               + Thêm sản phẩm
@@ -204,7 +204,7 @@ const StaffDashboard = () => {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '1rem' }}>
               {products.map((product) => (
                 <div key={product._id} style={{ background: 'white', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-                  <img src={product.images?.[0] || 'https://via.placeholder.com/300'} alt={product.name} style={{ width: '100%', height: '180px', objectFit: 'cover' }} />
+                  <img src={product.image || 'https://via.placeholder.com/300'} alt={product.name} style={{ width: '100%', height: '180px', objectFit: 'cover' }} />
                   <div style={{ padding: '1rem' }}>
                     <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{product.name}</h3>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
@@ -213,7 +213,7 @@ const StaffDashboard = () => {
                     </div>
                     <div style={{ display: 'flex', gap: '0.5rem' }}>
                       <button
-                        onClick={() => { setEditingProduct(product); setProductForm({ name: product.name, description: product.description || '', price: product.price.toString(), stock: product.stock.toString(), category: product.category?._id || product.category || '', images: product.images || [''] }); setShowModal(true); }}
+                        onClick={() => { setEditingProduct(product); setProductForm({ name: product.name, description: product.description || '', price: product.price.toString(), stock: product.stock.toString(), category: product.category?._id || product.category || '', image: product.image || '' }); setShowModal(true); }}
                         style={{ flex: 1, padding: '0.5rem', background: '#3498db', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem' }}
                       >
                         Sửa
@@ -386,8 +386,8 @@ const StaffDashboard = () => {
                 <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Link ảnh</label>
                 <input
                   type="text"
-                  value={productForm.images[0]}
-                  onChange={(e) => setProductForm({ ...productForm, images: [e.target.value] })}
+                  value={productForm.image}
+                  onChange={(e) => setProductForm({ ...productForm, image: e.target.value })}
                   placeholder="https://..."
                   style={{ width: '100%', padding: '0.75rem', border: '2px solid #ddd', borderRadius: '8px' }}
                 />

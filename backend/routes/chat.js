@@ -17,14 +17,14 @@ router.use(verifyToken);
 // Gửi tin nhắn
 router.post('/send', sendMessage);
 
-// Lấy tin nhắn với một người
-router.get('/:userId', getMessages);
-
-// Lấy danh sách cuộc trò chuyện
+// Lấy danh sách cuộc trò chuyện (PHẢI ĐỂ TRƯỚC /:userId)
 router.get('/conversations/all', getConversations);
 
 // Lấy danh sách admin/staff để chat
 router.get('/users/list', getChatUsers);
+
+// Lấy tin nhắn với một người
+router.get('/:userId', getMessages);
 
 // Đánh dấu đã đọc
 router.put('/read/:userId', markAsRead);
