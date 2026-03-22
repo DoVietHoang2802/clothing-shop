@@ -1,541 +1,272 @@
-# 👕 Clothing Shop - Full Stack Application
+# 👕 Clothing Shop - Hệ Thống Web Bán Hàng Full Stack
 
-Hệ thống web bán quần áo theo kiến trúc Fullstack với Node.js, Express, MongoDB (Backend) và React, Vite (Frontend).
+## 🚀 Tổng Quan Dự Án
 
-## 🚀 Live Demo
+Hệ thống web bán quần áo (giống Điện Máy Xanh) được xây dựng theo kiến trúc **RESTful API** với:
 
-- **Frontend**: https://clothing-shop-ashy.vercel.app
-- **Backend API**: https://clothing-shop-api-8wae.onrender.com/api
+| Phần | Công nghệ |
+|------|-----------|
+| **Backend** | Node.js + Express.js + MongoDB (Mongoose) |
+| **Frontend** | React 18 + Vite + React Router |
+| **Authentication** | JWT Token + Google OAuth (Firebase) |
+| **Database** | MongoDB |
+| **Real-time** | Socket.io |
 
-## 📁 Cấu Trúc Thư Mục
+---
+
+## 📁 Cấu Trúc Dự Án
 
 ```
 clothing-shop/
-├── backend/                    # Node.js + Express + MongoDB API
-│   ├── config/                 # Cấu hình (firebase, vnpay)
-│   ├── controllers/            # Logic xử lý API
-│   ├── models/                 # Schema database
-│   ├── routes/                # Định nghĩa API routes
-│   ├── middlewares/           # Middleware (auth, error handling)
-│   ├── utils/                 # Hàm tiện ích
-│   ├── server.js              # Entry point
-│   └── .env                   # Environment variables
 │
-├── frontend/                   # React + Vite
+├── backend/                          # RESTful API (Node.js + Express)
+│   ├── config/
+│   │   ├── connectDB.js             # Kết nối MongoDB
+│   │   ├── firebase.js              # Firebase Admin SDK
+│   │   ├── socket.js                # Socket.io config
+│   │   └── upload.js                # Multer upload config
+│   ├── controllers/                  # Xử lý request/response
+│   │   ├── authController.js        # Đăng ký, đăng nhập
+│   │   ├── userController.js        # Quản lý user
+│   │   ├── productController.js     # CRUD sản phẩm
+│   │   ├── categoryController.js    # CRUD danh mục
+│   │   ├── orderController.js       # CRUD đơn hàng
+│   │   ├── couponController.js      # CRUD coupon
+│   │   ├── reviewController.js      # Đánh giá sản phẩm
+│   │   ├── wishlistController.js    # Yêu thích
+│   │   ├── chatController.js        # Nhắn tin
+│   │   ├── paymentController.js    # Thanh toán
+│   │   ├── withdrawalController.js  # Rút tiền
+│   │   └── adminController.js       # Thống kê admin
+│   ├── models/                       # Schema database (MongoDB)
+│   │   ├── User.js, Product.js, Category.js, Order.js
+│   │   ├── Coupon.js, Review.js, Wishlist.js
+│   │   ├── Message.js, Withdrawal.js
+│   ├── routes/                       # Định nghĩa API endpoints
+│   ├── middlewares/                   # Middleware (auth, errorHandler)
+│   ├── app.js                         # Express app config
+│   ├── server.js                      # Entry point
+│   └── package.json
+│
+├── frontend/                         # React SPA
 │   ├── src/
-│   │   ├── components/        # Reusable UI components
-│   │   ├── context/           # React Context (Auth, Notification)
-│   │   ├── layouts/           # Layout components
-│   │   ├── pages/             # Page components
-│   │   │   ├── Admin/         # Admin pages
-│   │   │   ├── Staff/         # Staff pages
-│   │   │   └── *.jsx          # User pages
-│   │   ├── services/          # API service layer
-│   │   ├── config/            # Firebase config
-│   │   ├── App.jsx            # Main app component
-│   │   └── main.jsx           # Entry point
-│   └── .env.local             # Environment variables
+│   │   ├── components/               # Reusable components
+│   │   │   ├── Navbar.jsx, Footer.jsx, Modal.jsx
+│   │   │   ├── ProductFilterPanel.jsx, Carousel.jsx
+│   │   │   ├── ReviewForm.jsx, ReviewSection.jsx
+│   │   │   ├── ChatWidget.jsx, ToastNotification.jsx
+│   │   │   └── CouponFormModal.jsx, ProductFormModal.jsx
+│   │   ├── pages/                    # Page components
+│   │   │   ├── HomePage.jsx         # Trang chủ
+│   │   │   ├── ProductDetailPage.jsx
+│   │   │   ├── LoginPage.jsx, RegisterPage.jsx
+│   │   │   ├── CartPage.jsx, MyOrdersPage.jsx
+│   │   │   ├── WishlistPage.jsx, UserProfilePage.jsx
+│   │   │   ├── ChangePasswordPage.jsx
+│   │   │   ├── ForgotPasswordPage.jsx, ResetPasswordPage.jsx
+│   │   │   ├── PaymentResultPage.jsx, MockPaymentPage.jsx
+│   │   │   ├── Admin/               # Admin pages
+│   │   │   │   ├── AdminDashboard.jsx
+│   │   │   │   ├── AdminProductsPage.jsx
+│   │   │   │   ├── AdminOrdersPage.jsx
+│   │   │   │   ├── AdminCategoriesPage.jsx
+│   │   │   │   ├── AdminUsersPage.jsx
+│   │   │   │   ├── AdminCouponsPage.jsx
+│   │   │   │   └── AdminWithdrawalsPage.jsx
+│   │   │   └── Staff/               # Staff pages
+│   │   │       ├── StaffDashboard.jsx
+│   │   │       └── StaffProductsPage.jsx
+│   │   ├── services/                # API service layer
+│   │   │   ├── api.js               # Axios instance
+│   │   │   ├── authService.js
+│   │   │   ├── productService.js
+│   │   │   ├── orderService.js
+│   │   │   └── ... (14 service files)
+│   │   ├── context/                  # React Context
+│   │   │   ├── AuthContext.jsx       # Quản lý auth state
+│   │   │   └── NotificationContext.jsx
+│   │   ├── layouts/                  # Layout components
+│   │   │   └── MainLayout.jsx
+│   │   ├── config/                   # Firebase config
+│   │   ├── App.jsx                   # Main app
+│   │   └── main.jsx                  # Entry point
+│   └── package.json
 │
-└── README.md                  # This file
+└── README.md                         # File này
 ```
 
-## ✨ Tính Năng Đã Implement
+---
 
-### 🔐 Authentication & Authorization
+## 🔄 Cách Hoạt Động
+
+### 1. Kiến Trúc Tổng Quan
+
+```
+┌─────────────┐      HTTP/JSON       ┌─────────────┐
+│   Browser   │ ◄──────────────────► │   Backend   │
+│  (React)    │                      │  (Express)  │
+└─────────────┘                      └──────┬──────┘
+                                             │
+                                        MongoDB
+```
+
+### 2. RESTful API Flow
+
+```
+Client (Frontend)                    Server (Backend)
+     │                                    │
+     │  GET /api/products                │
+     ├──────────────────────────────────►│
+     │                                   │ Controller
+     │                                   │   │
+     │                                   │   ▼
+     │                                   │ Model (MongoDB)
+     │                                   │   │
+     │  ◄────────────────────────────────┤
+     │  JSON Response                    │
+```
+
+### 3. Authentication Flow
+
+```
+1. User đăng nhập → POST /api/auth/login
+2. Server verify → Trả về JWT token
+3. Frontend lưu token vào localStorage
+4. Request tiếp theo → Header: Authorization: Bearer <token>
+5. Middleware verifyToken → Cho phép truy cập
+```
+
+---
+
+## ✨ Tính Năng
+
+### 🔐 Authentication
 - Đăng ký / Đăng nhập (local)
-- Đăng nhập bằng Google (Firebase OAuth)
+- Đăng nhập Google (Firebase OAuth)
 - JWT Token authentication
-- 3 vai trò: `USER`, `STAFF`, `ADMIN`
-- Protected routes
+- Quên mật khẩu / Đặt lại mật khẩu
 
 ### 📦 Quản Lý Sản Phẩm
-- Tạo, chỉnh sửa, xóa sản phẩm
-- Quản lý hình ảnh sản phẩm
-- Quản lý tồn kho (stock)
-- Phân loại sản phẩm theo danh mục
-- Filter theo danh mục, tìm kiếm
+- CRUD sản phẩm (Admin/Staff)
+- Upload hình ảnh (Cloudinary)
+- Quản lý tồn kho
+- Lọc, tìm kiếm, sắp xếp
 
-### 📂 Quản Lý Danh Mục (Categories)
-- CRUD danh mục (ADMIN only)
+### 📂 Quản Lý Danh Mục
+- CRUD danh mục (Admin)
 
 ### 🛒 Giỏ Hàng & Đơn Hàng
-- Thêm sản phẩm vào giỏ hàng
-- Cập nhật số lượng, xóa sản phẩm
+- Thêm/sửa/xóa sản phẩm trong giỏ
 - Áp dụng mã giảm giá (coupon)
-- Tạo đơn hàng từ giỏ hàng
-
-### 💳 Thanh Toán (Mock Payment)
-- **Thanh toán khi nhận hàng (COD)**
-- **Thanh toán online giả lập (Mock VNPay)**
-- Trạng thái thanh toán: `UNPAID`, `PAID`
-
-### 📋 Quản Lý Đơn Hàng
-- **Luồng trạng thái đơn hàng:**
+- Luồng trạng thái đơn hàng:
   ```
   PENDING → CONFIRMED → SHIPPED → DELIVERING → ARRIVED → PAID_TO_SHIPPER → COMPLETED
-       ↓                                    ↓
-    CANCELLED                          (hoặc CANCELLED)
+       ↓                                                         ↓
+    CANCELLED                                               CANCELLED
   ```
-- User xem đơn hàng của mình
-- User hủy đơn (chỉ PENDING, CONFIRMED)
-- User xóa đơn (chỉ COMPLETED, PAID_TO_SHIPPER, CANCELLED)
-- Admin/Staff cập nhật trạng thái
-- Admin/Staff khóa đơn hoàn thành (không sửa được nữa)
-- Lọc đơn hàng theo trạng thái
-- Sắp xếp theo ngày mới nhất
 
-### 💰 Hệ Thống Rút Tiền (Mock Withdrawal)
-- User xem số dư khả dụng
-- User tạo yêu cầu rút tiền
-- Admin duyệt/từ chối rút tiền
-- Auto approve cho mock
+### 💳 Thanh Toán
+- COD (Thanh toán khi nhận hàng)
+- Mock VNPay (Giả lập thanh toán online)
 
-### 💬 Chat System (Giống Messenger)
-- User gửi tin nhắn cho Admin/Staff
-- Admin/Staff xem danh sách cuộc trò chuyện
-- Tin nhắn chưa đọc có badge đếm
-- Sắp xếp theo tin nhắn mới nhất
-- Auto refresh mỗi 5 giây
+### 💬 Chat System
+- Nhắn tin User ↔ Admin/Staff
+- Tin nhắn chưa đọc (badge)
+- Real-time với Socket.io
 
-### ⭐ Đánh Giá Sản Phẩm
-- User đánh giá sản phẩm (rating 1-5 sao)
-- Viết review
-- Xem trung bình rating sản phẩm
+### ⭐ Đánh Giá & Yêu Thích
+- Đánh giá sản phẩm (1-5 sao)
+- Wishlist (yêu thích)
 
-### ❤️ Yêu Thích (Wishlist)
-- Thêm/xóa sản phẩm yêu thích
-- Xem danh sách yêu thích
+### 💰 Withdrawal (Rút Tiền)
+- User xem số dư
+- Tạo yêu cầu rút tiền
+- Admin duyệt/từ chối
 
 ### 📊 Dashboard
-- **Admin Dashboard**: Thống kê tổng quan, quản lý users, categories, products, orders, coupons, withdrawals
-- **Staff Dashboard**: Quản lý sản phẩm và đơn hàng
+- **Admin**: Thống kê, quản lý users, categories, products, orders, coupons, withdrawals
+- **Staff**: Quản lý sản phẩm, đơn hàng
 
 ---
 
-## 🔗 API Endpoints Documentation
+## 👥 Vai Trò & Quyền Hạn
 
-### Base URL: `https://clothing-shop-api-8wae.onrender.com/api`
-
-### Authentication (`/api/auth`)
-
-| Method | Endpoint | Description | Auth | Role |
-|--------|----------|-------------|------|------|
-| POST | `/auth/register` | Đăng ký tài khoản | ❌ | - |
-| POST | `/auth/login` | Đăng nhập | ❌ | - |
-| POST | `/auth/google` | Đăng nhập Google | ✅ | - |
-| GET | `/auth/me` | Lấy thông tin user hiện tại | ✅ | All |
-
-### Users (`/api/users`)
-
-| Method | Endpoint | Description | Auth | Role |
-|--------|----------|-------------|------|------|
-| GET | `/users/profile` | Lấy profile user | ✅ | USER, STAFF, ADMIN |
-| PUT | `/users/profile` | Cập nhật profile | ✅ | USER, STAFF, ADMIN |
-| DELETE | `/users/:id` | Xóa user | ✅ | ADMIN |
-
-### Categories (`/api/categories`)
-
-| Method | Endpoint | Description | Auth | Role |
-|--------|----------|-------------|------|------|
-| GET | `/categories` | Lấy tất cả danh mục | ❌ | - |
-| POST | `/categories` | Tạo danh mục | ✅ | ADMIN |
-| PUT | `/categories/:id` | Cập nhật danh mục | ✅ | ADMIN |
-| DELETE | `/categories/:id` | Xóa danh mục | ✅ | ADMIN |
-
-### Products (`/api/products`)
-
-| Method | Endpoint | Description | Auth | Role |
-|--------|----------|-------------|------|------|
-| GET | `/products` | Lấy tất cả sản phẩm | ❌ | - |
-| GET | `/products/:id` | Lấy chi tiết sản phẩm | ❌ | - |
-| POST | `/products` | Tạo sản phẩm | ✅ | ADMIN, STAFF |
-| PUT | `/products/:id` | Cập nhật sản phẩm | ✅ | ADMIN, STAFF |
-| DELETE | `/products/:id` | Xóa sản phẩm | ✅ | ADMIN |
-
-### Orders (`/api/orders`)
-
-| Method | Endpoint | Description | Auth | Role |
-|--------|----------|-------------|------|------|
-| POST | `/orders` | Tạo đơn hàng mới | ✅ | USER, STAFF, ADMIN |
-| GET | `/orders/my` | Lấy đơn hàng của tôi | ✅ | USER, STAFF, ADMIN |
-| GET | `/orders` | Lấy tất cả đơn hàng | ✅ | ADMIN, STAFF |
-| GET | `/orders/:id` | Lấy chi tiết đơn hàng | ✅ | USER, ADMIN, STAFF |
-| PUT | `/orders/:id/status` | Cập nhật trạng thái | ✅ | ADMIN, STAFF |
-| PUT | `/orders/:id/cancel` | Hủy đơn hàng | ✅ | USER, ADMIN, STAFF |
-| PUT | `/orders/:id/paid-to-shipper` | Xác nhận đã trả tiền cho shipper | ✅ | USER |
-| DELETE | `/orders/:id` | Xóa đơn hàng (của mình) | ✅ | USER, STAFF |
-| DELETE | `/orders/admin/:id` | Xóa đơn hàng (admin) | ✅ | ADMIN |
-
-**Order Status Flow:**
-```
-PENDING → CONFIRMED → SHIPPED → DELIVERING → ARRIVED → PAID_TO_SHIPPER → COMPLETED
-   ↓                                    ↓
-CANCELLED                            CANCELLED
-```
-
-### Reviews (`/api/reviews`)
-
-| Method | Endpoint | Description | Auth | Role |
-|--------|----------|-------------|------|------|
-| GET | `/reviews/product/:productId` | Lấy reviews của sản phẩm | ❌ | - |
-| GET | `/reviews/product/:productId/average` | Lấy rating trung bình | ❌ | - |
-| POST | `/reviews` | Tạo review | ✅ | USER |
-| PUT | `/reviews/:id` | Cập nhật review | ✅ | USER |
-| DELETE | `/reviews/:id` | Xóa review | ✅ | USER, ADMIN |
-
-### Wishlist (`/api/wishlist`)
-
-| Method | Endpoint | Description | Auth | Role |
-|--------|----------|-------------|------|------|
-| GET | `/wishlist` | Lấy danh sách yêu thích | ✅ | USER, STAFF, ADMIN |
-| POST | `/wishlist/:productId` | Thêm vào yêu thích | ✅ | USER, STAFF, ADMIN |
-| DELETE | `/wishlist/:productId` | Xóa khỏi yêu thích | ✅ | USER, STAFF, ADMIN |
-
-### Coupons (`/api/coupons`)
-
-| Method | Endpoint | Description | Auth | Role |
-|--------|----------|-------------|------|------|
-| GET | `/coupons` | Lấy tất cả mã giảm giá | ❌ | - |
-| POST | `/coupons` | Tạo mã giảm giá | ✅ | ADMIN |
-| PUT | `/coupons/:id` | Cập nhật mã giảm giá | ✅ | ADMIN |
-| DELETE | `/coupons/:id` | Xóa mã giảm giá | ✅ | ADMIN |
-| POST | `/coupons/validate` | Validate mã giảm giá | ✅ | USER |
-
-### Payment (`/api/payment`)
-
-| Method | Endpoint | Description | Auth | Role |
-|--------|----------|-------------|------|------|
-| POST | `/payment/create-mock` | Tạo thanh toán mock | ✅ | USER |
-| GET | `/payment/mock/:orderId` | Trang thanh toán mock | ✅ | USER |
-| POST | `/payment/confirm-mock` | Xác nhận thanh toán mock | ✅ | USER |
-
-### Withdrawal (`/api/withdrawals`)
-
-| Method | Endpoint | Description | Auth | Role |
-|--------|----------|-------------|------|------|
-| POST | `/withdrawals` | Tạo yêu cầu rút tiền | ✅ | USER |
-| GET | `/withdrawals/my` | Lịch sử rút tiền của tôi | ✅ | USER |
-| GET | `/withdrawals/balance` | Lấy số dư khả dụng | ✅ | USER |
-| GET | `/withdrawals` | Lấy tất cả yêu cầu rút tiền | ✅ | ADMIN |
-| PUT | `/withdrawals/:id/status` | Cập nhật trạng thái | ✅ | ADMIN |
-
-### Chat (`/api/chat`)
-
-| Method | Endpoint | Description | Auth | Role |
-|--------|----------|-------------|------|------|
-| POST | `/chat/send` | Gửi tin nhắn | ✅ | All |
-| GET | `/chat/:userId` | Lấy tin nhắn với user | ✅ | All |
-| GET | `/chat/conversations/all` | Lấy danh sách cuộc trò chuyện | ✅ | All |
-| GET | `/chat/users/list` | Lấy danh sách admin/staff | ✅ | All |
-| PUT | `/chat/read/:userId` | Đánh dấu đã đọc | ✅ | All |
-| GET | `/chat/unread/count` | Lấy số tin nhắn chưa đọc | ✅ | All |
-
-### Admin Stats (`/api/admin`)
-
-| Method | Endpoint | Description | Auth | Role |
-|--------|----------|-------------|------|------|
-| GET | `/admin/stats` | Lấy thống kê tổng quan | ✅ | ADMIN |
-
----
-
-## 🧪 Testing Guide
-
-### 1. Test Authentication
-
-```bash
-# Register
-curl -X POST https://clothing-shop-api-8wae.onrender.com/api/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"name":"Test User","email":"test@example.com","password":"123456"}'
-
-# Login
-curl -X POST https://clothing-shop-api-8wae.onrender.com/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"test@example.com","password":"123456"}'
-
-# Get Token from response and use for subsequent requests
-```
-
-### 2. Test Products
-
-```bash
-# Get all products
-curl https://clothing-shop-api-8wae.onrender.com/api/products
-
-# Create product (需要 admin/staff token)
-curl -X POST https://clothing-shop-api-8wae.onrender.com/api/products \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -d '{"name":"Test Product","price":100000,"stock":10,"category":"CATEGORY_ID"}'
-```
-
-### 3. Test Orders
-
-```bash
-# Create order
-curl -X POST https://clothing-shop-api-8wae.onrender.com/api/orders \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -d '{
-    "items":[{"product":"PRODUCT_ID","quantity":2}],
-    "shippingAddress":{"name":"Nguyen Van A","phone":"0123456789","address":"123 ABC"},
-    "paymentMethod":"COD"
-  }'
-
-# Get my orders
-curl https://clothing-shop-api-8wae.onrender.com/api/orders/my \
-  -H "Authorization: Bearer YOUR_TOKEN"
-
-# Cancel order (only PENDING)
-curl -X PUT https://clothing-shop-api-8wae.onrender.com/api/orders/ORDER_ID/cancel \
-  -H "Authorization: Bearer YOUR_TOKEN"
-```
-
-### 4. Test Chat
-
-```bash
-# Send message
-curl -X POST https://clothing-shop-api-8wae.onrender.com/api/chat/send \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -d '{"receiverId":"ADMIN_USER_ID","content":"Hello Admin!"}'
-
-# Get conversations
-curl https://clothing-shop-api-8wae.onrender.com/api/chat/conversations/all \
-  -H "Authorization: Bearer YOUR_TOKEN"
-
-# Get unread count
-curl https://clothing-shop-api-8wae.onrender.com/api/chat/unread/count \
-  -H "Authorization: Bearer YOUR_TOKEN"
-```
-
-### 5. Test Withdrawal
-
-```bash
-# Get balance
-curl https://clothing-shop-api-8wae.onrender.com/api/withdrawals/balance \
-  -H "Authorization: Bearer YOUR_TOKEN"
-
-# Create withdrawal request
-curl -X POST https://clothing-shop-api-8wae.onrender.com/api/withdrawals \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -d '{
-    "amount":50000,
-    "bankName":"Vietcombank",
-    "accountNumber":"1234567890",
-    "accountHolder":"Nguyen Van A"
-  }'
-```
-
----
-
-## 👥 User Roles & Permissions
-
-| Feature | USER | STAFF | ADMIN |
-|---------|:----:|:-----:|:-----:|
+| Tính năng | USER | STAFF | ADMIN |
+|------------|:----:|:-----:|:-----:|
 | Xem sản phẩm | ✅ | ✅ | ✅ |
-| Giỏ hàng | ✅ | ✅ | ✅ |
-| Đặt hàng | ✅ | ✅ | ✅ |
-| Xem đơn hàng của mình | ✅ | ✅ | ✅ |
-| Hủy đơn (PENDING/CONFIRMED) | ✅ | ✅ | ✅ |
-| Xóa đơn (COMPLETED/CANCELLED) | ✅ | ✅ | ✅ |
-| Review sản phẩm | ✅ | ✅ | ✅ |
-| Wishlist | ✅ | ✅ | ✅ |
-| Chat với admin | ✅ | ✅ | ✅ |
-| Tạo/sửa sản phẩm | ❌ | ✅ | ✅ |
+| Mua hàng | ✅ | ✅ | ✅ |
+| CRUD sản phẩm | ❌ | ✅ | ✅ |
 | Xóa sản phẩm | ❌ | ❌ | ✅ |
-| Cập nhật trạng thái đơn | ❌ | ✅ | ✅ |
-| Xem tất cả đơn hàng | ❌ | ✅ | ✅ |
 | CRUD danh mục | ❌ | ❌ | ✅ |
+| Quản lý đơn hàng | ❌ | ✅ | ✅ |
 | CRUD coupon | ❌ | ❌ | ✅ |
 | CRUD users | ❌ | ❌ | ✅ |
-| Quản lý withdrawal | ❌ | ❌ | ✅ |
-| Xem thống kê | ❌ | ✅ | ✅ |
+| Thống kê | ❌ | ✅ | ✅ |
+| Chat | ✅ | ✅ | ✅ |
+| Rút tiền | ✅ | ✅ | ✅ |
 
 ---
 
-## 🛠️ Tech Stack
+## 🛠️ Cách Chạy Local
 
-### Backend
-- **Node.js** - JavaScript runtime
-- **Express.js** - Web framework
-- **MongoDB** - NoSQL database
-- **Mongoose** - MongoDB ODM
-- **JWT** - Authentication token
-- **bcryptjs** - Password hashing
-- **Firebase Admin SDK** - Google OAuth
-
-### Frontend
-- **React 18** - UI library
-- **Vite** - Build tool & dev server
-- **React Router** - Client-side routing
-- **Axios** - HTTP client
-- **Firebase SDK** - Google OAuth
-- **Vanilla CSS** - Styling
-
----
-
-## 📋 Database Schema (Updated)
-
-### User
-```javascript
-{
-  name: String,
-  email: String (unique),
-  password: String (hashed, nullable for OAuth),
-  role: 'USER' | 'STAFF' | 'ADMIN',
-  provider: 'local' | 'google',
-  providerId: String (OAuth ID),
-  avatar: String (URL),
-  createdAt: Date
-}
+### 1. Backend
+```bash
+cd backend
+npm install
+npm run dev
+# Server chạy: http://localhost:5000
 ```
 
-### Product
-```javascript
-{
-  name: String,
-  description: String,
-  price: Number,
-  stock: Number,
-  images: [String],
-  category: ObjectId (ref Category),
-  createdAt: Date
-}
+### 2. Frontend
+```bash
+cd frontend
+npm install
+npm run dev
+# Frontend chạy: http://localhost:5173
 ```
 
-### Order
-```javascript
-{
-  user: ObjectId (ref User),
-  items: [{
-    product: ObjectId (ref Product),
-    quantity: Number,
-    price: Number
-  }],
-  totalPrice: Number,
-  finalPrice: Number (sau khi giảm giá),
-  status: 'PENDING' | 'CONFIRMED' | 'SHIPPED' | 'DELIVERING' | 'ARRIVED' | 'PAID_TO_SHIPPER' | 'COMPLETED' | 'CANCELLED',
-  paymentMethod: 'COD' | 'ONLINE',
-  paymentStatus: 'UNPAID' | 'PAID',
-  shippingAddress: {
-    name: String,
-    phone: String,
-    address: String
-  },
-  coupon: ObjectId (ref Coupon),
-  createdAt: Date
-}
-```
+### 3. Cấu hình Environment
 
-### Message (Chat)
-```javascript
-{
-  sender: ObjectId (ref User),
-  receiver: ObjectId (ref User),
-  content: String,
-  read: Boolean (default: false),
-  createdAt: Date
-}
-```
-
-### Withdrawal
-```javascript
-{
-  user: ObjectId (ref User),
-  amount: Number,
-  bankName: String,
-  accountNumber: String,
-  accountHolder: String,
-  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'COMPLETED',
-  note: String,
-  processedAt: Date,
-  createdAt: Date
-}
-```
-
----
-
-## 🔧 Environment Variables
-
-### Backend (.env)
+**Backend (.env)**
 ```
 PORT=5000
 MONGO_URI=mongodb://localhost:27017/clothing_shop
-JWT_SECRET=your_secret_key_here
-FIREBASE_SERVICE_ACCOUNT_PATH=backend/serviceAccountKey.json
-# Hoặc
+JWT_SECRET=your_secret_key
 FIREBASE_SERVICE_ACCOUNT={"type":"service_account",...}
 ```
 
-### Frontend (.env.local)
+**Frontend (.env.local)**
 ```
 VITE_API_BASE_URL=http://localhost:5000/api
-VITE_FIREBASE_API_KEY=your_api_key
-VITE_FIREBASE_AUTH_DOMAIN=your_auth_domain
-VITE_FIREBASE_PROJECT_ID=your_project_id
-VITE_FIREBASE_STORAGE_BUCKET=your_storage_bucket
-VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-VITE_FIREBASE_APP_ID=your_app_id
 ```
 
 ---
 
 ## 🚀 Deployment
 
-### Backend (Render)
-1. Connect GitHub repo to Render
-2. Build command: `npm run start`
-3. Start command: `node server.js`
-4. Add environment variables in Render dashboard
-
-### Frontend (Vercel)
-1. Connect GitHub repo to Vercel
-2. Framework: Vite
-3. Build command: `npm run build`
-4. Output directory: `dist`
-5. Add environment variables in Vercel dashboard
+- **Backend**: Render (https://clothing-shop-api-8wae.onrender.com)
+- **Frontend**: Vercel (https://clothing-shop-ashy.vercel.app)
 
 ---
 
-## ✅ Development History
+## 📝 Tài Liệu Test API
 
-### Phase 1: Basic Setup
-- [x] Project structure
-- [x] Backend Express setup
-- [x] MongoDB connection
-- [x] React + Vite setup
-
-### Phase 2: Core Features
-- [x] User authentication (register/login)
-- [x] JWT authentication
-- [x] Role-based access control
-- [x] Product CRUD
-- [x] Category CRUD
-- [x] Cart management
-- [x] Order creation
-
-### Phase 3: Enhanced Features
-- [x] Google OAuth (Firebase)
-- [x] Order status management
-- [x] COD payment flow
-- [x] Mock payment (VNPay simulation)
-- [x] Review system
-- [x] Wishlist
-
-### Phase 4: Advanced Features
-- [x] Withdrawal system (mock)
-- [x] Chat system (Messenger-like)
-- [x] Admin dashboard stats
-- [x] Staff dashboard
-- [x] Order completion locking
-- [x] Order deletion
+- **Test Localhost**: Xem `API_TEST_LOCALHOST.md`
+- **Test Deployed**: Xem `API_TEST_DEPLOYED.md`
 
 ---
 
-## 📞 Support
+## ✅ Yêu Cầu Đồ Án Đã Đạt
 
-**Made with ❤️ for learning fullstack development**
+| Yêu cầu | Trạng thái |
+|----------|------------|
+| Viết bằng Node.js | ✅ |
+| RESTful API | ✅ |
+| MongoDB | ✅ |
+| Không dùng MVC | ✅ |
+| Có báo cáo | ✅ |
+| Có giao diện | ✅ |
 
-For questions, please refer to the API documentation above or check the source code.
+---
+
+**© 2026 - Clothing Shop Project**
