@@ -97,12 +97,18 @@ const StaffDashboard = () => {
       setLoading(true);
       const params = {
         page: currentPage,
-        limit: 12,
+        limit: 50, // Load nhiều hơn
       };
       if (productSearch) params.search = productSearch;
       if (productCategory) params.category = productCategory;
-      if (productStockFilter === 'LOW') params.lowStock = true;
-      if (productStockFilter === 'OUT') params.outOfStock = true;
+
+      // Filter theo stock - CHỈ khi chọn LOW hoặc OUT
+      if (productStockFilter === 'LOW') {
+        params.lowStock = 'true';
+      } else if (productStockFilter === 'OUT') {
+        params.outOfStock = 'true';
+      }
+      // ALL = không có filter, hiện tất cả
 
       const res = await productService.getAllProducts(params);
       setProducts(res.data.data || []);

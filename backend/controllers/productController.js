@@ -6,7 +6,7 @@ const asyncHandler = require('../utils/asyncHandler');
 // @access  Public
 // Query params: search, category, minPrice, maxPrice, page, limit, sortBy
 const getAllProducts = asyncHandler(async (req, res, next) => {
-  const { search, category, minPrice, maxPrice, page = 1, limit = 10, sortBy } = req.query;
+  const { search, category, minPrice, maxPrice, page = 1, limit = 10, sortBy, lowStock, outOfStock } = req.query;
   let query = {};
 
   // Search by name
@@ -28,6 +28,14 @@ const getAllProducts = asyncHandler(async (req, res, next) => {
     if (maxPrice) {
       query.price.$lte = parseFloat(maxPrice);
     }
+  }
+
+  // Filter by stock
+  if (lowStock === 'true') {
+    query.stock = { $lte: 5, $gt: 0 }; // Sắp hết: > 0 và <= 5
+  }
+  if (outOfStock === 'true') {
+    query.stock = 0; // Hết hàng
   }
 
   // Pagination
