@@ -17,6 +17,8 @@ import WishlistPage from './pages/WishlistPage';
 import PaymentResultPage from './pages/PaymentResultPage';
 import MockPaymentPage from './pages/MockPaymentPage';
 import WithdrawalPage from './pages/WithdrawalPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 
 // Admin Pages
 import AdminDashboard from './pages/Admin/AdminDashboard';
@@ -44,6 +46,8 @@ function App() {
             <Route path="/products/:id" element={<ProductDetailPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
             <Route path="/payment-result" element={<PaymentResultPage />} />
             <Route path="/mock-payment" element={<MockPaymentPage />} />
 

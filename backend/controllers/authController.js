@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const User = require('../models/User');
 const asyncHandler = require('../utils/asyncHandler');
 const admin = require('../config/firebase');
@@ -297,6 +298,15 @@ const changePassword = asyncHandler(async (req, res, next) => {
     });
   }
 
+  // OAuth users don't have password
+  if (user.provider !== 'local') {
+    return res.status(400).json({
+      success: false,
+      message: 'Tài khoản Google không có mật khẩu. Vui lòng sử dụng đăng nhập Google.',
+      data: null,
+    });
+  }
+
   // Check current password
   const isMatch = await user.matchPassword(currentPassword);
   if (!isMatch) {
@@ -318,10 +328,119 @@ const changePassword = asyncHandler(async (req, res, next) => {
   });
 });
 
+// @desc    Quên mật khẩu - gửi email reset
+// @route   POST /api/auth/forgot-password
+// @access  Public
+const forgotPassword = asyncHandler(async (req, res, next) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({
+      success: false,
+      message: 'Vui lòng cung cấp email',
+      data: null,
+    });
+  }
+
+  const user = await User.findOne({ email });
+
+  // Không tiết lộ email có tồn tại hay không (security)
+  if (!user || user.provider !== 'local') {
+    return res.status(200).json({
+      success: true,
+      message: 'Nếu email tồn tại trong hệ thống, bạn sẽ nhận được liên kết đặt lại mật khẩu.',
+      data: null,
+    });
+  }
+
+  // Tạo reset token
+  const resetToken = crypto.randomBytes(32).toString('hex');
+  const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password/${resetToken}`;
+
+  // Lưu token vào database (hash trước khi lưu)
+  user.resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+  user.resetPasswordExpires = Date.now() + 15 * 60 * 1000; // 15 phút
+  await user.save();
+
+  res.status(200).json({
+    success: true,
+    message: 'Nếu email tồn tại trong hệ thống, bạn sẽ nhận được liên kết đặt lại mật khẩu.',
+    data: {
+      // ⚠️ DEV MODE: Trả token về để test. Production nên gửi email thật.
+      resetToken: resetToken,
+      resetUrl: resetUrl,
+      expiresIn: '15 phút',
+    },
+  });
+});
+
+// @desc    Reset mật khẩu với token
+// @route   POST /api/auth/reset-password/:token
+// @access  Public
+const resetPassword = asyncHandler(async (req, res, next) => {
+  const { token } = req.params;
+  const { newPassword, confirmPassword } = req.body;
+
+  if (!newPassword || !confirmPassword) {
+    return res.status(400).json({
+      success: false,
+      message: 'Vui lòng cung cấp mật khẩu mới và xác nhận mật khẩu',
+      data: null,
+    });
+  }
+
+  if (newPassword !== confirmPassword) {
+    return res.status(400).json({
+      success: false,
+      message: 'Mật khẩu mới không khớp',
+      data: null,
+    });
+  }
+
+  if (newPassword.length < 6) {
+    return res.status(400).json({
+      success: false,
+      message: 'Mật khẩu mới phải có ít nhất 6 ký tự',
+      data: null,
+    });
+  }
+
+  // Hash token để so sánh với database
+  const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+  // Tìm user với token và kiểm tra hết hạn
+  const user = await User.findOne({
+    resetPasswordToken: hashedToken,
+    resetPasswordExpires: { $gt: Date.now() },
+  });
+
+  if (!user) {
+    return res.status(400).json({
+      success: false,
+      message: 'Token không hợp lệ hoặc đã hết hạn',
+      data: null,
+    });
+  }
+
+  // Cập nhật mật khẩu mới
+  user.password = newPassword;
+  user.resetPasswordToken = undefined;
+  user.resetPasswordExpires = undefined;
+  await user.save();
+
+  res.status(200).json({
+    success: true,
+    message: 'Đặt lại mật khẩu thành công. Bạn có thể đăng nhập với mật khẩu mới.',
+    data: null,
+  });
+});
+
 module.exports = {
   register,
   login,
   googleAuth,
   refreshToken,
   changePassword,
+  forgotPassword,
+  resetPassword,
 };

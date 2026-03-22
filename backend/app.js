@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 
 // Import routes
 const authRoutes = require('./routes/auth');
@@ -31,6 +32,9 @@ const corsOptions = {
 // Middlewares
 app.use(express.json());
 app.use(cors(corsOptions));
+
+// Serve uploaded files
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Add COOP/COEP headers for better security with OAuth
 app.use((req, res, next) => {

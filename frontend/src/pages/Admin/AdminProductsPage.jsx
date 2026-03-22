@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import productService from '../../services/productService';
 import categoryService from '../../services/categoryService';
@@ -12,6 +12,7 @@ const AdminProductsPage = () => {
   const [success, setSuccess] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [uploading, setUploading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -21,6 +22,8 @@ const AdminProductsPage = () => {
     category: '',
   });
   const [searchTerm, setSearchTerm] = useState('');
+  const [imagePreview, setImagePreview] = useState('');
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     loadData();
@@ -77,6 +80,7 @@ const AdminProductsPage = () => {
     });
     setEditingId(product._id);
     setShowForm(true);
+    setImagePreview(product.image || '');
   };
 
   const handleDelete = async (id) => {
@@ -103,6 +107,40 @@ const AdminProductsPage = () => {
       category: '',
     });
     setEditingId(null);
+    setImagePreview('');
+  };
+
+  const handleImageSelect = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Kích thước ảnh không được vượt quá 5MB');
+      return;
+    }
+
+    // Preview image locally
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setImagePreview(event.target.result);
+    };
+    reader.readAsDataURL(file);
+
+    // Upload to server
+    const uploadImage = async () => {
+      setUploading(true);
+      try {
+        const res = await productService.uploadProductImage(file);
+        setFormData({ ...formData, image: res.data.data.url });
+        setError('');
+      } catch (err) {
+        setError('Upload ảnh thất bại. Vui lòng thử lại.');
+        setImagePreview('');
+      } finally {
+        setUploading(false);
+      }
+    };
+    uploadImage();
   };
 
   const filteredProducts = products.filter(product =>
@@ -392,14 +430,87 @@ const AdminProductsPage = () => {
                 />
               </div>
               <div style={{ gridColumn: '1 / -1' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>URL Hình ảnh</label>
-                <input
-                  type="text"
-                  value={formData.image}
-                  onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                  placeholder="https://..."
-                  style={{ width: '100%', padding: '0.75rem', border: '2px solid #e0e0e0', borderRadius: '8px' }}
-                />
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Hình ảnh sản phẩm</label>
+                <div style={{
+                  display: 'flex',
+                  gap: '1rem',
+                  alignItems: imagePreview || formData.image ? 'flex-start' : 'center',
+                  flexDirection: imagePreview || formData.image ? 'row' : 'column'
+                }}>
+                  {/* Image preview */}
+                  {(imagePreview || formData.image) && (
+                    <div style={{ position: 'relative' }}>
+                      <img
+                        src={imagePreview || formData.image}
+                        alt="Preview"
+                        style={{
+                          width: '120px',
+                          height: '120px',
+                          objectFit: 'cover',
+                          borderRadius: '8px',
+                          border: '2px solid #e0e0e0'
+                        }}
+                      />
+                      {uploading && (
+                        <div style={{
+                          position: 'absolute',
+                          top: 0, left: 0, right: 0, bottom: 0,
+                          background: 'rgba(255,255,255,0.8)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          borderRadius: '8px'
+                        }}>
+                          ⏳
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Upload button */}
+                  <div>
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleImageSelect}
+                      accept="image/*"
+                      style={{ display: 'none' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploading}
+                      style={{
+                        padding: '0.75rem 1.5rem',
+                        background: uploading ? '#ccc' : '#4facfe',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '8px',
+                        cursor: uploading ? 'not-allowed' : 'pointer',
+                        fontWeight: '600'
+                      }}
+                    >
+                      {uploading ? '⏳ Đang upload...' : '📷 Chọn ảnh'}
+                    </button>
+
+                    {/* URL fallback */}
+                    <div style={{ marginTop: '0.5rem' }}>
+                      <input
+                        type="text"
+                        value={formData.image}
+                        onChange={(e) => { setFormData({ ...formData, image: e.target.value }); setImagePreview(''); }}
+                        placeholder="Hoặc dán URL ảnh..."
+                        style={{
+                          width: '250px',
+                          padding: '0.5rem',
+                          border: '2px solid #e0e0e0',
+                          borderRadius: '8px',
+                          fontSize: '0.85rem'
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
               <div style={{ gridColumn: '1 / -1' }}>
                 <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Mô tả</label>

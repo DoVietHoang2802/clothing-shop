@@ -1,5 +1,6 @@
 const Product = require('../models/Product');
 const asyncHandler = require('../utils/asyncHandler');
+const path = require('path');
 
 // @desc    Lấy tất cả sản phẩm (với search, filter, pagination, sort)
 // @route   GET /api/products
@@ -232,10 +233,36 @@ const deleteProduct = asyncHandler(async (req, res, next) => {
   });
 });
 
+// @desc    Upload ảnh sản phẩm
+// @route   POST /api/products/upload
+// @access  Private/ADMIN,STAFF
+const uploadProductImage = asyncHandler(async (req, res, next) => {
+  if (!req.file) {
+    return res.status(400).json({
+      success: false,
+      message: 'Vui lòng chọn file ảnh',
+      data: null,
+    });
+  }
+
+  const baseUrl = `${req.protocol}://${req.get('host')}`;
+  const imageUrl = `${baseUrl}/uploads/${req.file.filename}`;
+
+  res.status(200).json({
+    success: true,
+    message: 'Upload ảnh thành công',
+    data: {
+      url: imageUrl,
+      filename: req.file.filename,
+    },
+  });
+});
+
 module.exports = {
   getAllProducts,
   getProductById,
   createProduct,
   updateProduct,
   deleteProduct,
+  uploadProductImage,
 };

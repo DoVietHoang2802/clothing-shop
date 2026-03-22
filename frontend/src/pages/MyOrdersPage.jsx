@@ -117,6 +117,34 @@ const MyOrdersPage = () => {
     return statusMap[status] || { label: status, color: '#7f8c8d', bg: '#7f8c8d20' };
   };
 
+  const getStatusIndex = (status) => {
+    const order = ['PENDING', 'CONFIRMED', 'SHIPPED', 'DELIVERING', 'ARRIVED', 'PAID_TO_SHIPPER', 'COMPLETED'];
+    const cancelIdx = order.indexOf('CANCELLED');
+    return order.indexOf(status);
+  };
+
+  const getTimelineSteps = (status) => {
+    const allSteps = [
+      { key: 'PENDING', label: 'Đặt hàng', icon: '📝' },
+      { key: 'CONFIRMED', label: 'Xác nhận', icon: '✅' },
+      { key: 'SHIPPED', label: 'Giao ĐVVC', icon: '📦' },
+      { key: 'DELIVERING', label: 'Đang giao', icon: '🚚' },
+      { key: 'ARRIVED', label: 'Đến nơi', icon: '🏪' },
+      { key: 'PAID_TO_SHIPPER', label: 'Thanh toán', icon: '💵' },
+      { key: 'COMPLETED', label: 'Hoàn tất', icon: '🎉' },
+    ];
+
+    if (status === 'CANCELLED') {
+      return allSteps.map(step => ({ ...step, active: false, cancelled: step.key === 'CONFIRMED' }));
+    }
+
+    const currentIdx = getStatusIndex(status);
+    return allSteps.map((step, idx) => ({
+      ...step,
+      active: idx <= currentIdx,
+    }));
+  };
+
   const getFilteredOrders = () => {
     let filtered = orders;
     if (filterStatus === 'ALL') filtered = orders;
@@ -369,6 +397,85 @@ const MyOrdersPage = () => {
                         </p>
                       </div>
                     )}
+
+                    {/* Timeline theo dõi đơn hàng */}
+                    <div style={{
+                      padding: '1rem',
+                      marginBottom: '1rem',
+                      background: order.status === 'CANCELLED' ? '#fee' : '#f8f9fa',
+                      borderRadius: '8px'
+                    }}>
+                      <div style={{ fontWeight: '600', color: '#2c3e50', fontSize: '0.85rem', marginBottom: '0.75rem' }}>
+                        {order.status === 'CANCELLED' ? '❌ Đơn hàng đã bị hủy' : '📍 Theo dõi đơn hàng'}
+                      </div>
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'flex-start',
+                        position: 'relative'
+                      }}>
+                        {/* Line connecting steps */}
+                        <div style={{
+                          position: 'absolute',
+                          top: '16px',
+                          left: '20px',
+                          right: '20px',
+                          height: '3px',
+                          background: '#e0e0e0',
+                          zIndex: 0
+                        }} />
+
+                        {getTimelineSteps(order.status).map((step, idx) => (
+                          <div key={step.key} style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            zIndex: 1,
+                            flex: 1
+                          }}>
+                            <div style={{
+                              width: '36px',
+                              height: '36px',
+                              borderRadius: '50%',
+                              background: step.cancelled
+                                ? '#e74c3c'
+                                : step.active
+                                  ? '#667eea'
+                                  : '#e0e0e0',
+                              color: step.cancelled
+                                ? '#fff'
+                                : step.active
+                                  ? '#fff'
+                                  : '#aaa',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: '0.9rem',
+                              fontWeight: '700',
+                              marginBottom: '0.35rem',
+                              boxShadow: step.active ? '0 2px 8px rgba(102,126,234,0.4)' : 'none',
+                              textDecoration: step.cancelled ? 'line-through' : 'none',
+                            }}>
+                              {step.active && !step.cancelled ? idx + 1 : step.icon}
+                            </div>
+                            <div style={{
+                              fontSize: '0.65rem',
+                              fontWeight: step.active ? '700' : '400',
+                              color: step.cancelled
+                                ? '#e74c3c'
+                                : step.active
+                                  ? '#667eea'
+                                  : '#aaa',
+                              textAlign: 'center',
+                              maxWidth: '45px',
+                              lineHeight: 1.2
+                            }}>
+                              {step.label}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
 
                     {/* Danh sách sản phẩm */}
                     <div style={{ marginBottom: '1rem' }}>

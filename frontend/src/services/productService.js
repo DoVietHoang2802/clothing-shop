@@ -34,6 +34,14 @@ const productService = {
   deleteProduct: (id) => {
     return api.delete(`/products/${id}`);
   },
+
+  uploadProductImage: (file) => {
+    const formData = new FormData();
+    formData.append('image', file);
+    return api.post('/products/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
 };
 
 export default productService;

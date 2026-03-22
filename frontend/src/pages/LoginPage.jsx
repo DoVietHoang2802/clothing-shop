@@ -103,6 +103,15 @@ const LoginPage = () => {
             />
           </div>
 
+          <div style={{ textAlign: 'right', marginTop: '-0.5rem' }}>
+            <Link
+              to="/forgot-password"
+              style={{ fontSize: '0.85rem', color: '#667eea' }}
+            >
+              Quên mật khẩu?
+            </Link>
+          </div>
+
           <button
             type="submit"
             className="btn btn-primary"

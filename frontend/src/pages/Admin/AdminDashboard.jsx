@@ -1,24 +1,47 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import {
+  LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
+} from 'recharts';
 import adminService from '../../services/adminService';
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState(null);
+  const [chartData, setChartData] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadStats();
+    loadData();
   }, []);
 
-  const loadStats = async () => {
+  const loadData = async () => {
     try {
-      const res = await adminService.getStats();
-      setStats(res.data.data);
+      const [statsRes, chartRes] = await Promise.all([
+        adminService.getStats(),
+        adminService.getChartData(),
+      ]);
+      setStats(statsRes.data.data);
+      setChartData(chartRes.data.data);
     } catch (err) {
-      console.error('Error loading stats:', err);
+      console.error('Error loading data:', err);
     } finally {
       setLoading(false);
     }
+  };
+
+  const formatCurrency = (value) => {
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND',
+      maximumFractionDigits: 0,
+    }).format(value);
+  };
+
+  const formatCurrencyShort = (value) => {
+    if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
+    if (value >= 1000) return `${(value / 1000).toFixed(0)}K`;
+    return value;
   };
 
   const menuItems = [
@@ -319,6 +342,124 @@ const AdminDashboard = () => {
               </p>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* Charts Section */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(2, 1fr)',
+        gap: '1.5rem',
+        marginBottom: '2rem'
+      }}>
+        {/* Revenue Chart */}
+        <div style={{
+          background: 'white',
+          borderRadius: '16px',
+          padding: '1.5rem',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
+        }}>
+          <h3 style={{ margin: '0 0 1rem 0', color: '#2c3e50', fontSize: '1.1rem' }}>
+            💰 Doanh thu theo tháng
+          </h3>
+          <ResponsiveContainer width="100%" height={250}>
+            <BarChart data={chartData?.revenueByMonth || []}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+              <YAxis tickFormatter={formatCurrencyShort} tick={{ fontSize: 11 }} />
+              <Tooltip formatter={(value) => formatCurrency(value)} />
+              <Bar dataKey="revenue" fill="#667eea" radius={[8, 8, 0, 0]} name="Doanh thu" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Orders by Status Pie Chart */}
+        <div style={{
+          background: 'white',
+          borderRadius: '16px',
+          padding: '1.5rem',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
+        }}>
+          <h3 style={{ margin: '0 0 1rem 0', color: '#2c3e50', fontSize: '1.1rem' }}>
+            📦 Đơn hàng theo trạng thái
+          </h3>
+          <ResponsiveContainer width="100%" height={250}>
+            <PieChart>
+              <Pie
+                data={chartData?.ordersByStatus || []}
+                cx="50%"
+                cy="50%"
+                innerRadius={50}
+                outerRadius={90}
+                paddingAngle={3}
+                dataKey="value"
+              >
+                {(chartData?.ordersByStatus || []).map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.color} />
+                ))}
+              </Pie>
+              <Tooltip />
+              <Legend
+                formatter={(value, entry) => <span style={{ fontSize: '0.75rem' }}>{value}</span>}
+              />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Users Growth Chart */}
+        <div style={{
+          background: 'white',
+          borderRadius: '16px',
+          padding: '1.5rem',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
+        }}>
+          <h3 style={{ margin: '0 0 1rem 0', color: '#2c3e50', fontSize: '1.1rem' }}>
+            👥 Người dùng mới
+          </h3>
+          <ResponsiveContainer width="100%" height={250}>
+            <LineChart data={chartData?.usersByMonth || []}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+              <YAxis tick={{ fontSize: 11 }} />
+              <Tooltip />
+              <Line
+                type="monotone"
+                dataKey="users"
+                stroke="#27ae60"
+                strokeWidth={3}
+                dot={{ fill: '#27ae60', r: 5 }}
+                name="Người dùng"
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Top Products */}
+        <div style={{
+          background: 'white',
+          borderRadius: '16px',
+          padding: '1.5rem',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
+        }}>
+          <h3 style={{ margin: '0 0 1rem 0', color: '#2c3e50', fontSize: '1.1rem' }}>
+            🏆 Top sản phẩm bán chạy
+          </h3>
+          {chartData?.topProducts?.length > 0 ? (
+            <ResponsiveContainer width="100%" height={250}>
+              <BarChart data={chartData?.topProducts || []} layout="vertical">
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis type="number" tick={{ fontSize: 11 }} />
+                <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 11 }} />
+                <Tooltip formatter={(value, name) => name === 'sold' ? [value, 'Đã bán'] : [formatCurrency(value), 'Doanh thu']} />
+                <Bar dataKey="sold" fill="#fa709a" radius={[0, 8, 8, 0]} name="sold" />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div style={{ textAlign: 'center', padding: '3rem 0', color: '#999' }}>
+              <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>📊</div>
+              <p style={{ margin: 0 }}>Chưa có dữ liệu</p>
+            </div>
+          )}
         </div>
       </div>
 

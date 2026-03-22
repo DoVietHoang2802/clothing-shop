@@ -5,13 +5,18 @@ const {
   createProduct,
   updateProduct,
   deleteProduct,
+  uploadProductImage,
 } = require('../controllers/productController');
 const { verifyToken, authorizeRoles } = require('../middlewares/auth');
+const upload = require('../config/upload');
 
 const router = express.Router();
 
 // GET /api/products - Lấy tất cả sản phẩm (Public)
 router.get('/', getAllProducts);
+
+// POST /api/products/upload - Upload ảnh (ADMIN, STAFF) - phải để trước /:id
+router.post('/upload', verifyToken, authorizeRoles('ADMIN', 'STAFF'), upload.single('image'), uploadProductImage);
 
 // GET /api/products/:id - Lấy một sản phẩm (Public)
 router.get('/:id', getProductById);

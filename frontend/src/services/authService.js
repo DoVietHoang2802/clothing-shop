@@ -66,6 +66,14 @@ const authService = {
   googleLogin: (googleToken) => {
     return api.post('/auth/google', { googleToken });
   },
+
+  forgotPassword: (email) => {
+    return api.post('/auth/forgot-password', { email });
+  },
+
+  resetPassword: (token, newPassword, confirmPassword) => {
+    return api.post(`/auth/reset-password/${token}`, { newPassword, confirmPassword });
+  },
 };
 
 export default authService;
