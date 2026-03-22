@@ -267,7 +267,6 @@ const getConversations = asyncHandler(async (req, res, next) => {
     });
 
   } catch (err) {
-    console.error('Error in getConversations:', err);
     return res.status(500).json({
       success: false,
       message: 'Lỗi khi lấy danh sách cuộc trò chuyện',

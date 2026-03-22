@@ -22,8 +22,6 @@ const MyOrdersPage = () => {
 
     // Listen for real-time order updates
     socketService.onOrderUpdate((data) => {
-      console.log('📦 Received order update:', data);
-
       // Update the specific order in the list
       setOrders(prevOrders => {
         const index = prevOrders.findIndex(o => o._id === data.orderId);

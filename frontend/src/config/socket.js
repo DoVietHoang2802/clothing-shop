@@ -19,7 +19,6 @@ class SocketService {
     });
 
     this.socket.on('connect', () => {
-      console.log('🔌 Socket connected:', this.socket.id);
       this.connected = true;
 
       // Join user's personal room
@@ -29,12 +28,11 @@ class SocketService {
     });
 
     this.socket.on('disconnect', () => {
-      console.log('❌ Socket disconnected');
       this.connected = false;
     });
 
-    this.socket.on('connect_error', (error) => {
-      console.log('⚠️ Socket connection error:', error.message);
+    this.socket.on('connect_error', () => {
+      // Connection errors are handled silently - real-time features degrade gracefully
     });
   }
 
@@ -50,7 +48,6 @@ class SocketService {
   onOrderUpdate(callback) {
     if (!this.socket) return;
     this.socket.on('order_updated', (data) => {
-      console.log('📦 Order updated:', data);
       callback(data);
     });
   }
@@ -65,7 +62,6 @@ class SocketService {
   onNewMessage(callback) {
     if (!this.socket) return;
     this.socket.on('new_message', (data) => {
-      console.log('💬 New message:', data);
       callback(data);
     });
   }

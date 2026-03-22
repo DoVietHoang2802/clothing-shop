@@ -5,16 +5,9 @@ const asyncHandler = require('../utils/asyncHandler');
 // @route   GET /api/users/profile
 // @access  Private
 const getProfile = asyncHandler(async (req, res, next) => {
-  console.log('=== GET PROFILE ===');
-  console.log('User ID từ token:', req.user?.id);
-  
   const user = await User.findById(req.user.id).select('-password');
-  
-  console.log('User tìm được:', user ? 'Có' : 'Không');
-  console.log('User data:', user);
 
   if (!user) {
-    console.log('❌ User không tìm thấy');
     return res.status(404).json({
       success: false,
       message: 'Người dùng không tìm thấy',
@@ -22,7 +15,6 @@ const getProfile = asyncHandler(async (req, res, next) => {
     });
   }
 
-  console.log('✅ User tìm thấy:', user.email);
   res.status(200).json({
     success: true,
     message: 'Lấy profile thành công',

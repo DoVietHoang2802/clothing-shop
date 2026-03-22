@@ -163,7 +163,6 @@ const createOrder = asyncHandler(async (req, res, next) => {
       paymentStatus: 'PENDING',
     });
   } catch (err) {
-    console.error('Order creation failed:', err);
     return res.status(500).json({
       success: false,
       message: 'Tạo đơn hàng thất bại',
@@ -208,11 +207,10 @@ const getMyOrders = asyncHandler(async (req, res, next) => {
       data: orders || [],
     });
   } catch (error) {
-    console.error('getMyOrders error:', error);
-    res.status(200).json({
-      success: true,
-      message: 'Lấy danh sách đơn hàng thành công',
-      data: [],
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi khi lấy danh sách đơn hàng',
+      data: null,
     });
   }
 });
@@ -278,11 +276,10 @@ const getAllOrders = asyncHandler(async (req, res, next) => {
       data: orders || [],
     });
   } catch (error) {
-    console.error('getAllOrders error:', error);
-    res.status(200).json({
-      success: true,
-      message: 'Lấy danh sách đơn hàng thành công',
-      data: [],
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi khi lấy danh sách đơn hàng',
+      data: null,
     });
   }
 });
