@@ -1,0 +1,3 @@
+# This directory stores uploaded product images
+# WARNING: Images here are NOT persisted on cloud platforms like Render!
+# Use external image URLs (e.g., from Imgur, Cloudinary, AWS S3) for production
