@@ -376,6 +376,226 @@
 
 ---
 
+### 10. PAYMENT - Thanh toán (Mock VNPay)
+
+#### POST `/api/payment/vnpay/create` - Tạo link thanh toán mock
+- **Access:** Private (USER)
+- **Headers:** `Authorization: Bearer <token>`
+- **Body:**
+```json
+{
+  "orderId": "order_id"
+}
+```
+- **Response:**
+```json
+{
+  "success": true,
+  "message": "Tạo link thanh toán thành công",
+  "data": {
+    "paymentUrl": "/mock-payment?orderId=xxx&amount=xxx",
+    "orderId": "xxx",
+    "amount": 500000
+  }
+}
+```
+
+#### POST `/api/payment/mock/confirm` - Xác nhận thanh toán mock
+- **Access:** Private (USER)
+- **Headers:** `Authorization: Bearer <token>`
+- **Body:**
+```json
+{
+  "orderId": "order_id"
+}
+```
+- **Response:**
+```json
+{
+  "success": true,
+  "message": "Thanh toán thành công!",
+  "data": {
+    "orderId": "xxx",
+    "paymentStatus": "PAID",
+    "status": "CONFIRMED"
+  }
+}
+```
+
+#### POST `/api/payment/mock/cancel` - Hủy thanh toán mock
+- **Access:** Private (USER)
+- **Headers:** `Authorization: Bearer <token>`
+- **Body:**
+```json
+{
+  "orderId": "order_id"
+}
+```
+- **Note:** Khi hủy, đơn hàng sẽ bị CANCELLED và stock sẽ được restore
+
+---
+
+### 11. WITHDRAWAL - Rút tiền
+
+#### GET `/api/withdrawals/balance` - Lấy số dư khả dụng
+- **Access:** Private (USER)
+- **Headers:** `Authorization: Bearer <token>`
+- **Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "totalRevenue": 5000000,
+    "totalWithdrawn": 1000000,
+    "availableBalance": 4000000
+  }
+}
+```
+
+#### POST `/api/withdrawals` - Tạo yêu cầu rút tiền
+- **Access:** Private (USER)
+- **Headers:** `Authorization: Bearer <token>`
+- **Body:**
+```json
+{
+  "amount": 1000000,
+  "bankName": "Vietcombank",
+  "accountNumber": "1234567890",
+  "accountHolder": "NGUYEN VAN A"
+}
+```
+- **Note:** Số tiền rút tối thiểu là 10,000 VNĐ
+
+#### GET `/api/withdrawals/my` - Lấy danh sách rút tiền của tôi
+- **Access:** Private (USER)
+
+#### GET `/api/withdrawals` - Lấy tất cả yêu cầu rút tiền (Admin)
+- **Access:** Private (ADMIN)
+
+#### PUT `/api/withdrawals/:id/status` - Cập nhật trạng thái rút tiền (Admin)
+- **Access:** Private (ADMIN)
+- **Body:**
+```json
+{
+  "status": "COMPLETED",
+  "note": "Đã chuyển khoản"
+}
+```
+- **Status values:** PENDING, APPROVED, REJECTED, COMPLETED
+
+---
+
+### 12. CHAT - Nhắn tin
+
+#### POST `/api/chat/send` - Gửi tin nhắn
+- **Access:** Private (USER, STAFF, ADMIN)
+- **Headers:** `Authorization: Bearer <token>`
+- **Body:**
+```json
+{
+  "receiverId": "user_id",
+  "message": "Xin chào, tôi cần hỗ trợ!"
+}
+```
+
+#### GET `/api/chat/:userId` - Lấy tin nhắn với một người
+- **Access:** Private
+
+#### GET `/api/chat/conversations/all` - Lấy danh sách cuộc trò chuyện
+- **Access:** Private
+- **Response:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "user": {
+        "_id": "xxx",
+        "name": "Admin",
+        "email": "admin@shop.com",
+        "avatar": "https://...",
+        "role": "ADMIN"
+      },
+      "lastMessage": {
+        "sender": "xxx",
+        "receiver": "xxx",
+        "message": "Tin nhắn cuối",
+        "createdAt": "2024-01-01T00:00:00.000Z"
+      },
+      "unreadCount": 2
+    }
+  ]
+}
+```
+
+#### GET `/api/chat/users/list` - Lấy danh sách admin/staff để chat
+- **Access:** Private
+
+#### PUT `/api/chat/read/:userId` - Đánh dấu tin nhắn đã đọc
+- **Access:** Private
+
+#### GET `/api/chat/unread/count` - Lấy số tin nhắn chưa đọc
+- **Access:** Private
+- **Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "unreadCount": 5
+  }
+}
+```
+
+---
+
+### 13. ORDER - Trạng thái đơn hàng (Chi tiết)
+
+#### Order Status Flow
+```
+PENDING → CONFIRMED → SHIPPED → DELIVERING → ARRIVED → PAID_TO_SHIPPER → COMPLETED
+    ↓
+CANCELLED (có thể hủy ở PENDING, CONFIRMED)
+```
+
+#### Trạng thái đơn hàng:
+| Status | Mô tả | Có thể hủy | Có thể xóa |
+|--------|-------|-------------|-------------|
+| PENDING | Chờ xác nhận | ✅ | ❌ |
+| CONFIRMED | Đã xác nhận | ✅ | ❌ |
+| SHIPPED | Đã giao ĐVVC | ❌ | ❌ |
+| DELIVERING | Đang giao | ❌ | ❌ |
+| ARRIVED | Đã đến nơi | ❌ | ❌ |
+| PAID_TO_SHIPPER | Đã thanh toán cho shipper | ❌ | ✅ |
+| COMPLETED | Hoàn tất | ❌ | ✅ |
+| CANCELLED | Đã hủy | ❌ | ✅ |
+
+#### Payment Status:
+| Status | Mô tả |
+|--------|-------|
+| UNPAID | Chưa thanh toán |
+| PAID | Đã thanh toán |
+| FAILED | Thanh toán thất bại |
+
+---
+
+### 14. ROLES & PERMISSIONS
+
+| Tính năng | USER | STAFF | ADMIN |
+|-----------|:----:|:-----:|:-----:|
+| Xem sản phẩm | ✅ | ✅ | ✅ |
+| Mua hàng | ✅ | ✅ | ✅ |
+| CRUD sản phẩm | ❌ | ✅ | ✅ |
+| CRUD danh mục | ❌ | ❌ | ✅ |
+| Quản lý đơn hàng | ❌ | ✅ | ✅ |
+| CRUD coupon | ❌ | ❌ | ✅ |
+| Xem thống kê | ❌ | ❌ | ✅ |
+| Quản lý user | ❌ | ❌ | ✅ |
+| Rút tiền | ✅ | ✅ | ✅ |
+| Quản lý rút tiền | ❌ | ❌ | ✅ |
+| Nhắn tin | ✅ | ✅ | ✅ |
+
+---
+
 ## User Roles
 
 | Role | Description |
