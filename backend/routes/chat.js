@@ -7,6 +7,7 @@ const {
   markAsRead,
   getUnreadCount,
   deleteMessage,
+  deleteConversation,
   sseHandler,
 } = require('../controllers/chatController');
 const { verifyToken } = require('../middlewares/auth');
@@ -52,5 +53,8 @@ router.get('/unread/count', getUnreadCount);
 
 // Xóa tin nhắn
 router.delete('/message/:id', deleteMessage);
+
+// Xóa toàn bộ cuộc trò chuyện (PHẢI ĐỂ TRƯỚC /:userId)
+router.delete('/conversation/:userId', deleteConversation);
 
 module.exports = router;

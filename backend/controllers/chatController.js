@@ -423,6 +423,50 @@ const deleteMessage = asyncHandler(async (req, res, next) => {
   });
 });
 
+// @desc    Xóa toàn bộ cuộc trò chuyện với một người
+// @route   DELETE /api/chat/conversation/:userId
+// @access  Private
+const deleteConversation = asyncHandler(async (req, res, next) => {
+  const { userId } = req.params;
+  const currentUserId = req.user.id;
+
+  if (!userId || userId === 'undefined' || userId === 'null') {
+    return res.status(400).json({
+      success: false,
+      message: 'ID người dùng không hợp lệ',
+      data: null,
+    });
+  }
+
+  try {
+    const currentUserIdObj = new mongoose.Types.ObjectId(currentUserId);
+    const otherUserIdObj = new mongoose.Types.ObjectId(userId);
+
+    // Xóa tất cả tin nhắn giữa 2 người
+    const result = await Message.deleteMany({
+      $or: [
+        { sender: currentUserIdObj, receiver: otherUserIdObj },
+        { sender: otherUserIdObj, receiver: currentUserIdObj },
+      ],
+    });
+
+    // Broadcast event để cập nhật cho tất cả client
+    broadcastToAll({ type: 'conversation_deleted', deletedWith: userId });
+
+    res.status(200).json({
+      success: true,
+      message: `Đã xóa ${result.deletedCount} tin nhắn`,
+      data: { deletedCount: result.deletedCount },
+    });
+  } catch (err) {
+    return res.status(400).json({
+      success: false,
+      message: 'ID người dùng không hợp lệ',
+      data: null,
+    });
+  }
+});
+
 module.exports = {
   sendMessage,
   getMessages,
@@ -431,5 +475,6 @@ module.exports = {
   markAsRead,
   getUnreadCount,
   deleteMessage,
+  deleteConversation,
   sseHandler,
 };

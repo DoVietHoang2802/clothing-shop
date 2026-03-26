@@ -46,6 +46,13 @@ const ChatWidget = () => {
             handleNewMessage(data.message);
           } else if (data.type === 'reload_conversations') {
             loadConversations();
+          } else if (data.type === 'conversation_deleted') {
+            // Cuộc trò chuyện bị xóa bởi người khác
+            if (selectedUser && selectedUser._id === data.deletedWith) {
+              setSelectedUser(null);
+              setMessages([]);
+            }
+            loadConversations();
           }
         } catch (e) {
           console.log('SSE parse error:', e);
@@ -197,6 +204,30 @@ const ChatWidget = () => {
       console.error('Error loading messages:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Xóa cuộc trò chuyện
+  const handleDeleteConversation = async () => {
+    if (!selectedUser) return;
+
+    const userId = selectedUser._id;
+    const userName = selectedUser.name;
+
+    if (!window.confirm(`Bạn có chắc muốn xóa toàn bộ cuộc trò chuyện với "${userName}"?\nHành động này không thể hoàn tác.`)) {
+      return;
+    }
+
+    try {
+      await chatService.deleteConversation(userId);
+      // Quay về danh sách cuộc trò chuyện
+      setSelectedUser(null);
+      setMessages([]);
+      // Reload danh sách
+      loadConversations();
+    } catch (err) {
+      console.error('Error deleting conversation:', err);
+      alert('Lỗi khi xóa cuộc trò chuyện');
     }
   };
 
@@ -420,37 +451,57 @@ const ChatWidget = () => {
             background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
             color: 'white',
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                {selectedUser ? (
+                  <button
+                    onClick={() => { setSelectedUser(null); setMessages([]); }}
+                    style={{
+                      background: 'rgba(255,255,255,0.2)',
+                      border: 'none',
+                      color: 'white',
+                      padding: '6px 12px',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      fontSize: '0.85rem',
+                    }}
+                  >
+                    ←
+                  </button>
+                ) : null}
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: '600' }}>
+                    {selectedUser
+                      ? (isAdminOrStaff ? `💬 ${selectedUser.name}` : '💬 Hỗ trợ')
+                      : (isAdminOrStaff ? '💬 Hộp thư' : '💬 Hỗ trợ')
+                    }
+                  </h3>
+                  <p style={{ margin: '2px 0 0 0', fontSize: '0.75rem', opacity: 0.9 }}>
+                    {selectedUser
+                      ? (isAdminOrStaff ? getRoleBadge(selectedUser.role).label : 'Đang trò chuyện với hỗ trợ')
+                      : (isAdminOrStaff ? `${conversations.length} cuộc trò chuyện` : 'Gửi tin nhắn để được hỗ trợ')
+                    }
+                  </p>
+                </div>
+              </div>
+              {/* Nút xóa cuộc trò chuyện */}
               {selectedUser && (
                 <button
-                  onClick={() => { setSelectedUser(null); setMessages([]); }}
+                  onClick={handleDeleteConversation}
+                  title="Xóa cuộc trò chuyện"
                   style={{
                     background: 'rgba(255,255,255,0.2)',
                     border: 'none',
                     color: 'white',
-                    padding: '6px 12px',
+                    padding: '6px 10px',
                     borderRadius: '6px',
                     cursor: 'pointer',
                     fontSize: '0.85rem',
                   }}
                 >
-                  ←
+                  🗑️
                 </button>
               )}
-              <div>
-                <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: '600' }}>
-                  {selectedUser
-                    ? (isAdminOrStaff ? `💬 ${selectedUser.name}` : '💬 Hỗ trợ')
-                    : (isAdminOrStaff ? '💬 Hộp thư' : '💬 Hỗ trợ')
-                  }
-                </h3>
-                <p style={{ margin: '2px 0 0 0', fontSize: '0.75rem', opacity: 0.9 }}>
-                  {selectedUser
-                    ? (isAdminOrStaff ? getRoleBadge(selectedUser.role).label : 'Đang trò chuyện với hỗ trợ')
-                    : (isAdminOrStaff ? `${conversations.length} cuộc trò chuyện` : 'Gửi tin nhắn để được hỗ trợ')
-                  }
-                </p>
-              </div>
             </div>
           </div>
 

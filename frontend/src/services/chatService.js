@@ -45,6 +45,11 @@ const chatService = {
   deleteMessage: (messageId) => {
     return api.delete(`/chat/message/${messageId}`);
   },
+
+  // Xóa toàn bộ cuộc trò chuyện
+  deleteConversation: (userId) => {
+    return api.delete(`/chat/conversation/${userId}`);
+  },
 };
 
 export default chatService;
