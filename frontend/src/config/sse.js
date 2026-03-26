@@ -12,9 +12,11 @@ class SSEService {
     this.listeners = {};
     this.connected = false;
     this.userId = null;
+    this.reconnectTimer = null;
   }
 
   connect(userId) {
+    // Prevent multiple connections
     if (this.eventSource) {
       this.disconnect();
     }
@@ -22,59 +24,82 @@ class SSEService {
     this.userId = userId;
     const token = localStorage.getItem('token');
 
-    if (!token || !userId) return;
+    if (!token || !userId) {
+      console.log('SSE: Missing token or userId, skipping connection');
+      return;
+    }
 
-    // API_BASE_URL đã bao gồm /api, không thêm lại
-    this.eventSource = new EventSource(`${API_BASE_URL}/orders/sse?token=${token}`);
+    try {
+      // API_BASE_URL đã bao gồm /api, không thêm lại
+      this.eventSource = new EventSource(`${API_BASE_URL}/orders/sse?token=${token}`);
 
-    this.eventSource.onopen = () => {
-      this.connected = true;
-      console.log('✅ SSE connected for order updates');
-    };
+      this.eventSource.onopen = () => {
+        this.connected = true;
+        console.log('✅ SSE connected for order updates');
+      };
 
-    this.eventSource.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
+      this.eventSource.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
 
-        // Handle different event types
-        if (data.type === 'ORDER_STATUS_CHANGED') {
-          this.emit('order_updated', data);
-        } else if (data.type === 'connected') {
-          console.log('SSE connected:', data.userId);
+          if (data.type === 'ORDER_STATUS_CHANGED') {
+            this.emit('order_updated', data);
+          } else if (data.type === 'connected') {
+            console.log('SSE connected:', data.userId);
+          }
+        } catch (e) {
+          console.error('SSE parse error:', e);
         }
-      } catch (e) {
-        console.error('SSE parse error:', e);
-      }
-    };
+      };
 
-    this.eventSource.onerror = (error) => {
-      console.log('SSE connection error - will retry...');
-      this.connected = false;
+      this.eventSource.onerror = () => {
+        console.log('SSE connection error');
+        this.connected = false;
 
-      // Cleanup on error
-      setTimeout(() => {
-        if (this.userId && !this.connected) {
-          this.connect(this.userId);
+        // Clear existing reconnect timer
+        if (this.reconnectTimer) {
+          clearTimeout(this.reconnectTimer);
         }
-      }, 5000);
-    };
+
+        // Reconnect after 5 seconds only if we have userId
+        if (this.userId) {
+          this.reconnectTimer = setTimeout(() => {
+            if (!this.connected && this.userId) {
+              console.log('SSE: Attempting to reconnect...');
+              this.connect(this.userId);
+            }
+          }, 5000);
+        }
+      };
+    } catch (e) {
+      console.error('SSE connection error:', e);
+    }
   }
 
   disconnect() {
+    // Clear reconnect timer
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
+
     if (this.eventSource) {
       this.eventSource.close();
       this.eventSource = null;
-      this.connected = false;
-      this.userId = null;
     }
+    this.connected = false;
+    this.userId = null;
+    this.listeners = {};
   }
 
   // Listen for order updates
   onOrderUpdate(callback) {
-    if (!this.listeners.order_updated) {
-      this.listeners.order_updated = [];
+    if (typeof callback === 'function') {
+      if (!this.listeners.order_updated) {
+        this.listeners.order_updated = [];
+      }
+      this.listeners.order_updated.push(callback);
     }
-    this.listeners.order_updated.push(callback);
   }
 
   // Remove order update listener
@@ -87,7 +112,15 @@ class SSEService {
   // Internal emit method
   emit(event, data) {
     if (this.listeners[event]) {
-      this.listeners[event].forEach(callback => callback(data));
+      this.listeners[event].forEach(callback => {
+        if (typeof callback === 'function') {
+          try {
+            callback(data);
+          } catch (e) {
+            console.error('SSE callback error:', e);
+          }
+        }
+      });
     }
   }
 }
