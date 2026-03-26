@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import productService from '../services/productService';
 import categoryService from '../services/categoryService';
 import reviewService from '../services/reviewService';
@@ -8,9 +8,11 @@ import { useAuth } from '../context/AuthContext';
 import Carousel from '../components/Carousel';
 import FlashSaleTimer from '../components/FlashSaleTimer';
 import ProductFilterPanel from '../components/ProductFilterPanel';
+import { toast } from '../components/ToastNotification';
 
 const HomePage = () => {
   const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
@@ -24,6 +26,9 @@ const HomePage = () => {
   const [error, setError] = useState('');
   const [latestReviews, setLatestReviews] = useState([]);
   const [wishlistItems, setWishlistItems] = useState(new Set());
+
+  // Cart state
+  const [addingToCart, setAddingToCart] = useState(null);
 
   useEffect(() => {
     loadData();
@@ -106,7 +111,7 @@ const HomePage = () => {
 
   const toggleWishlist = async (productId) => {
     if (!isAuthenticated) {
-      alert('Vui lòng đăng nhập để sử dụng wishlist');
+      toast.error('Vui lòng đăng nhập để sử dụng wishlist');
       return;
     }
 
@@ -121,11 +126,43 @@ const HomePage = () => {
       } else {
         await wishlistService.addToWishlist(productId);
         setWishlistItems(prev => new Set([...prev, productId]));
+        toast.success('Đã thêm vào yêu thích!');
       }
     } catch (err) {
       console.error('Error toggling wishlist:', err);
-      alert(err.response?.data?.message || 'Lỗi khi cập nhật wishlist');
+      toast.error(err.response?.data?.message || 'Lỗi khi cập nhật wishlist');
     }
+  };
+
+  // Add to cart function
+  const handleAddToCart = (e, product) => {
+    e.stopPropagation();
+    e.preventDefault();
+
+    if (product.stock <= 0) {
+      toast.error('Sản phẩm đã hết hàng!');
+      return;
+    }
+
+    const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+    const existingIndex = cart.findIndex(item => item.productId === product._id);
+
+    if (existingIndex >= 0) {
+      cart[existingIndex].quantity += 1;
+    } else {
+      cart.push({
+        productId: product._id,
+        name: product.name,
+        price: product.price,
+        image: product.image,
+        quantity: 1,
+        stock: product.stock,
+      });
+    }
+
+    localStorage.setItem('cart', JSON.stringify(cart));
+    window.dispatchEvent(new Event('cartUpdated'));
+    toast.success(`Đã thêm "${product.name}" vào giỏ hàng!`);
   };
 
   useEffect(() => {
@@ -144,6 +181,15 @@ const HomePage = () => {
     setSelectedCategory(null);
     setSortBy('newest');
     setPage(1);
+  };
+
+  // Render star rating
+  const renderStars = (rating) => {
+    const fullStars = Math.floor(rating);
+    const hasHalf = rating % 1 >= 0.5;
+    let stars = '★'.repeat(fullStars);
+    if (hasHalf) stars += '½';
+    return stars;
   };
 
   return (
@@ -225,7 +271,7 @@ const HomePage = () => {
               </span>
             </div>
 
-            {/* Products Grid */}
+            {/* Products Grid - Redesigned */}
             {loading ? (
               <div className="flex-center" style={{
                 minHeight: '400px',
@@ -244,64 +290,174 @@ const HomePage = () => {
                   {products.length > 0 ? (
                     products.map((product) => (
                       <div key={product._id} style={{ position: 'relative' }}>
+                        {/* Product Card - Click to navigate */}
                         <Link to={`/products/${product._id}`} style={{ textDecoration: 'none' }}>
-                          <div className="card product-card">
+                          <div
+                            className="product-card"
+                            style={{
+                              background: 'white',
+                              borderRadius: '12px',
+                              overflow: 'hidden',
+                              boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                              transition: 'all 0.3s ease',
+                              cursor: 'pointer',
+                              border: '1px solid #f0f0f0',
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.transform = 'translateY(-4px)';
+                              e.currentTarget.style.boxShadow = '0 12px 24px rgba(0,0,0,0.12)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.transform = 'translateY(0)';
+                              e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.06)';
+                            }}
+                          >
+                            {/* Product Image */}
                             <div style={{ position: 'relative', overflow: 'hidden' }}>
                               <img
                                 src={product.image}
                                 alt={product.name}
-                                className="product-image"
-                                style={{ width: '100%', height: '200px', objectFit: 'cover', borderRadius: '8px', transition: 'transform 0.3s ease' }}
-                                onMouseEnter={(e) => e.target.style.transform = 'scale(1.05)'}
+                                style={{
+                                  width: '100%',
+                                  height: '180px',
+                                  objectFit: 'cover',
+                                  transition: 'transform 0.4s ease',
+                                }}
+                                onMouseEnter={(e) => e.target.style.transform = 'scale(1.08)'}
                                 onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
                               />
-                              {product.stock < 5 && (
+
+                              {/* Badges */}
+                              {product.stock < 5 && product.stock > 0 && (
                                 <div style={{
                                   position: 'absolute',
-                                  top: '10px',
-                                  right: '10px',
-                                  background: '#e74c3c',
+                                  top: '8px',
+                                  left: '8px',
+                                  background: 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)',
                                   color: 'white',
-                                  padding: '0.4rem 0.8rem',
-                                  borderRadius: '20px',
-                                  fontSize: '0.8rem',
-                                  fontWeight: '600'
+                                  padding: '0.25rem 0.6rem',
+                                  borderRadius: '6px',
+                                  fontSize: '0.7rem',
+                                  fontWeight: '700',
+                                  boxShadow: '0 2px 6px rgba(231,76,60,0.4)',
                                 }}>
                                   🔥 Gần hết
                                 </div>
                               )}
+
+                              {product.stock === 0 && (
+                                <div style={{
+                                  position: 'absolute',
+                                  top: 0,
+                                  left: 0,
+                                  right: 0,
+                                  bottom: 0,
+                                  background: 'rgba(0,0,0,0.5)',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                }}>
+                                  <span style={{
+                                    background: '#e74c3c',
+                                    color: 'white',
+                                    padding: '0.5rem 1rem',
+                                    borderRadius: '8px',
+                                    fontWeight: '700',
+                                    fontSize: '0.9rem',
+                                  }}>
+                                    HẾT HÀNG
+                                  </span>
+                                </div>
+                              )}
+
+                              {product.soldCount > 10 && (
+                                <div style={{
+                                  position: 'absolute',
+                                  bottom: '8px',
+                                  left: '8px',
+                                  background: 'rgba(231,76,60,0.9)',
+                                  color: 'white',
+                                  padding: '0.25rem 0.5rem',
+                                  borderRadius: '4px',
+                                  fontSize: '0.7rem',
+                                  fontWeight: '600',
+                                }}>
+                                  🏆 Đã bán {product.soldCount}
+                                </div>
+                              )}
                             </div>
 
-                            <div style={{ padding: '1rem 0' }}>
-                              <h3 className="product-name">{product.name}</h3>
+                            {/* Product Info */}
+                            <div style={{ padding: '0.75rem' }}>
+                              {/* Product Name */}
+                              <h3 style={{
+                                margin: '0 0 0.5rem 0',
+                                fontSize: '0.95rem',
+                                fontWeight: '600',
+                                color: '#2c3e50',
+                                lineHeight: '1.3',
+                                display: '-webkit-box',
+                                WebkitLineClamp: 2,
+                                WebkitBoxOrient: 'vertical',
+                                overflow: 'hidden',
+                                minHeight: '2.5rem',
+                              }}>
+                                {product.name}
+                              </h3>
 
-                              <p className="product-price">
-                                {new Intl.NumberFormat('vi-VN', {
-                                  style: 'currency',
-                                  currency: 'VND',
-                                }).format(product.price)}
-                              </p>
-
+                              {/* Rating & Reviews */}
                               <div style={{
                                 display: 'flex',
-                                justifyContent: 'space-between',
                                 alignItems: 'center',
-                                fontSize: '0.9rem',
-                                color: '#7f8c8d'
+                                gap: '0.5rem',
+                                marginBottom: '0.5rem',
                               }}>
-                                <span>
-                                  📦 Kho: <strong style={{ color: product.stock > 0 ? '#27ae60' : '#e74c3c' }}>
-                                    {product.stock}
-                                  </strong>
-                                </span>
+                                {product.averageRating > 0 ? (
+                                  <>
+                                    <span style={{
+                                      color: '#f39c12',
+                                      fontSize: '0.85rem',
+                                      fontWeight: '700',
+                                    }}>
+                                      ★ {product.averageRating.toFixed(1)}
+                                    </span>
+                                    <span style={{
+                                      color: '#7f8c8d',
+                                      fontSize: '0.75rem',
+                                    }}>
+                                      ({product.totalReviews} đánh giá)
+                                    </span>
+                                  </>
+                                ) : (
+                                  <span style={{
+                                    color: '#bdc3c7',
+                                    fontSize: '0.8rem',
+                                  }}>
+                                    Chưa có đánh giá
+                                  </span>
+                                )}
+                              </div>
+
+                              {/* Price */}
+                              <div style={{ marginBottom: '0.5rem' }}>
                                 <span style={{
-                                  background: '#ecf0f1',
-                                  padding: '0.3rem 0.8rem',
-                                  borderRadius: '12px',
-                                  fontSize: '0.85rem'
+                                  fontSize: '1.1rem',
+                                  fontWeight: '700',
+                                  color: '#e74c3c',
                                 }}>
-                                  Xem chi tiết →
+                                  {new Intl.NumberFormat('vi-VN', {
+                                    style: 'currency',
+                                    currency: 'VND',
+                                  }).format(product.price)}
                                 </span>
+                              </div>
+
+                              {/* Stock */}
+                              <div style={{
+                                fontSize: '0.75rem',
+                                color: product.stock > 0 ? '#27ae60' : '#e74c3c',
+                              }}>
+                                {product.stock > 0 ? `📦 Còn ${product.stock} sản phẩm` : '❌ Hết hàng'}
                               </div>
                             </div>
                           </div>
@@ -316,23 +472,23 @@ const HomePage = () => {
                           style={{
                             position: 'absolute',
                             top: '10px',
-                            left: '10px',
-                            width: '40px',
-                            height: '40px',
+                            right: '10px',
+                            width: '38px',
+                            height: '38px',
                             borderRadius: '50%',
                             border: 'none',
                             background: wishlistItems.has(product._id)
                               ? 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)'
-                              : 'rgba(255, 255, 255, 0.9)',
+                              : 'rgba(255, 255, 255, 0.95)',
                             color: wishlistItems.has(product._id) ? 'white' : '#e74c3c',
-                            fontSize: '1.2rem',
+                            fontSize: '1.1rem',
                             cursor: 'pointer',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                             transition: 'all 0.3s ease',
                             boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                            zIndex: 10
+                            zIndex: 10,
                           }}
                           title={wishlistItems.has(product._id) ? 'Xóa khỏi yêu thích' : 'Thêm vào yêu thích'}
                           onMouseEnter={(e) => {
@@ -343,12 +499,71 @@ const HomePage = () => {
                           }}
                           onMouseLeave={(e) => {
                             if (!wishlistItems.has(product._id)) {
-                              e.target.style.background = 'rgba(255, 255, 255, 0.9)';
+                              e.target.style.background = 'rgba(255, 255, 255, 0.95)';
                               e.target.style.transform = 'scale(1)';
                             }
                           }}
                         >
                           {wishlistItems.has(product._id) ? '❤️' : '🤍'}
+                        </button>
+
+                        {/* Add to Cart Button - Overlays bottom of card */}
+                        <button
+                          onClick={(e) => handleAddToCart(e, product)}
+                          disabled={product.stock === 0 || addingToCart === product._id}
+                          style={{
+                            position: 'absolute',
+                            bottom: '12px',
+                            left: '50%',
+                            transform: 'translateX(-50%)',
+                            width: 'calc(100% - 24px)',
+                            padding: '0.6rem 1rem',
+                            background: product.stock === 0
+                              ? '#bdc3c7'
+                              : 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '8px',
+                            fontWeight: '700',
+                            fontSize: '0.85rem',
+                            cursor: product.stock === 0 ? 'not-allowed' : 'pointer',
+                            transition: 'all 0.3s ease',
+                            boxShadow: product.stock === 0 ? 'none' : '0 4px 12px rgba(231,76,60,0.4)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '0.4rem',
+                            zIndex: 10,
+                          }}
+                          onMouseEnter={(e) => {
+                            if (product.stock > 0) {
+                              e.target.style.transform = 'translateX(-50%) scale(1.02)';
+                              e.target.style.boxShadow = '0 6px 16px rgba(231,76,60,0.5)';
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (product.stock > 0) {
+                              e.target.style.transform = 'translateX(-50%) scale(1)';
+                              e.target.style.boxShadow = '0 4px 12px rgba(231,76,60,0.4)';
+                            }
+                          }}
+                        >
+                          {addingToCart === product._id ? (
+                            <>
+                              <span>⏳</span>
+                              <span>Đang thêm...</span>
+                            </>
+                          ) : product.stock === 0 ? (
+                            <>
+                              <span>❌</span>
+                              <span>Hết hàng</span>
+                            </>
+                          ) : (
+                            <>
+                              <span>🛒</span>
+                              <span>Thêm vào giỏ</span>
+                            </>
+                          )}
                         </button>
                       </div>
                     ))
@@ -514,7 +729,7 @@ const HomePage = () => {
             className="newsletter-form"
             onSubmit={(e) => {
               e.preventDefault();
-              alert('Cảm ơn bạn đã đăng ký! 🎉');
+              toast.success('Cảm ơn bạn đã đăng ký! 🎉');
             }}
           >
             <input

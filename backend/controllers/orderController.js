@@ -2,6 +2,7 @@ const Order = require('../models/Order');
 const Product = require('../models/Product');
 const Coupon = require('../models/Coupon');
 const asyncHandler = require('../utils/asyncHandler');
+const { broadcastOrderUpdate } = require('./orderSSEController');
 
 // @desc    Tạo đơn hàng mới
 // @route   POST /api/orders
@@ -341,13 +342,27 @@ const updateOrderStatus = asyncHandler(async (req, res, next) => {
     }
   }
 
+  // Increment soldCount when order is completed
+  if (status === 'COMPLETED' && oldStatus !== 'COMPLETED') {
+    for (const item of order.items) {
+      await Product.findByIdAndUpdate(
+        item.product,
+        { $inc: { soldCount: item.quantity } },
+        { new: true }
+      );
+    }
+  }
+
   order.status = status;
   order = await order.save();
 
   await order.populate('user', 'name email');
   await order.populate('items.product', 'name price image');
 
-  // Gửi thông báo real-time qua Socket.io
+  // Gửi thông báo real-time qua SSE (fallback cho production Vercel)
+  broadcastOrderUpdate(order._id, oldStatus, status);
+
+  // Gửi thông báo real-time qua Socket.io (chỉ khi hoạt động - local dev)
   const io = req.app.get('io');
   if (io) {
     const userId = order.user._id.toString();

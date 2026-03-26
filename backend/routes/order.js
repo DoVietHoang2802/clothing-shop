@@ -10,9 +10,13 @@ const {
   deleteOrder,
   deleteOrderAdmin,
 } = require('../controllers/orderController');
+const { orderSSEHandler } = require('../controllers/orderSSEController');
 const { verifyToken, authorizeRoles } = require('../middlewares/auth');
 
 const router = express.Router();
+
+// GET /api/orders/sse - SSE endpoint for real-time order updates (PRIVATE - must be before /:id)
+router.get('/sse', verifyToken, authorizeRoles('USER', 'STAFF', 'ADMIN'), orderSSEHandler);
 
 // POST /api/orders - Tạo đơn hàng (USER)
 router.post('/', verifyToken, authorizeRoles('USER', 'STAFF', 'ADMIN'), createOrder);

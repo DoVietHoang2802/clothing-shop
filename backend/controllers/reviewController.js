@@ -38,11 +38,21 @@ const createReview = asyncHandler(async (req, res, next) => {
   const { productId, rating, comment } = req.body;
   const userId = req.user.id;
 
-  // Validation
-  if (!productId || !rating || !comment) {
+  // Validation - chỉ require productId và rating, comment là optional
+  if (!productId || !rating) {
     return res.status(400).json({
       success: false,
-      message: 'Vui lòng cung cấp productId, rating, comment',
+      message: 'Vui lòng cung cấp productId và rating (sao)',
+      data: null,
+    });
+  }
+
+  // Rating phải từ 1-5
+  const ratingNum = parseInt(rating);
+  if (ratingNum < 1 || ratingNum > 5) {
+    return res.status(400).json({
+      success: false,
+      message: 'Số sao đánh giá phải từ 1 đến 5',
       data: null,
     });
   }
@@ -70,8 +80,8 @@ const createReview = asyncHandler(async (req, res, next) => {
   const review = await Review.create({
     product: productId,
     user: userId,
-    rating: parseInt(rating),
-    comment,
+    rating: ratingNum,
+    comment: comment || '', // Cho phép comment rỗng
   });
 
   await review.populate('user', 'name');

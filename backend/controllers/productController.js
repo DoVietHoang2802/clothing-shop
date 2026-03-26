@@ -1,4 +1,5 @@
 const Product = require('../models/Product');
+const Review = require('../models/Review');
 const asyncHandler = require('../utils/asyncHandler');
 const path = require('path');
 
@@ -60,6 +61,9 @@ const getAllProducts = asyncHandler(async (req, res, next) => {
       case 'price-desc':
         sortOption = { price: -1 };
         break;
+      case 'best-selling':
+        sortOption = { soldCount: -1 };
+        break;
       case 'newest':
       default:
         sortOption = { createdAt: -1 };
@@ -77,10 +81,42 @@ const getAllProducts = asyncHandler(async (req, res, next) => {
     .skip(skip)
     .sort(sortOption);
 
+  // Get rating info for all products in one aggregation
+  const productIds = products.map(p => p._id);
+  const ratingData = await Review.aggregate([
+    { $match: { product: { $in: productIds } } },
+    {
+      $group: {
+        _id: '$product',
+        averageRating: { $avg: '$rating' },
+        totalReviews: { $sum: 1 },
+      },
+    },
+  ]);
+
+  // Create a map for quick lookup
+  const ratingMap = {};
+  ratingData.forEach(r => {
+    ratingMap[r._id.toString()] = {
+      averageRating: Math.round(r.averageRating * 10) / 10, // Round to 1 decimal
+      totalReviews: r.totalReviews,
+    };
+  });
+
+  // Add rating info to each product
+  const productsWithRatings = products.map(p => {
+    const ratingInfo = ratingMap[p._id.toString()] || { averageRating: 0, totalReviews: 0 };
+    return {
+      ...p.toObject(),
+      averageRating: ratingInfo.averageRating,
+      totalReviews: ratingInfo.totalReviews,
+    };
+  });
+
   res.status(200).json({
     success: true,
     message: 'Lấy danh sách sản phẩm thành công',
-    data: products,
+    data: productsWithRatings,
     pagination: {
       currentPage: pageNum,
       pageSize: pageSize,

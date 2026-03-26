@@ -29,6 +29,10 @@ const productSchema = new mongoose.Schema({
     ref: 'Category',
     required: true,
   },
+  soldCount: {
+    type: Number,
+    default: 0,
+  },
   createdAt: {
     type: Date,
     default: Date.now,

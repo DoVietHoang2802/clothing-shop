@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import orderService from '../services/orderService';
-import socketService from '../config/socket';
+import sseService from '../config/sse';
 import { useNotifications } from '../context/NotificationContext';
 import { toast } from '../components/ToastNotification';
 
@@ -20,27 +20,44 @@ const MyOrdersPage = () => {
   useEffect(() => {
     loadOrders();
 
-    // Listen for real-time order updates
-    socketService.onOrderUpdate((data) => {
-      // Update the specific order in the list
-      setOrders(prevOrders => {
-        const index = prevOrders.findIndex(o => o._id === data.orderId);
-        if (index !== -1) {
-          const newOrders = [...prevOrders];
-          newOrders[index] = { ...newOrders[index], ...data.order };
-          return newOrders;
-        }
-        return prevOrders;
-      });
-
-      // Show toast notification
-      if (data.message) {
-        toast.success(data.message);
+    // Get userId from localStorage
+    const token = localStorage.getItem('token');
+    const userData = localStorage.getItem('user');
+    let userId = null;
+    if (userData) {
+      try {
+        userId = JSON.parse(userData).id;
+      } catch (e) {
+        // ignore
       }
-    });
+    }
+
+    // Connect to SSE for real-time order updates
+    if (userId) {
+      sseService.connect(userId);
+
+      // Listen for real-time order updates
+      sseService.onOrderUpdate((data) => {
+        // Update the specific order in the list
+        setOrders(prevOrders => {
+          const index = prevOrders.findIndex(o => o._id === data.orderId);
+          if (index !== -1) {
+            const newOrders = [...prevOrders];
+            newOrders[index] = { ...newOrders[index], ...data.order };
+            return newOrders;
+          }
+          return prevOrders;
+        });
+
+        // Show toast notification
+        if (data.message) {
+          toast.success(data.message);
+        }
+      });
+    }
 
     return () => {
-      socketService.offOrderUpdate();
+      sseService.disconnect();
     };
   }, []);
 

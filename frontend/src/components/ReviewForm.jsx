@@ -15,19 +15,16 @@ export default function ReviewForm({ productId, onReviewSubmitted }) {
     setError(null);
     setSuccess(null);
 
+    // Chỉ require rating - comment là optional
     if (!rating) {
-      setError('Vui lòng chọn đánh giá');
-      return;
-    }
-
-    if (comment.trim().length < 10) {
-      setError('Bình luận phải từ 10 ký tự trở lên');
+      setError('Vui lòng chọn số sao đánh giá');
       return;
     }
 
     setLoading(true);
 
     try {
+      // Gửi review - comment có thể empty
       await reviewService.createReview(productId, rating, comment);
       setSuccess('Cảm ơn bạn đã đánh giá sản phẩm!');
       setRating(0);
@@ -58,7 +55,7 @@ export default function ReviewForm({ productId, onReviewSubmitted }) {
       <form onSubmit={handleSubmit} className="review-form">
         <div className="form-group">
           <label htmlFor="rating" className="form-label">
-            Đánh giá:
+            Đánh giá: <span style={{ color: '#e74c3c' }}>*</span>
           </label>
           <div className="star-rating">
             {[1, 2, 3, 4, 5].map((star) => (
@@ -68,6 +65,9 @@ export default function ReviewForm({ productId, onReviewSubmitted }) {
                 onClick={() => setRating(star)}
                 onMouseEnter={() => setHoverRating(star)}
                 onMouseLeave={() => setHoverRating(0)}
+                style={{ cursor: 'pointer', fontSize: '2rem', transition: 'transform 0.2s' }}
+                onMouseOver={(e) => e.target.style.transform = 'scale(1.2)'}
+                onMouseOut={(e) => e.target.style.transform = 'scale(1)'}
               >
                 ⭐
               </span>
@@ -80,15 +80,15 @@ export default function ReviewForm({ productId, onReviewSubmitted }) {
 
         <div className="form-group">
           <label htmlFor="comment" className="form-label">
-            Bình luận:
+            Bình luận: <span style={{ color: '#7f8c8d', fontWeight: 'normal' }}>(không bắt buộc)</span>
           </label>
           <textarea
             id="comment"
             value={comment}
             onChange={(e) => setComment(e.target.value)}
-            placeholder="Chia sẻ trải nghiệm của bạn về sản phẩm này... (tối thiểu 10 ký tự)"
+            placeholder="Chia sẻ trải nghiệm của bạn về sản phẩm này... (có thể chỉ để trống)"
             className="form-textarea"
-            rows="4"
+            rows="3"
             maxLength="500"
           />
           <div className="char-count">
@@ -98,7 +98,7 @@ export default function ReviewForm({ productId, onReviewSubmitted }) {
 
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || !rating}
           className="btn-submit"
         >
           {loading ? '⏳ Đang gửi...' : '✓ Gửi đánh giá'}

@@ -13,14 +13,13 @@ const reviewSchema = new mongoose.Schema({
   },
   rating: {
     type: Number,
-    required: true,
+    required: [true, 'Vui lòng chọn số sao đánh giá'],
     min: [1, 'Rating phải từ 1-5'],
     max: [5, 'Rating phải từ 1-5'],
   },
   comment: {
     type: String,
-    required: true,
-    minlength: [10, 'Bình luận phải có ít nhất 10 ký tự'],
+    default: '', // Không bắt buộc - có thể chỉ đánh giá bằng sao
     maxlength: [500, 'Bình luận không được vượt 500 ký tự'],
   },
   createdAt: {
