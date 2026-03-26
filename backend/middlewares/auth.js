@@ -1,8 +1,14 @@
 const jwt = require('jsonwebtoken');
 
-// Middleware xác thực JWT token
+// Middleware xác thực JWT token - hỗ trợ cả header và query param (cho SSE)
 const verifyToken = (req, res, next) => {
-  const token = req.headers.authorization?.split(' ')[1];
+  // Ưu tiên đọc từ Authorization header
+  let token = req.headers.authorization?.split(' ')[1];
+
+  // Nếu không có header, thử đọc từ query param (cho SSE endpoints)
+  if (!token && req.query.token) {
+    token = req.query.token;
+  }
 
   if (!token) {
     return res.status(401).json({
