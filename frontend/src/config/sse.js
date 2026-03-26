@@ -3,7 +3,8 @@
  * Sử dụng SSE thay vì Socket.io để tương thích với Vercel production
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+// API_BASE_URL đã bao gồm /api rồi (xem .env.local)
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
 
 class SSEService {
   constructor() {
@@ -23,7 +24,8 @@ class SSEService {
 
     if (!token || !userId) return;
 
-    this.eventSource = new EventSource(`${API_BASE_URL}/api/orders/sse?token=${token}`);
+    // API_BASE_URL đã bao gồm /api, không thêm lại
+    this.eventSource = new EventSource(`${API_BASE_URL}/orders/sse?token=${token}`);
 
     this.eventSource.onopen = () => {
       this.connected = true;
