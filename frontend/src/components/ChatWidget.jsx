@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import chatService from '../services/chatService';
 import { useAuth } from '../context/AuthContext';
+import authService from '../services/authService';
 
 const ChatWidget = () => {
   const { isAuthenticated, user } = useAuth();
@@ -16,18 +17,89 @@ const ChatWidget = () => {
   const [showImageUpload, setShowImageUpload] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
   const [lastMessageId, setLastMessageId] = useState(null);
+  const [allMessages, setAllMessages] = useState([]); // Tất cả tin nhắn cho admin
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
+  const eventSourceRef = useRef(null);
 
   const isAdminOrStaff = user?.role === 'ADMIN' || user?.role === 'STAFF';
 
-  // Load data on open
+  // SSE Connection - Thay thế polling
+  useEffect(() => {
+    if (isAuthenticated && isOpen) {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      // EventSource không hỗ trợ headers, gửi token qua query string
+      const eventSource = new EventSource(`${apiBase}/chat/sse?token=${token}`);
+      eventSourceRef.current = eventSource;
+
+      eventSource.onopen = () => {
+        console.log('SSE Connected');
+      };
+
+      eventSource.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === 'new_message') {
+            handleNewMessage(data.message);
+          }
+        } catch (e) {
+          console.log('SSE parse error:', e);
+        }
+      };
+
+      eventSource.onerror = () => {
+        console.log('SSE Error, reconnecting...');
+        eventSource.close();
+        // Reconnect sau 5s
+        setTimeout(() => {
+          if (isAuthenticated && isOpen) {
+            const newEventSource = new EventSource(`${apiBase}/chat/sse?token=${localStorage.getItem('token')}`);
+            eventSourceRef.current = newEventSource;
+          }
+        }, 5000);
+      };
+
+      return () => {
+        eventSource.close();
+      };
+    }
+  }, [isAuthenticated, isOpen]);
+
+  // Xử lý tin nhắn mới từ SSE
+  const handleNewMessage = (message) => {
+    if (isAdminOrStaff) {
+      // Admin/Staff: Cập nhật danh sách cuộc trò chuyện
+      loadConversations();
+
+      // Nếu đang xem cuộc trò chuyện với người gửi, thêm tin nhắn vào
+      const otherUserId = message.sender._id || message.sender;
+      if (selectedUser && selectedUser._id === otherUserId) {
+        setMessages(prev => {
+          if (!prev.find(m => m._id === message._id)) {
+            return [...prev, message];
+          }
+          return prev;
+        });
+      }
+    } else {
+      // User thường: Cập nhật số tin nhắn chưa đọc
+      if (message.receiver._id === user._id || message.receiver === user._id) {
+        setUnreadCount(prev => prev + 1);
+      }
+    }
+  };
+
+  // Load data on open (chỉ gọi khi mở chat)
   useEffect(() => {
     if (isAuthenticated && isOpen) {
       if (isAdminOrStaff) {
         loadConversations();
       } else {
         loadAdminList();
+        loadUnreadCount();
       }
     }
   }, [isAuthenticated, isOpen, isAdminOrStaff]);
@@ -44,29 +116,6 @@ const ChatWidget = () => {
       }
     }
   }, [messages]);
-
-  // Refresh data periodically but smarter
-  useEffect(() => {
-    if (isAuthenticated && isOpen) {
-      const interval = setInterval(() => {
-        if (isAdminOrStaff) {
-          loadConversations();
-        }
-        loadUnreadCount();
-        // Only load messages if viewing a chat and there are new ones
-        if (selectedUser) {
-          const prevLength = messages.length;
-          loadMessagesSilent(selectedUser._id).then(newMessages => {
-            if (newMessages.length > prevLength) {
-              setMessages(newMessages);
-            }
-          });
-        }
-      }, 8000);
-
-      return () => clearInterval(interval);
-    }
-  }, [isAuthenticated, isOpen, isAdminOrStaff, selectedUser, messages.length]);
 
   // Load admin/staff list
   const loadAdminList = async () => {

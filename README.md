@@ -177,12 +177,7 @@ Client (Frontend)                    Server (Backend)
 ### ⭐ Đánh Giá & Yêu Thích
 - Đánh giá sản phẩm (1-5 sao)
 - Wishlist (yêu thích)
-
-### 💰 Withdrawal (Rút Tiền)
-- User xem số dư
-- Tạo yêu cầu rút tiền
-- Admin duyệt/từ chối
-
+          
 ### 📊 Dashboard
 - **Admin**: Thống kê, quản lý users, categories, products, orders, coupons, withdrawals
 - **Staff**: Quản lý sản phẩm, đơn hàng

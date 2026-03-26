@@ -7,6 +7,58 @@ const Message = require('../models/Message');
 const User = require('../models/User');
 const asyncHandler = require('../utils/asyncHandler');
 
+// Map lưu các SSE connections
+const sseClients = new Map();
+
+// SSE Endpoint - Real-time chat updates
+// @route   GET /api/chat/sse
+// @access  Private
+const sseHandler = asyncHandler(async (req, res, next) => {
+  // Lấy user từ middleware đã verify
+  const userId = req.user.id;
+  const userRole = req.user.role;
+  const isAdminOrStaff = userRole === 'ADMIN' || userRole === 'STAFF';
+
+  // Set headers cho SSE
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.flushHeaders();
+
+  // Lưu connection vào Map
+  sseClients.set(userId, res);
+
+  // Gửi heartbeat để giữ kết nối
+  const heartbeatInterval = setInterval(() => {
+    res.write(': heartbeat\n\n');
+  }, 30000);
+
+  // Gửi event khởi tạo
+  res.write(`data: ${JSON.stringify({ type: 'connected', userId })}\n\n`);
+
+  // Cleanup khi client disconnect
+  req.on('close', () => {
+    clearInterval(heartbeatInterval);
+    sseClients.delete(userId);
+  });
+});
+
+// Hàm broadcast tin nhắn mới tới tất cả admin/staff
+const broadcastToAdmins = (message) => {
+  sseClients.forEach((res, clientId) => {
+    const client = sseClients.get(clientId);
+    if (client) {
+      try {
+        client.write(`data: ${JSON.stringify({ type: 'new_message', message })}\n\n`);
+      } catch (e) {
+        // Client đã disconnect
+        sseClients.delete(clientId);
+      }
+    }
+  });
+};
+
 // @desc    Gửi tin nhắn
 // @route   POST /api/chat/send
 // @access  Private
@@ -61,12 +113,8 @@ const sendMessage = asyncHandler(async (req, res, next) => {
   await message.populate('sender', 'name email avatar role');
   await message.populate('receiver', 'name email avatar role');
 
-  // Emit socket event (nếu có socket)
-  const io = req.app.get('io');
-  if (io) {
-    io.to(`user_${receiverId}`).emit('new_message', message);
-    io.to(`user_${senderId}`).emit('message_sent', message);
-  }
+  // Broadcast qua SSE cho admin/staff
+  broadcastToAdmins(message);
 
   res.status(201).json({
     success: true,
@@ -382,4 +430,5 @@ module.exports = {
   markAsRead,
   getUnreadCount,
   deleteMessage,
+  sseHandler,
 };
