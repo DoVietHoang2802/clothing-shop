@@ -3,6 +3,7 @@ const Product = require('../models/Product');
 const Coupon = require('../models/Coupon');
 const asyncHandler = require('../utils/asyncHandler');
 const { broadcastOrderUpdate } = require('./orderSSEController');
+const { createNotification } = require('./notificationController');
 
 // @desc    Tạo đơn hàng mới
 // @route   POST /api/orders
@@ -362,16 +363,34 @@ const updateOrderStatus = asyncHandler(async (req, res, next) => {
   // Gửi thông báo real-time qua SSE (fallback cho production Vercel)
   broadcastOrderUpdate(order._id, oldStatus, status);
 
+  // Tạo notification cho user
+  const statusLabels = {
+    PENDING: 'Chờ xác nhận',
+    CONFIRMED: 'Đã xác nhận',
+    SHIPPED: 'Đã giao ĐVVC',
+    DELIVERING: 'Đang giao',
+    ARRIVED: 'Đã đến nơi',
+    PAID_TO_SHIPPER: 'Đã thanh toán',
+    COMPLETED: 'Hoàn thành',
+    CANCELLED: 'Đã hủy',
+  };
+
+  const orderIdShort = order._id.toString().slice(-6).toUpperCase();
+
+  // Tạo notification lưu vào database
+  await createNotification({
+    userId: order.user._id,
+    type: status === 'CANCELLED' ? 'ORDER_CANCELLED' : 'ORDER_STATUS',
+    title: status === 'CANCELLED' ? 'Đơn hàng đã bị hủy' : 'Cập nhật đơn hàng',
+    message: `Đơn hàng #${orderIdShort} đã được cập nhật: ${statusLabels[status]}`,
+    link: `/my-orders`,
+    data: { orderId: order._id.toString(), oldStatus, newStatus: status },
+  });
+
   // Gửi thông báo real-time qua Socket.io (chỉ khi hoạt động - local dev)
   const io = req.app.get('io');
   if (io) {
     const userId = order.user._id.toString();
-    const statusLabels = {
-      PENDING: 'Chờ xác nhận', CONFIRMED: 'Đã xác nhận',
-      SHIPPED: 'Đã giao ĐVVC', DELIVERING: 'Đang giao',
-      ARRIVED: 'Đã đến nơi', PAID_TO_SHIPPER: 'Đã thanh toán',
-      COMPLETED: 'Hoàn thành', CANCELLED: 'Đã hủy',
-    };
 
     // Gửi cho user
     io.to(`user_${userId}`).emit('order_updated', {
@@ -381,7 +400,7 @@ const updateOrderStatus = asyncHandler(async (req, res, next) => {
       newStatus: status,
       statusLabel: statusLabels[status],
       order: order,
-      message: `Đơn hàng #${order._id.toString().slice(-6).toUpperCase()} đã được cập nhật: ${statusLabels[status]}`,
+      message: `Đơn hàng #${orderIdShort} đã được cập nhật: ${statusLabels[status]}`,
     });
 
     // Gửi cho tất cả admin/staff

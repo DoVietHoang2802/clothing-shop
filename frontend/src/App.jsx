@@ -18,6 +18,7 @@ import PaymentResultPage from './pages/PaymentResultPage';
 import MockPaymentPage from './pages/MockPaymentPage';
 import WithdrawalPage from './pages/WithdrawalPage';
 import AddressPage from './pages/AddressPage';
+import NotificationPage from './pages/NotificationPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import { ToastContainer } from './components/ToastNotification';
@@ -107,6 +108,14 @@ function App() {
               element={
                 <PrivateRoute allowedRoles={['USER', 'ADMIN', 'STAFF']}>
                   <AddressPage />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/notifications"
+              element={
+                <PrivateRoute allowedRoles={['USER', 'ADMIN', 'STAFF']}>
+                  <NotificationPage />
                 </PrivateRoute>
               }
             />
