@@ -17,6 +17,7 @@ import WishlistPage from './pages/WishlistPage';
 import PaymentResultPage from './pages/PaymentResultPage';
 import MockPaymentPage from './pages/MockPaymentPage';
 import WithdrawalPage from './pages/WithdrawalPage';
+import AddressPage from './pages/AddressPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import { ToastContainer } from './components/ToastNotification';
@@ -98,6 +99,14 @@ function App() {
               element={
                 <PrivateRoute allowedRoles={['USER', 'ADMIN', 'STAFF']}>
                   <WithdrawalPage />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/addresses"
+              element={
+                <PrivateRoute allowedRoles={['USER', 'ADMIN', 'STAFF']}>
+                  <AddressPage />
                 </PrivateRoute>
               }
             />

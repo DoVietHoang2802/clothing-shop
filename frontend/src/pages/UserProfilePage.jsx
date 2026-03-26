@@ -171,6 +171,24 @@ const UserProfilePage = () => {
 
           <div style={{ marginTop: '2rem', borderTop: '1px solid #eee', paddingTop: '1.5rem' }}>
             <button
+              onClick={() => navigate('/addresses')}
+              style={{
+                width: '100%',
+                padding: '0.75rem',
+                background: 'white',
+                color: '#667eea',
+                border: '2px solid #667eea',
+                borderRadius: '8px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                marginBottom: '0.75rem',
+                transition: 'all 0.3s ease'
+              }}
+            >
+              📍 Địa Chỉ Giao Hàng
+            </button>
+
+            <button
               onClick={() => navigate('/change-password')}
               style={{
                 width: '100%',
