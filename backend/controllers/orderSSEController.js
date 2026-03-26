@@ -4,7 +4,6 @@
  */
 
 const Order = require('../models/Order');
-const asyncHandler = require('../utils/asyncHandler');
 
 // SSE clients map - lưu theo userId
 const sseClients = new Map();
@@ -12,7 +11,7 @@ const sseClients = new Map();
 // SSE Endpoint - Real-time order updates
 // @route   GET /api/orders/sse
 // @access  Private
-const orderSSEHandler = asyncHandler(async (req, res, next) => {
+const orderSSEHandler = async (req, res, next) => {
   const userId = req.user.id;
   const userRole = req.user.role;
 
