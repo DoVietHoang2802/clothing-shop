@@ -90,17 +90,35 @@ const ChatWidget = () => {
         });
       }
     } else {
-      // User thường: Chỉ nhận tin nhắn gửi cho mình
+      // User thường: Nhận tin nhắn gửi cho mình và hiển thị
       if (receiverId === currentUserId) {
+        // Tăng số tin nhắn chưa đọc
         setUnreadCount(prev => prev + 1);
-        // Nếu đang xem cuộc trò chuyện với admin đó, thêm tin nhắn
-        if (selectedUser && (selectedUser._id === senderId)) {
+
+        // Tìm admin gửi tin nhắn trong danh sách
+        const sender = adminList.find(a => a._id === senderId);
+        if (sender && !selectedUser) {
+          // Chọn admin này làm người chat nếu chưa chọn ai
+          setSelectedUser(sender);
+          setMessages([message]);
+        } else if (sender && selectedUser?._id === senderId) {
+          // Đang chat với admin này rồi - thêm tin nhắn
           setMessages(prev => {
             if (!prev.find(m => m._id === message._id)) {
-              return [...prev, message];
+              const newMessages = [...prev, message];
+              return newMessages.sort((a, b) =>
+                new Date(a.createdAt) - new Date(b.createdAt)
+              );
             }
             return prev;
           });
+          // Scroll xuống
+          setTimeout(() => {
+            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+          }, 100);
+        } else if (sender) {
+          // Đang chat với admin khác - thông báo có tin nhắn mới
+          setUnreadCount(prev => prev + 1);
         }
       }
     }
