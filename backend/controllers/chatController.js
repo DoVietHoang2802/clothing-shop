@@ -44,17 +44,14 @@ const sseHandler = asyncHandler(async (req, res, next) => {
   });
 });
 
-// Hàm broadcast tin nhắn mới tới tất cả admin/staff
-const broadcastToAdmins = (message) => {
+// Hàm broadcast tin nhắn mới tới tất cả client đang online
+const broadcastToAll = (message) => {
   sseClients.forEach((res, clientId) => {
-    const client = sseClients.get(clientId);
-    if (client) {
-      try {
-        client.write(`data: ${JSON.stringify({ type: 'new_message', message })}\n\n`);
-      } catch (e) {
-        // Client đã disconnect
-        sseClients.delete(clientId);
-      }
+    try {
+      res.write(`data: ${JSON.stringify({ type: 'new_message', message })}\n\n`);
+    } catch (e) {
+      // Client đã disconnect
+      sseClients.delete(clientId);
     }
   });
 };
@@ -113,8 +110,8 @@ const sendMessage = asyncHandler(async (req, res, next) => {
   await message.populate('sender', 'name email avatar role');
   await message.populate('receiver', 'name email avatar role');
 
-  // Broadcast qua SSE cho admin/staff
-  broadcastToAdmins(message);
+  // Broadcast tin nhắn tới TẤT CẢ client đang online
+  broadcastToAll(message);
 
   res.status(201).json({
     success: true,

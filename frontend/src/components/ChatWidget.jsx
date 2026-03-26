@@ -70,13 +70,16 @@ const ChatWidget = () => {
 
   // Xử lý tin nhắn mới từ SSE
   const handleNewMessage = (message) => {
+    const senderId = message.sender._id || message.sender;
+    const receiverId = message.receiver._id || message.receiver;
+    const currentUserId = user?._id;
+
     if (isAdminOrStaff) {
       // Admin/Staff: Cập nhật danh sách cuộc trò chuyện
       loadConversations();
 
-      // Nếu đang xem cuộc trò chuyện với người gửi, thêm tin nhắn vào
-      const otherUserId = message.sender._id || message.sender;
-      if (selectedUser && selectedUser._id === otherUserId) {
+      // Nếu đang xem cuộc trò chuyện với user liên quan, thêm tin nhắn
+      if (selectedUser && (selectedUser._id === senderId || selectedUser._id === receiverId)) {
         setMessages(prev => {
           if (!prev.find(m => m._id === message._id)) {
             return [...prev, message];
@@ -85,9 +88,18 @@ const ChatWidget = () => {
         });
       }
     } else {
-      // User thường: Cập nhật số tin nhắn chưa đọc
-      if (message.receiver._id === user._id || message.receiver === user._id) {
+      // User thường: Chỉ nhận tin nhắn gửi cho mình
+      if (receiverId === currentUserId) {
         setUnreadCount(prev => prev + 1);
+        // Nếu đang xem cuộc trò chuyện với admin đó, thêm tin nhắn
+        if (selectedUser && (selectedUser._id === senderId)) {
+          setMessages(prev => {
+            if (!prev.find(m => m._id === message._id)) {
+              return [...prev, message];
+            }
+            return prev;
+          });
+        }
       }
     }
   };
@@ -410,7 +422,10 @@ const ChatWidget = () => {
                   {selectedUser ? `💬 ${selectedUser.name}` : isAdminOrStaff ? '💬 Hộp thư' : '💬 Hỗ trợ'}
                 </h3>
                 <p style={{ margin: '2px 0 0 0', fontSize: '0.75rem', opacity: 0.9 }}>
-                  {selectedUser ? getRoleBadge(selectedUser.role).label : isAdminOrStaff ? `${conversations.length} cuộc trò chuyện` : 'Gửi tin nhắn để được hỗ trợ'}
+                  {selectedUser
+                    ? (isAdminOrStaff ? getRoleBadge(selectedUser.role).label : 'Đang trò chuyện')
+                    : (isAdminOrStaff ? `${conversations.length} cuộc trò chuyện` : 'Gửi tin nhắn để được hỗ trợ')
+                  }
                 </p>
               </div>
             </div>
