@@ -48,7 +48,9 @@ const sseHandler = asyncHandler(async (req, res, next) => {
 const broadcastToAll = (message) => {
   sseClients.forEach((res, clientId) => {
     try {
+      // Gửi cả tin nhắn mới và event reload conversations
       res.write(`data: ${JSON.stringify({ type: 'new_message', message })}\n\n`);
+      res.write(`data: ${JSON.stringify({ type: 'reload_conversations' })}\n\n`);
     } catch (e) {
       // Client đã disconnect
       sseClients.delete(clientId);

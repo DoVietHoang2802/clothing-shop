@@ -44,6 +44,8 @@ const ChatWidget = () => {
           const data = JSON.parse(event.data);
           if (data.type === 'new_message') {
             handleNewMessage(data.message);
+          } else if (data.type === 'reload_conversations') {
+            loadConversations();
           }
         } catch (e) {
           console.log('SSE parse error:', e);
@@ -419,11 +421,14 @@ const ChatWidget = () => {
               )}
               <div>
                 <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: '600' }}>
-                  {selectedUser ? `💬 ${selectedUser.name}` : isAdminOrStaff ? '💬 Hộp thư' : '💬 Hỗ trợ'}
+                  {selectedUser
+                    ? (isAdminOrStaff ? `💬 ${selectedUser.name}` : '💬 Hỗ trợ')
+                    : (isAdminOrStaff ? '💬 Hộp thư' : '💬 Hỗ trợ')
+                  }
                 </h3>
                 <p style={{ margin: '2px 0 0 0', fontSize: '0.75rem', opacity: 0.9 }}>
                   {selectedUser
-                    ? (isAdminOrStaff ? getRoleBadge(selectedUser.role).label : 'Đang trò chuyện')
+                    ? (isAdminOrStaff ? getRoleBadge(selectedUser.role).label : 'Đang trò chuyện với hỗ trợ')
                     : (isAdminOrStaff ? `${conversations.length} cuộc trò chuyện` : 'Gửi tin nhắn để được hỗ trợ')
                   }
                 </p>
