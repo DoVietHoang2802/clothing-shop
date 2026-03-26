@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import orderService from '../services/orderService';
+import addressService from '../services/addressService';
 import CouponInput from '../components/CouponInput';
 
 const CartPage = () => {
@@ -10,6 +11,11 @@ const CartPage = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState(null);
+
+  // Addresses state
+  const [addresses, setAddresses] = useState([]);
+  const [selectedAddressId, setSelectedAddressId] = useState(null);
+  const [showAddressList, setShowAddressList] = useState(false);
 
   // Shipping address state
   const [shippingAddress, setShippingAddress] = useState({
@@ -23,7 +29,59 @@ const CartPage = () => {
 
   useEffect(() => {
     loadCart();
+    loadAddresses();
   }, []);
+
+  // Load addresses
+  const loadAddresses = async () => {
+    try {
+      const res = await addressService.getAddresses();
+      const addrList = res.data.data || [];
+      setAddresses(addrList);
+
+      // Auto select default address
+      const defaultAddr = addrList.find(a => a.isDefault);
+      if (defaultAddr) {
+        setSelectedAddressId(defaultAddr._id);
+        setShippingAddress({
+          fullName: defaultAddr.fullName,
+          phone: defaultAddr.phone,
+          address: formatFullAddress(defaultAddr),
+        });
+      }
+    } catch (err) {
+      console.error('Error loading addresses:', err);
+    }
+  };
+
+  // Format full address
+  const formatFullAddress = (addr) => {
+    let full = addr.address || '';
+    if (addr.ward) full += addr.ward + ', ';
+    if (addr.district) full += addr.district + ', ';
+    if (addr.city) full += addr.city;
+    return full.trim();
+  };
+
+  // Handle select address
+  const handleSelectAddress = (addr) => {
+    setSelectedAddressId(addr._id);
+    setShippingAddress({
+      fullName: addr.fullName,
+      phone: addr.phone,
+      address: formatFullAddress(addr),
+    });
+    setShowAddressList(false);
+  };
+
+  // Get label icon
+  const getLabelIcon = (label) => {
+    switch (label) {
+      case 'home': return '🏠';
+      case 'office': return '🏢';
+      default: return '📍';
+    }
+  };
 
   const loadCart = () => {
     const savedCart = JSON.parse(localStorage.getItem('cart') || '[]');
@@ -465,12 +523,78 @@ const CartPage = () => {
                   📍 Địa Chỉ Giao Hàng
                 </h4>
 
+                {/* Address Selection Buttons */}
+                {addresses.length > 0 && (
+                  <div style={{ marginBottom: '1rem' }}>
+                    <button
+                      onClick={() => setShowAddressList(!showAddressList)}
+                      style={{
+                        width: '100%',
+                        padding: '0.75rem',
+                        background: '#f8f9fa',
+                        border: '2px solid #667eea',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.5rem',
+                        fontSize: '0.9rem',
+                        color: '#667eea',
+                        fontWeight: '600',
+                      }}
+                    >
+                      📍 Chọn địa chỉ đã lưu ({addresses.length})
+                    </button>
+
+                    {showAddressList && (
+                      <div style={{
+                        marginTop: '0.5rem',
+                        border: '2px solid #eee',
+                        borderRadius: '8px',
+                        overflow: 'hidden',
+                        maxHeight: '200px',
+                        overflowY: 'auto'
+                      }}>
+                        {addresses.map((addr) => (
+                          <div
+                            key={addr._id}
+                            onClick={() => handleSelectAddress(addr)}
+                            style={{
+                              padding: '0.75rem',
+                              cursor: 'pointer',
+                              borderBottom: '1px solid #eee',
+                              background: selectedAddressId === addr._id ? '#f0f4ff' : 'white',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.5rem',
+                            }}
+                          >
+                            <span style={{ fontSize: '1.2rem' }}>{getLabelIcon(addr.label)}</span>
+                            <div style={{ flex: 1 }}>
+                              <div style={{ fontWeight: '600', fontSize: '0.9rem', color: '#2c3e50' }}>
+                                {addr.fullName} {addr.isDefault && <span style={{ color: '#667eea', fontSize: '0.75rem' }}>★ Mặc định</span>}
+                              </div>
+                              <div style={{ fontSize: '0.8rem', color: '#666' }}>
+                                {addr.phone} - {formatFullAddress(addr)}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                   <input
                     type="text"
                     placeholder="Họ và tên"
                     value={shippingAddress.fullName}
-                    onChange={(e) => setShippingAddress({ ...shippingAddress, fullName: e.target.value })}
+                    onChange={(e) => {
+                      setShippingAddress({ ...shippingAddress, fullName: e.target.value });
+                      setSelectedAddressId(null); // User đang tự nhập
+                    }}
                     style={{
                       width: '100%',
                       padding: '0.75rem 1rem',
@@ -485,7 +609,10 @@ const CartPage = () => {
                     type="tel"
                     placeholder="Số điện thoại (VD: 0123456789)"
                     value={shippingAddress.phone}
-                    onChange={(e) => setShippingAddress({ ...shippingAddress, phone: e.target.value })}
+                    onChange={(e) => {
+                      setShippingAddress({ ...shippingAddress, phone: e.target.value });
+                      setSelectedAddressId(null);
+                    }}
                     style={{
                       width: '100%',
                       padding: '0.75rem 1rem',
@@ -499,7 +626,10 @@ const CartPage = () => {
                   <textarea
                     placeholder="Địa chỉ chi tiết (số nhà, đường, phường/xã, quận/huyện, thành phố)"
                     value={shippingAddress.address}
-                    onChange={(e) => setShippingAddress({ ...shippingAddress, address: e.target.value })}
+                    onChange={(e) => {
+                      setShippingAddress({ ...shippingAddress, address: e.target.value });
+                      setSelectedAddressId(null);
+                    }}
                     rows={3}
                     style={{
                       width: '100%',
