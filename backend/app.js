@@ -23,10 +23,16 @@ const app = express();
 
 // CORS configuration for Firebase OAuth
 const corsOptions = {
-  origin: true,
+  origin: [
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'https://clothing-shop-ashy.vercel.app',
+    'https://clothing-shop-git-*.vercel.app',
+  ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  exposedHeaders: ['Content-Type'],
 };
 
 // Middlewares
