@@ -22,13 +22,24 @@ const errorHandler = require('./middlewares/errorHandler');
 const app = express();
 
 // CORS configuration for Firebase OAuth
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'https://clothing-shop-ashy.vercel.app',
+  'https://clothing-shop-git-main-*.vercel.app',
+];
+
 const corsOptions = {
-  origin: [
-    'http://localhost:5173',
-    'http://localhost:3000',
-    'https://clothing-shop-ashy.vercel.app',
-    'https://clothing-shop-git-*.vercel.app',
-  ],
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.includes(origin) || origin.match(/https:\/\/clothing-shop-.*\.vercel\.app$/)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
@@ -38,6 +49,21 @@ const corsOptions = {
 // Middlewares
 app.use(express.json());
 app.use(cors(corsOptions));
+
+// Manual CORS headers for all responses (backup)
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin) || (origin && origin.match(/https:\/\/clothing-shop-.*\.vercel\.app$/))) {
+    res.header('Access-Control-Allow-Origin', origin);
+  } else {
+    res.header('Access-Control-Allow-Origin', allowedOrigins[0]);
+  }
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+  res.header('Access-Control-Expose-Headers', 'Content-Type');
+  next();
+});
 
 // Serve uploaded files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
