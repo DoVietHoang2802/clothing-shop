@@ -52,12 +52,13 @@ export const NotificationProvider = ({ children }) => {
     return null;
   };
 
-  // Polling fallback - chạy mỗi 30s để cập nhật notification bell
+  // Polling fallback - tăng lên 2 phút để tránh Render free tier sleep
+  // SSE đã handle real-time, polling chỉ là backup khi SSE fail
   const startPolling = useCallback(() => {
     if (pollingRef.current) return;
     pollingRef.current = setInterval(() => {
       loadUnreadCount();
-    }, 30000);
+    }, 120000); // 2 phút thay vì 30s
   }, [loadUnreadCount]);
 
   const stopPolling = useCallback(() => {
