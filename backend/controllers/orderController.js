@@ -322,7 +322,14 @@ const getOrderById = asyncHandler(async (req, res, next) => {
 // @access  Private/ADMIN
 const getAllOrders = asyncHandler(async (req, res, next) => {
   try {
-    const orders = await Order.find()
+    // Chỉ hiện: COD (mọi status) HOẶC MoMo đã thanh toán
+    // ẨN: MoMo đang chờ thanh toán (sẽ bị xóa khi hủy/thất bại)
+    const orders = await Order.find({
+      $or: [
+        { paymentMethod: 'COD' },
+        { paymentMethod: 'MOMO', paymentStatus: 'PAID' }
+      ]
+    })
       .populate('user', 'name email')
       .populate('items.product', 'name price image')
       .sort({ createdAt: -1 });
