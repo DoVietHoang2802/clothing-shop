@@ -10,7 +10,7 @@ Hệ thống web bán quần áo (giống Điện Máy Xanh) được xây dựn
 | **Frontend** | React 18 + Vite + React Router |
 | **Authentication** | JWT Token + Google OAuth (Firebase) |
 | **Database** | MongoDB |
-| **Real-time** | Socket.io |
+| **Real-time** | SSE (Server-Sent Events) |
 
 ---
 
@@ -172,7 +172,13 @@ Client (Frontend)                    Server (Backend)
 ### 💬 Chat System
 - Nhắn tin User ↔ Admin/Staff
 - Tin nhắn chưa đọc (badge)
-- Real-time với Socket.io
+- Real-time với SSE
+
+### 🔔 Notification System
+- Thông báo đơn hàng mới cho Admin
+- Thông báo cập nhật trạng thái cho User
+- Thông báo đánh giá sản phẩm mới cho Admin
+- Real-time với SSE
 
 ### ⭐ Đánh Giá & Yêu Thích
 - Đánh giá sản phẩm (1-5 sao)
@@ -241,6 +247,88 @@ VITE_API_BASE_URL=http://localhost:5000/api
 
 - **Backend**: Render (https://clothing-shop-api-8wae.onrender.com)
 - **Frontend**: Vercel (https://clothing-shop-ashy.vercel.app)
+
+---
+
+## 🔌 Real-time Architecture (SSE)
+
+### Tổng Quan
+Dự án sử dụng **Server-Sent Events (SSE)** thay vì WebSocket vì:
+- Render free tier không hỗ trợ WebSocket
+- SSE chỉ cần HTTP, hoạt động tốt với serverless
+
+### Luồng SSE
+```
+User đặt hàng
+    ↓
+Backend: createOrder()
+    ↓
+broadcastNewOrder(order) → Gửi SSE tới Admin
+    ↓
+Admin nhận event → Toast + Update UI
+
+Admin duyệt đơn
+    ↓
+Backend: updateOrderStatus()
+    ↓
+broadcastOrderUpdate(order) → Gửi SSE tới User + Admin
+    ↓
+User nhận event → Toast + Update UI
+```
+
+### SSE Endpoints
+| Endpoint | Mô tả |
+|----------|-------|
+| `GET /api/orders/sse` | Order updates + Notifications |
+
+### SSE Events
+| Event | Target | Mô tả |
+|-------|--------|--------|
+| `NEW_ORDER` | Admin | Có đơn hàng mới |
+| `ORDER_STATUS_CHANGED` | User + Admin | Trạng thái đơn thay đổi |
+| `new_notification` | User + Admin | Thông báo mới |
+
+### Cấu trúc File
+```
+frontend/src/
+├── config/
+│   ├── sse.js                    # Unified SSE service (1 connection)
+│   └── notificationSSE.js         # (Deprecated - dùng sse.js)
+├── context/
+│   ├── AuthContext.jsx             # Auth state (Socket.io disabled)
+│   └── NotificationContext.jsx    # Notification state
+└── pages/
+    ├── MyOrdersPage.jsx           # User: lắng nghe SSE
+    └── Admin/AdminOrdersPage.jsx  # Admin: lắng nghe SSE
+```
+
+### Backend SSE Files
+```
+backend/controllers/
+├── orderSSEController.js          # Order SSE logic
+│   ├── orderSSEHandler()         # Endpoint handler
+│   ├── broadcastNewOrder()       # Gửi event đơn mới
+│   ├── broadcastOrderUpdate()     # Gửi event cập nhật
+│   └── sendToAllAdmins()          # Gửi tới tất cả admin
+└── chatController.js              # Chat SSE logic
+    ├── sseHandler()               # Endpoint handler
+    └── broadcastToAll()           # Gửi tin nhắn
+```
+
+### Socket.io
+Socket.io đã bị **tắt** vì:
+- Render free không hỗ trợ WebSocket
+- SSE đã đáp ứng đủ nhu cầu realtime
+
+Để bật lại (khi upgrade hosting):
+1. Uncomment `import socketService` trong `AuthContext.jsx`
+2. Gọi `socketService.connect(userId)` sau login
+
+### Performance Notes
+- **1 SSE connection duy nhất** cho tất cả events
+- Heartbeat gửi mỗi 15s để giữ kết nối
+- Exponential backoff khi reconnect (3s → 6s → 12s → 24s → 30s max)
+- Polling fallback mỗi 30s cho notification bell
 
 ---
 
