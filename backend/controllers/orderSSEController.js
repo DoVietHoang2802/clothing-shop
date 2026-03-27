@@ -131,4 +131,5 @@ module.exports = {
   orderSSEHandler,
   broadcastOrderUpdate,
   broadcastNewOrder,
+  sseClients, // Export để notificationController có thể dùng chung
 };

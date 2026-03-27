@@ -1,48 +1,16 @@
 const Notification = require('../models/Notification');
 const asyncHandler = require('../utils/asyncHandler');
+const { sseClients } = require('./orderSSEController');
 
-// SSE clients cho notification
-const notificationClients = new Map();
-
-// SSE endpoint cho notifications real-time
-const notificationSSEHandler = async (req, res) => {
-  const userId = req.user.id;
-
-  res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache');
-  res.setHeader('Connection', 'keep-alive');
-  res.setHeader('X-Accel-Buffering', 'no');
-  res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
-  res.flushHeaders();
-
-  notificationClients.set(userId, res);
-
-  // Heartbeat (15s thay vì 25s - tránh server kill connection)
-  const heartbeatInterval = setInterval(() => {
-    try {
-      res.write(': heartbeat\n\n');
-    } catch (e) {
-      clearInterval(heartbeatInterval);
-      notificationClients.delete(userId);
-    }
-  }, 15000);
-
-  res.write(`data: ${JSON.stringify({ type: 'connected' })}\n\n`);
-
-  req.on('close', () => {
-    clearInterval(heartbeatInterval);
-    notificationClients.delete(userId);
-  });
-};
-
-// Broadcast notification tới user
+// Dùng chung sseClients từ orderSSEController để gửi notification qua unified SSE connection
+// Broadcast notification tới user qua unified connection
 const broadcastToUser = async (userId, notification) => {
-  const res = notificationClients.get(userId.toString());
-  if (res) {
+  const client = sseClients.get(userId.toString());
+  if (client) {
     try {
-      res.write(`data: ${JSON.stringify({ type: 'new_notification', notification })}\n\n`);
+      client.res.write(`data: ${JSON.stringify({ type: 'new_notification', notification })}\n\n`);
     } catch (e) {
-      notificationClients.delete(userId.toString());
+      sseClients.delete(userId.toString());
     }
   }
 };
@@ -234,7 +202,6 @@ const deleteReadNotifications = asyncHandler(async (req, res) => {
 });
 
 module.exports = {
-  notificationSSEHandler,
   createNotification,
   getNotifications,
   getUnreadCount,

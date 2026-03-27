@@ -67,14 +67,32 @@ export const NotificationProvider = ({ children }) => {
     }
   }, []);
 
-  // Load notifications on mount + polling
+  // Load notifications on mount + SSE real-time + polling
   useEffect(() => {
     const userId = getUserId();
     if (userId && localStorage.getItem('token')) {
       loadNotifications();
       loadUnreadCount();
       startPolling();
+
+      // Kết nối SSE để nhận thông báo real-time
+      sseService.connect(userId);
+
+      // Lắng nghe thông báo mới từ SSE
+      const handleNewNotification = (notification) => {
+        setNotifications(prev => {
+          // Tránh trùng lặp nếu notification đã tồn tại
+          if (prev.some(n => n._id === notification._id)) return prev;
+          return [notification, ...prev];
+        });
+        setUnreadCount(prev => prev + 1);
+        setToastNotification(notification);
+        setTimeout(() => setToastNotification(null), 5000);
+      };
+
+      sseService.onNotification(handleNewNotification);
     }
+
     return () => stopPolling();
   }, [loadNotifications, loadUnreadCount, startPolling, stopPolling]);
 

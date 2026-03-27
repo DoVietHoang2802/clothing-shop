@@ -1,6 +1,5 @@
 const express = require('express');
 const {
-  notificationSSEHandler,
   getNotifications,
   getUnreadCount,
   markAsRead,
@@ -11,9 +10,6 @@ const {
 const { verifyToken } = require('../middlewares/auth');
 
 const router = express.Router();
-
-// GET /api/notifications/sse - SSE endpoint cho notifications (PRIVATE - trước /:id)
-router.get('/sse', verifyToken, notificationSSEHandler);
 
 // GET /api/notifications - Lấy tất cả thông báo
 router.get('/', verifyToken, getNotifications);
