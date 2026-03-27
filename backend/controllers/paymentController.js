@@ -7,7 +7,6 @@ const crypto = require('crypto');
 const axios = require('axios');
 const momoConfig = require('../config/momo');
 const Order = require('../models/Order');
-const Cart = require('../models/Cart');
 const asyncHandler = require('../utils/asyncHandler');
 
 // Tạo signature HMAC SHA256
@@ -186,9 +185,6 @@ const ipnCallback = asyncHandler(async (req, res) => {
           order.momoMessage = message;
           order.paidAt = new Date();
           await order.save();
-
-          // Xóa cart sau khi thanh toán thành công
-          await Cart.deleteOne({ user: order.user });
 
           console.log('✅ Payment success, order updated:', dbOrderId);
         }
