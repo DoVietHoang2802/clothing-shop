@@ -13,6 +13,9 @@ export const toast = {
   warning: (message, duration = 4000) => {
     if (addToastFn) addToastFn({ type: 'warning', message, duration });
   },
+  info: (message, duration = 4000) => {
+    if (addToastFn) addToastFn({ type: 'info', message, duration });
+  },
 };
 
 const Toast = ({ toast: item, onClose }) => {

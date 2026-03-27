@@ -85,13 +85,14 @@ const AdminOrdersPage = () => {
   const handleStatusChange = async (orderId, newStatus) => {
     try {
       setUpdatingId(orderId);
-      await orderService.updateOrderStatus(orderId, newStatus);
-      setSuccess('✅ Cập nhật trạng thái thành công!');
-      loadOrders();
-      setTimeout(() => setSuccess(''), 3000);
+      const res = await orderService.updateOrderStatus(orderId, newStatus);
+      // Cập nhật state trực tiếp - không reload toàn bộ danh sách
+      if (res.data.data) {
+        setOrders(prev => prev.map(o => o._id === orderId ? { ...o, ...res.data.data } : o));
+      }
+      toast.success('✅ Cập nhật trạng thái thành công!');
     } catch (err) {
-      setError('Không thể cập nhật trạng thái');
-      console.error(err);
+      toast.error(err.response?.data?.message || 'Không thể cập nhật trạng thái');
     } finally {
       setUpdatingId(null);
     }
@@ -105,12 +106,11 @@ const AdminOrdersPage = () => {
     try {
       setDeletingId(orderId);
       await orderService.deleteOrderAdmin(orderId);
-      setSuccess('✅ Xóa đơn hàng thành công!');
-      loadOrders();
-      setTimeout(() => setSuccess(''), 3000);
+      // Xóa khỏi state trực tiếp - không reload
+      setOrders(prev => prev.filter(o => o._id !== orderId));
+      toast.success('✅ Xóa đơn hàng thành công!');
     } catch (err) {
-      setError(err.response?.data?.message || 'Không thể xóa đơn hàng');
-      console.error(err);
+      toast.error(err.response?.data?.message || 'Không thể xóa đơn hàng');
     } finally {
       setDeletingId(null);
     }
