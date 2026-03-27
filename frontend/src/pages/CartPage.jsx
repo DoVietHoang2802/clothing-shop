@@ -130,7 +130,7 @@ const CartPage = () => {
       return;
     }
 
-    // Validate shipping address (required for both COD and VNPAY)
+    // Validate shipping address
     if (!shippingAddress.fullName || !shippingAddress.phone || !shippingAddress.address) {
       setError('Vui lòng nhập đầy đủ thông tin giao hàng');
       return;
@@ -160,26 +160,6 @@ const CartPage = () => {
       );
 
       const orderId = orderRes.data.data._id;
-
-      // Nếu là VNPay, chuyển sang trang thanh toán mock
-      if (paymentMethod === 'VNPAY') {
-        try {
-          const paymentRes = await import('../services/paymentService').then(module =>
-            module.default.createMockPayment(orderId)
-          );
-
-          if (paymentRes.data.success && paymentRes.data.data.paymentUrl) {
-            // Redirect đến trang thanh toán mock
-            window.location.href = paymentRes.data.data.paymentUrl;
-            return;
-          }
-        } catch (payErr) {
-          console.error('Payment error:', payErr);
-          setError('Lỗi khi tạo link thanh toán');
-          setLoading(false);
-          return;
-        }
-      }
 
       // Nếu là MoMo, tạo payment và redirect
       if (paymentMethod === 'MOMO') {
@@ -533,34 +513,11 @@ const CartPage = () => {
                   <div style={{ fontSize: '0.8rem', color: '#7f8c8d' }}>Thanh toán qua MoMo</div>
                 </label>
 
-                {/* VNPay Option */}
-                <label style={{
-                  flex: 1,
-                  padding: '1rem',
-                  border: paymentMethod === 'VNPAY' ? '2px solid #3498db' : '2px solid #ddd',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  background: paymentMethod === 'VNPAY' ? '#f0f7fc' : 'white',
-                  transition: 'all 0.3s ease',
-                  textAlign: 'center'
-                }}>
-                  <input
-                    type="radio"
-                    name="paymentMethod"
-                    value="VNPAY"
-                    checked={paymentMethod === 'VNPAY'}
-                    onChange={(e) => setPaymentMethod(e.target.value)}
-                    style={{ display: 'none' }}
-                  />
-                  <div style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>🏦</div>
-                  <div style={{ fontWeight: '600', color: '#2c3e50' }}>VNPay</div>
-                  <div style={{ fontSize: '0.8rem', color: '#7f8c8d' }}>Thanh toán qua VNPay</div>
-                </label>
               </div>
             </div>
 
             {/* Shipping Address Form - Show for all payment methods */}
-            {(paymentMethod === 'COD' || paymentMethod === 'VNPAY' || paymentMethod === 'MOMO') && (
+            {(paymentMethod === 'COD' || paymentMethod === 'MOMO') && (
               <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '2px solid #f0f0f0' }}>
                 <h4 style={{ margin: '0 0 1rem 0', fontSize: '1rem', color: '#2c3e50' }}>
                   📍 Địa Chỉ Giao Hàng
@@ -749,8 +706,7 @@ const CartPage = () => {
               >
                 {loading ? '⏳ Đang Xử Lý...' :
                   paymentMethod === 'COD' ? '📦 Đặt Hàng (COD)' :
-                  paymentMethod === 'MOMO' ? '💜 Thanh Toán MoMo' :
-                  '💳 Thanh Toán VNPay'}
+                  '💜 Thanh Toán MoMo'}
               </button>
 
               <button

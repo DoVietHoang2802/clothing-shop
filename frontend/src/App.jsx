@@ -15,8 +15,6 @@ import UserProfilePage from './pages/UserProfilePage';
 import ChangePasswordPage from './pages/ChangePasswordPage';
 import WishlistPage from './pages/WishlistPage';
 import PaymentResultPage from './pages/PaymentResultPage';
-import MockPaymentPage from './pages/MockPaymentPage';
-import WithdrawalPage from './pages/WithdrawalPage';
 import AddressPage from './pages/AddressPage';
 import NotificationPage from './pages/NotificationPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
@@ -30,7 +28,6 @@ import AdminCategoriesPage from './pages/Admin/AdminCategoriesPage';
 import AdminProductsPage from './pages/Admin/AdminProductsPage';
 import AdminOrdersPage from './pages/Admin/AdminOrdersPage';
 import AdminCouponsPage from './pages/Admin/AdminCouponsPage';
-import AdminWithdrawalsPage from './pages/Admin/AdminWithdrawalsPage';
 
 // Staff Pages
 import StaffProductsPage from './pages/Staff/StaffProductsPage';
@@ -52,7 +49,6 @@ function App() {
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
             <Route path="/payment-result" element={<PaymentResultPage />} />
-            <Route path="/mock-payment" element={<MockPaymentPage />} />
 
             {/* User Routes */}
             <Route
@@ -92,14 +88,6 @@ function App() {
               element={
                 <PrivateRoute allowedRoles={['USER', 'ADMIN', 'STAFF']}>
                   <WishlistPage />
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/withdrawal"
-              element={
-                <PrivateRoute allowedRoles={['USER', 'ADMIN', 'STAFF']}>
-                  <WithdrawalPage />
                 </PrivateRoute>
               }
             />
@@ -184,14 +172,6 @@ function App() {
               element={
                 <PrivateRoute allowedRoles={['ADMIN']}>
                   <AdminCouponsPage />
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/admin/withdrawals"
-              element={
-                <PrivateRoute allowedRoles={['ADMIN']}>
-                  <AdminWithdrawalsPage />
                 </PrivateRoute>
               }
             />

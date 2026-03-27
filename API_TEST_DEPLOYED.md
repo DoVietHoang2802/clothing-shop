@@ -362,36 +362,6 @@ Headers: Authorization: Bearer <token>
 
 ---
 
-## 💰 10. WITHDRAWALS - Rút Tiền
-
-### 10.1 Lấy số dư
-```
-GET /api/withdrawals/balance
-Headers: Authorization: Bearer <token>
-
-✅ Test: Lấy được số dư khả dụng
-```
-
-### 10.2 Tạo yêu cầu rút tiền
-```
-POST /api/withdrawals
-Headers: Authorization: Bearer <token>
-Content-Type: application/json
-
-Body:
-{
-  "amount": 100000,
-  "bankName": "Vietcombank",
-  "accountNumber": "1234567890",
-  "accountHolder": "NGUYEN VAN DEMO"
-}
-
-✅ Test: Tạo yêu cầu thành công
-❌ Lỗi: Số dư không đủ
-```
-
----
-
 ## 💳 11. PAYMENT - Thanh Toán
 
 ### 11.1 Thanh toán COD

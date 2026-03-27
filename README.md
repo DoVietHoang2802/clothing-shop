@@ -41,7 +41,7 @@ clothing-shop/
 │   ├── models/                       # Schema database (MongoDB)
 │   │   ├── User.js, Product.js, Category.js, Order.js
 │   │   ├── Coupon.js, Review.js, Wishlist.js
-│   │   ├── Message.js, Withdrawal.js
+│   │   ├── Message.js
 │   ├── routes/                       # Định nghĩa API endpoints
 │   ├── middlewares/                   # Middleware (auth, errorHandler)
 │   ├── app.js                         # Express app config
@@ -72,7 +72,6 @@ clothing-shop/
 │   │   │   │   ├── AdminCategoriesPage.jsx
 │   │   │   │   ├── AdminUsersPage.jsx
 │   │   │   │   ├── AdminCouponsPage.jsx
-│   │   │   │   └── AdminWithdrawalsPage.jsx
 │   │   │   └── Staff/               # Staff pages
 │   │   │       ├── StaffDashboard.jsx
 │   │   │       └── StaffProductsPage.jsx

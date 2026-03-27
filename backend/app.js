@@ -15,7 +15,6 @@ const couponRoutes = require('./routes/coupon');
 const adminRoutes = require('./routes/admin');
 const paymentRoutes = require('./routes/payment');
 const momoRoutes = require('./routes/momo');
-const withdrawalRoutes = require('./routes/withdrawal');
 const chatRoutes = require('./routes/chat');
 const notificationRoutes = require('./routes/notification');
 
@@ -91,7 +90,6 @@ app.use('/api/coupons', couponRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/api/momo', momoRoutes);
-app.use('/api/withdrawals', withdrawalRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/notifications', notificationRoutes);
 
