@@ -13,6 +13,8 @@ class SSEService {
     this.connected = false;
     this.userId = null;
     this.reconnectTimer = null;
+    this.reconnectAttempts = 0;
+    this.maxReconnectDelay = 30000; // Max 30s giữa các lần reconnect
   }
 
   connect(userId) {
@@ -25,17 +27,20 @@ class SSEService {
     const token = localStorage.getItem('token');
 
     if (!token || !userId) {
-      console.log('SSE: Missing token or userId, skipping connection');
       return;
     }
 
     try {
-      // API_BASE_URL đã bao gồm /api, không thêm lại
+      // Close any existing connection first
+      if (this.eventSource) {
+        this.eventSource.close();
+      }
+
       this.eventSource = new EventSource(`${API_BASE_URL}/orders/sse?token=${token}`);
 
       this.eventSource.onopen = () => {
         this.connected = true;
-        console.log('✅ SSE connected for order updates');
+        this.reconnectAttempts = 0;
       };
 
       this.eventSource.onmessage = (event) => {
@@ -46,40 +51,39 @@ class SSEService {
             this.emit('order_updated', data);
           } else if (data.type === 'NEW_ORDER') {
             this.emit('new_order', data);
-          } else if (data.type === 'connected') {
-            console.log('SSE connected:', data.userId);
           }
         } catch (e) {
-          console.error('SSE parse error:', e);
+          // Silent fail for parse errors
         }
       };
 
       this.eventSource.onerror = () => {
-        console.log('SSE connection error');
         this.connected = false;
 
         // Clear existing reconnect timer
         if (this.reconnectTimer) {
           clearTimeout(this.reconnectTimer);
+          this.reconnectTimer = null;
         }
 
-        // Reconnect after 5 seconds only if we have userId
+        // Exponential backoff: 3s, 6s, 12s, 24s, max 30s
+        this.reconnectAttempts++;
+        const delay = Math.min(3000 * Math.pow(2, this.reconnectAttempts - 1), this.maxReconnectDelay);
+
         if (this.userId) {
           this.reconnectTimer = setTimeout(() => {
             if (!this.connected && this.userId) {
-              console.log('SSE: Attempting to reconnect...');
               this.connect(this.userId);
             }
-          }, 5000);
+          }, delay);
         }
       };
     } catch (e) {
-      console.error('SSE connection error:', e);
+      // Silent fail
     }
   }
 
   disconnect() {
-    // Clear reconnect timer
     if (this.reconnectTimer) {
       clearTimeout(this.reconnectTimer);
       this.reconnectTimer = null;
@@ -92,6 +96,7 @@ class SSEService {
     this.connected = false;
     this.userId = null;
     this.listeners = {};
+    this.reconnectAttempts = 0;
   }
 
   // Listen for order updates
@@ -129,7 +134,7 @@ class SSEService {
           try {
             callback(data);
           } catch (e) {
-            console.error('SSE callback error:', e);
+            // Silent fail for callback errors
           }
         }
       });

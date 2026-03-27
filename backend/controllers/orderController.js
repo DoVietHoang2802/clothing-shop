@@ -1,9 +1,29 @@
 const Order = require('../models/Order');
 const Product = require('../models/Product');
 const Coupon = require('../models/Coupon');
+const User = require('../models/User');
 const asyncHandler = require('../utils/asyncHandler');
 const { broadcastOrderUpdate } = require('./orderSSEController');
 const { createNotification } = require('./notificationController');
+
+// Helper: Gửi notification cho tất cả admin
+const notifyAdmins = async ({ title, message, type, link, data }) => {
+  try {
+    const admins = await User.find({ role: 'ADMIN' }).select('_id');
+    for (const admin of admins) {
+      await createNotification({
+        userId: admin._id,
+        type: type || 'SYSTEM',
+        title,
+        message,
+        link: link || '/admin/dashboard',
+        data: data || null,
+      });
+    }
+  } catch (err) {
+    console.error('Error notifying admins:', err);
+  }
+};
 
 // @desc    Tạo đơn hàng mới
 // @route   POST /api/orders
@@ -201,19 +221,14 @@ const createOrder = asyncHandler(async (req, res, next) => {
   const { broadcastNewOrder } = require('./orderSSEController');
   broadcastNewOrder(order);
 
-  // Tạo notification cho admin (để hiển thị trong trang notifications)
-  const User = require('../models/User');
-  const admins = await User.find({ role: 'ADMIN' }).select('_id');
-  for (const admin of admins) {
-    await createNotification({
-      userId: admin._id,
-      type: 'ORDER_STATUS',
-      title: '📦 Đơn hàng mới',
-      message: `Đơn hàng #${orderIdShort} từ ${order.user?.name || 'Khách hàng'} - ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(order.finalPrice || order.totalPrice)}`,
-      link: `/admin/orders`,
-      data: { orderId: order._id.toString() },
-    });
-  }
+  // Notification cho admin
+  await notifyAdmins({
+    title: '📦 Đơn hàng mới',
+    message: `Đơn hàng #${orderIdShort} từ ${order.user?.name || 'Khách hàng'} - ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(order.finalPrice || order.totalPrice)}`,
+    type: 'ORDER_STATUS',
+    link: '/admin/orders',
+    data: { orderId: order._id.toString() },
+  });
 
   res.status(201).json({
     success: true,
@@ -652,24 +667,20 @@ const confirmPaidToShipper = asyncHandler(async (req, res, next) => {
   await createNotification({
     userId: order.user._id,
     type: 'ORDER_STATUS',
-    title: 'Đã xác nhận thanh toán cho shipper',
+    title: '💵 Đã xác nhận thanh toán cho shipper',
     message: `Đơn hàng #${orderIdShort} - Bạn đã xác nhận thanh toán. Chờ admin xác nhận hoàn tất.`,
     link: `/my-orders`,
     data: { orderId: order._id.toString(), oldStatus, newStatus: 'PAID_TO_SHIPPER' },
   });
 
-  // Socket.io broadcast nếu có
-  const io = req.app.get('io');
-  if (io) {
-    io.emit('admin_order_updated', {
-      type: 'ORDER_STATUS_CHANGED',
-      orderId: order._id,
-      oldStatus,
-      newStatus: 'PAID_TO_SHIPPER',
-      statusLabel: 'Đã thanh toán cho shipper',
-      order: order,
-    });
-  }
+  // Notification cho admin - có người thanh toán cho shipper
+  await notifyAdmins({
+    title: '💵 Khách xác nhận thanh toán cho shipper',
+    message: `Đơn hàng #${orderIdShort} từ ${order.user?.name || 'Khách hàng'} - Cần xác nhận hoàn tất đơn hàng`,
+    type: 'ORDER_STATUS',
+    link: '/admin/orders',
+    data: { orderId: order._id.toString(), oldStatus, newStatus: 'PAID_TO_SHIPPER' },
+  });
 
   res.status(200).json({
     success: true,

@@ -1,7 +1,28 @@
 const Review = require('../models/Review');
 const Product = require('../models/Product');
+const User = require('../models/User');
 const mongoose = require('mongoose');
 const asyncHandler = require('../utils/asyncHandler');
+const { createNotification } = require('./notificationController');
+
+// Helper: Gửi notification cho tất cả admin
+const notifyAdmins = async ({ title, message, type, link, data }) => {
+  try {
+    const admins = await User.find({ role: 'ADMIN' }).select('_id');
+    for (const admin of admins) {
+      await createNotification({
+        userId: admin._id,
+        type: type || 'REVIEW_REQUEST',
+        title,
+        message,
+        link: link || '/admin/dashboard',
+        data: data || null,
+      });
+    }
+  } catch (err) {
+    console.error('Error notifying admins:', err);
+  }
+};
 
 // @desc    Lấy review của sản phẩm
 // @route   GET /api/reviews/product/:productId
@@ -85,6 +106,17 @@ const createReview = asyncHandler(async (req, res, next) => {
   });
 
   await review.populate('user', 'name');
+
+  // Notification cho admin khi có đánh giá mới
+  const userName = review.user?.name || 'Khách hàng';
+  const stars = '⭐'.repeat(ratingNum);
+  await notifyAdmins({
+    title: '⭐ Đánh giá sản phẩm mới',
+    message: `${userName} đã đánh giá "${product.name}": ${stars} (${ratingNum}/5)${comment ? '\n"' + comment + '"' : ''}`,
+    type: 'REVIEW_REQUEST',
+    link: `/admin/products`,
+    data: { reviewId: review._id.toString(), productId, rating: ratingNum },
+  });
 
   res.status(201).json({
     success: true,
