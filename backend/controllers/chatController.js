@@ -31,10 +31,10 @@ const sseHandler = asyncHandler(async (req, res, next) => {
   // Lưu connection vào Map
   sseClients.set(userId, res);
 
-  // Gửi heartbeat để giữ kết nối
+  // Gửi heartbeat để giữ kết nối (15s - tránh Render kill)
   const heartbeatInterval = setInterval(() => {
     res.write(': heartbeat\n\n');
-  }, 30000);
+  }, 15000);
 
   // Gửi event khởi tạo
   res.write(`data: ${JSON.stringify({ type: 'connected', userId })}\n\n`);

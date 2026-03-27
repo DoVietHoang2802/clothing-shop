@@ -1,6 +1,7 @@
 /**
- * SSE Service - Real-time order status updates
- * Sử dụng SSE thay vì Socket.io để tương thích với Vercel production
+ * Unified SSE Service - Real-time updates for ALL features
+ * Thay thế: orders SSE + notifications SSE + chat SSE
+ * Chỉ dùng 1 connection duy nhất để tránh Render kill
  */
 
 // API_BASE_URL đã bao gồm /api rồi (xem .env.local)
@@ -9,33 +10,29 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000
 class SSEService {
   constructor() {
     this.eventSource = null;
-    this.listeners = {};
     this.connected = false;
     this.userId = null;
     this.reconnectTimer = null;
     this.reconnectAttempts = 0;
-    this.maxReconnectDelay = 30000; // Max 30s giữa các lần reconnect
+    this.maxReconnectDelay = 30000;
+    this.listeners = {};
   }
 
   connect(userId) {
-    // Prevent multiple connections
-    if (this.eventSource) {
-      this.disconnect();
-    }
+    // Không reconnect nếu đã có connection
+    if (this.eventSource || !userId) return;
 
     this.userId = userId;
     const token = localStorage.getItem('token');
-
-    if (!token || !userId) {
-      return;
-    }
+    if (!token || !userId) return;
 
     try {
-      // Close any existing connection first
       if (this.eventSource) {
         this.eventSource.close();
       }
 
+      // Sử dụng endpoint orders/sse làm unified endpoint
+      // Backend sẽ gửi tất cả events qua đường này
       this.eventSource = new EventSource(`${API_BASE_URL}/orders/sse?token=${token}`);
 
       this.eventSource.onopen = () => {
@@ -47,40 +44,38 @@ class SSEService {
         try {
           const data = JSON.parse(event.data);
 
+          // Order updates
           if (data.type === 'ORDER_STATUS_CHANGED') {
             this.emit('order_updated', data);
-          } else if (data.type === 'NEW_ORDER') {
+          }
+          // New order notification
+          else if (data.type === 'NEW_ORDER') {
             this.emit('new_order', data);
           }
+          // Notification (mapped from backend)
+          else if (data.type === 'new_notification') {
+            this.emit('notification', data.notification);
+          }
         } catch (e) {
-          // Silent fail for parse errors
+          // Silent fail
         }
       };
 
       this.eventSource.onerror = () => {
         this.connected = false;
+        this.eventSource = null;
 
-        // Clear existing reconnect timer
-        if (this.reconnectTimer) {
-          clearTimeout(this.reconnectTimer);
-          this.reconnectTimer = null;
-        }
-
-        // Exponential backoff: 3s, 6s, 12s, 24s, max 30s
+        // Exponential backoff
         this.reconnectAttempts++;
         const delay = Math.min(3000 * Math.pow(2, this.reconnectAttempts - 1), this.maxReconnectDelay);
 
         if (this.userId) {
           this.reconnectTimer = setTimeout(() => {
-            if (!this.connected && this.userId) {
-              this.connect(this.userId);
-            }
+            this.connect(this.userId);
           }, delay);
         }
       };
-    } catch (e) {
-      // Silent fail
-    }
+    } catch (e) {}
   }
 
   disconnect() {
@@ -88,55 +83,39 @@ class SSEService {
       clearTimeout(this.reconnectTimer);
       this.reconnectTimer = null;
     }
-
     if (this.eventSource) {
       this.eventSource.close();
       this.eventSource = null;
     }
     this.connected = false;
     this.userId = null;
-    this.listeners = {};
     this.reconnectAttempts = 0;
+    this.listeners = {};
   }
 
   // Listen for order updates
   onOrderUpdate(callback) {
-    if (typeof callback === 'function') {
-      if (!this.listeners.order_updated) {
-        this.listeners.order_updated = [];
-      }
-      this.listeners.order_updated.push(callback);
-    }
+    if (!this.listeners.order_updated) this.listeners.order_updated = [];
+    this.listeners.order_updated.push(callback);
   }
 
   // Listen for new orders (admin)
   onNewOrder(callback) {
-    if (typeof callback === 'function') {
-      if (!this.listeners.new_order) {
-        this.listeners.new_order = [];
-      }
-      this.listeners.new_order.push(callback);
-    }
+    if (!this.listeners.new_order) this.listeners.new_order = [];
+    this.listeners.new_order.push(callback);
   }
 
-  // Remove order update listener
-  offOrderUpdate() {
-    if (this.listeners.order_updated) {
-      this.listeners.order_updated = [];
-    }
+  // Listen for notifications
+  onNotification(callback) {
+    if (!this.listeners.notification) this.listeners.notification = [];
+    this.listeners.notification.push(callback);
   }
 
-  // Internal emit method
+  // Internal emit
   emit(event, data) {
     if (this.listeners[event]) {
-      this.listeners[event].forEach(callback => {
-        if (typeof callback === 'function') {
-          try {
-            callback(data);
-          } catch (e) {
-            // Silent fail for callback errors
-          }
-        }
+      this.listeners[event].forEach(cb => {
+        try { cb(data); } catch (e) {}
       });
     }
   }

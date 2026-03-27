@@ -1,6 +1,6 @@
 import React, { createContext, useState, useEffect, useCallback, useRef } from 'react';
 import notificationService from '../services/notificationService';
-import notificationSSE from '../config/notificationSSE';
+import sseService from '../config/sse';
 
 export const NotificationContext = createContext();
 
@@ -8,7 +8,6 @@ export const NotificationProvider = ({ children }) => {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [isConnected, setIsConnected] = useState(false);
   const [toastNotification, setToastNotification] = useState(null);
   const pollingRef = useRef(null);
 
@@ -53,12 +52,12 @@ export const NotificationProvider = ({ children }) => {
     return null;
   };
 
-  // Polling fallback - chạy mỗi 10s khi SSE không hoạt động
+  // Polling fallback - chạy mỗi 30s để cập nhật notification bell
   const startPolling = useCallback(() => {
     if (pollingRef.current) return;
     pollingRef.current = setInterval(() => {
       loadUnreadCount();
-    }, 10000);
+    }, 30000);
   }, [loadUnreadCount]);
 
   const stopPolling = useCallback(() => {
@@ -68,35 +67,16 @@ export const NotificationProvider = ({ children }) => {
     }
   }, []);
 
-  // Connect to SSE on mount
+  // Load notifications on mount + polling
   useEffect(() => {
     const userId = getUserId();
     if (userId && localStorage.getItem('token')) {
-      // Load initial notifications
       loadNotifications();
       loadUnreadCount();
-
-      // Connect to SSE
-      notificationSSE.connect(userId);
-      setIsConnected(true);
-
-      // Listen for new notifications
-      notificationSSE.onNotification((newNotification) => {
-        setNotifications(prev => [newNotification, ...prev]);
-        setUnreadCount(prev => prev + 1);
-        // Set toast notification để Navbar hiển thị
-        setToastNotification(newNotification);
-        // Clear toast sau 5s
-        setTimeout(() => setToastNotification(null), 5000);
-      });
-
-      return () => {
-        notificationSSE.disconnect();
-        stopPolling();
-        setIsConnected(false);
-      };
+      startPolling();
     }
-  }, [loadNotifications, loadUnreadCount, stopPolling]);
+    return () => stopPolling();
+  }, [loadNotifications, loadUnreadCount, startPolling, stopPolling]);
 
   // Mark single notification as read
   const markAsRead = async (notificationId) => {
