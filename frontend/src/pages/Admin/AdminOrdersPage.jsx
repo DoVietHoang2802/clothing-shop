@@ -5,7 +5,7 @@ import { useNotifications } from '../../context/NotificationContext';
 
 const AdminOrdersPage = () => {
   const navigate = useNavigate();
-  const { markAdminRead, setAdminNotificationCount } = useNotifications();
+  const { markAllAsRead } = useNotifications();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -26,10 +26,8 @@ const AdminOrdersPage = () => {
       setError('');
 
       const pendingCount = res.data.data.filter(order => order.status === 'PENDING').length;
-      if (pendingCount > 0) {
-        setAdminNotificationCount(pendingCount);
-      } else {
-        markAdminRead();
+      if (pendingCount === 0) {
+        markAllAsRead();
       }
     } catch (err) {
       setError('Không thể tải đơn hàng');

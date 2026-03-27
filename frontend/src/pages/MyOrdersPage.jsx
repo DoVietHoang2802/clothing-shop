@@ -6,7 +6,7 @@ import { useNotifications } from '../context/NotificationContext';
 import { toast } from '../components/ToastNotification';
 
 const MyOrdersPage = () => {
-  const { markOrdersRead, setOrderNotificationCount } = useNotifications();
+  const { markAllAsRead } = useNotifications();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -73,9 +73,9 @@ const MyOrdersPage = () => {
       ).length;
 
       if (unfinishedCount > 0) {
-        setOrderNotificationCount(unfinishedCount);
+        // Orders still pending, notification system will handle unread count via SSE
       } else {
-        markOrdersRead();
+        markAllAsRead();
       }
     } catch (err) {
       setError('Không thể tải đơn hàng');
