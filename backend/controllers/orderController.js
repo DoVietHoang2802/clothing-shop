@@ -406,8 +406,8 @@ const updateOrderStatus = asyncHandler(async (req, res, next) => {
   await order.populate('user', 'name email');
   await order.populate('items.product', 'name price image');
 
-  // Gửi thông báo real-time qua SSE (fallback cho production Vercel)
-  broadcastOrderUpdate(order._id, oldStatus, status);
+  // Gửi thông báo real-time qua SSE
+  broadcastOrderUpdate(order, oldStatus, status);
 
   // Tạo notification cho user
   const statusLabels = {
@@ -660,7 +660,7 @@ const confirmPaidToShipper = asyncHandler(async (req, res, next) => {
   await order.populate('items.product', 'name price image');
 
   // Broadcast SSE cho user và admin
-  broadcastOrderUpdate(order._id, oldStatus, 'PAID_TO_SHIPPER');
+  broadcastOrderUpdate(order, oldStatus, 'PAID_TO_SHIPPER');
 
   // Tạo notification cho user
   const orderIdShort = order._id.toString().slice(-6).toUpperCase();

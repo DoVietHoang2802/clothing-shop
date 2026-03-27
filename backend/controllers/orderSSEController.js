@@ -104,14 +104,9 @@ const broadcastNewOrder = async (order) => {
 };
 
 // Hàm broadcast cập nhật đơn hàng - gửi cho user VÀ admin
-const broadcastOrderUpdate = async (orderId, oldStatus, newStatus) => {
+// Nhận order đã populate sẵn để tránh query lại DB
+const broadcastOrderUpdate = (order, oldStatus, newStatus) => {
   try {
-    const order = await Order.findById(orderId)
-      .populate('user', 'name email')
-      .populate('items.product', 'name price image');
-
-    if (!order) return;
-
     const eventData = {
       type: 'ORDER_STATUS_CHANGED',
       orderId: order._id,
