@@ -180,6 +180,15 @@ const ipnCallback = asyncHandler(async (req, res) => {
       try {
         const order = await Order.findById(dbOrderId);
         if (order && order.paymentStatus !== 'PAID') {
+          // Trừ stock khi thanh toán thành công (stock chưa bị trừ khi tạo MoMo order)
+          for (const item of order.items) {
+            await Product.findByIdAndUpdate(
+              item.product,
+              { $inc: { stock: -item.quantity } },
+              { new: true }
+            );
+          }
+
           order.paymentStatus = 'PAID';
           order.paymentMethod = 'MOMO';
           order.momoTransId = transId;
@@ -187,7 +196,7 @@ const ipnCallback = asyncHandler(async (req, res) => {
           order.paidAt = new Date();
           await order.save();
 
-          console.log('✅ Payment success, order updated:', dbOrderId);
+          console.log('✅ Payment success, stock reduced, order updated:', dbOrderId);
         }
       } catch (err) {
         console.error('Error updating order:', err);
@@ -195,6 +204,7 @@ const ipnCallback = asyncHandler(async (req, res) => {
     }
   } else {
     console.log('❌ Payment failed, resultCode:', resultCode, 'message:', message);
+    // KHÔNG xóa đơn ở đây - chỉ xóa ở returnCallback (khi user thực sự hủy)
   }
 
   // Luôn trả 200 để MoMo không gọi lại

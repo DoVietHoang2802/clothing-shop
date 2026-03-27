@@ -192,13 +192,15 @@ const createOrder = asyncHandler(async (req, res, next) => {
     });
   }
 
-  // Giảm stock chỉ sau khi order create thành công
-  for (const product of productsToUpdate) {
-    await Product.findByIdAndUpdate(
-      product.productId,
-      { $inc: { stock: -product.quantity } },
-      { new: true }
-    );
+  // Giảm stock chỉ khi tạo đơn COD (MoMo sẽ trừ stock khi thanh toán thành công)
+  if (paymentMethodVal === 'COD') {
+    for (const product of productsToUpdate) {
+      await Product.findByIdAndUpdate(
+        product.productId,
+        { $inc: { stock: -product.quantity } },
+        { new: true }
+      );
+    }
   }
 
   await order.populate('user', 'name email');
