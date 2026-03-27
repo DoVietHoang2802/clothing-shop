@@ -7,6 +7,7 @@ const crypto = require('crypto');
 const axios = require('axios');
 const momoConfig = require('../config/momo');
 const Order = require('../models/Order');
+const Product = require('../models/Product');
 const asyncHandler = require('../utils/asyncHandler');
 
 // Tạo signature HMAC SHA256
@@ -204,17 +205,43 @@ const ipnCallback = asyncHandler(async (req, res) => {
 // @route   GET /api/momo/return
 // @access  Public
 const returnCallback = asyncHandler(async (req, res) => {
-  const { resultCode, orderId, transId, amount, message } = req.query;
+  const { resultCode, orderInfo, transId, amount, message } = req.query;
 
   console.log('=== MoMo Return Callback ===');
   console.log('ResultCode:', resultCode);
+
+  // Trích xuất orderId từ orderInfo: "thanh toan don hang 123abc"
+  const orderIdMatch = orderInfo ? orderInfo.match(/thanh toan don hang (.+)/i) : null;
 
   if (resultCode == 0) {
     // Thanh toán thành công - redirect về frontend
     return res.redirect(`${momoConfig.redirectUrl}?status=success&orderId=${orderId}`);
   } else {
-    // Thanh toán thất bại
-    return res.redirect(`${momoConfig.redirectUrl}?status=failed&code=${resultCode}&message=${message}`);
+    // Thanh toán thất bại/hủy - hủy đơn hàng
+    if (orderIdMatch) {
+      const dbOrderId = orderIdMatch[1];
+      try {
+        const order = await Order.findById(dbOrderId);
+        if (order && order.paymentStatus !== 'PAID') {
+          // Hoàn stock
+          for (const item of order.items) {
+            await Product.findByIdAndUpdate(
+              item.product,
+              { $inc: { stock: item.quantity } },
+              { new: true }
+            );
+          }
+          // Xóa đơn hàng
+          await Order.findByIdAndDelete(dbOrderId);
+          console.log('✅ Order cancelled due to payment failure, stock restored:', dbOrderId);
+        }
+      } catch (err) {
+        console.error('Error cancelling order:', err);
+      }
+    }
+    // Redirect về trang thất bại
+    const errorMessage = encodeURIComponent(message || 'Thanh toán bị hủy');
+    return res.redirect(`${momoConfig.redirectUrl}?status=failed&code=${resultCode}&message=${errorMessage}`);
   }
 });
 
