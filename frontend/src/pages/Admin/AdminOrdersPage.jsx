@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import orderService from '../../services/orderService';
 import sseService from '../../config/sse';
@@ -15,11 +15,21 @@ const AdminOrdersPage = () => {
   const [updatingId, setUpdatingId] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
   const [filterStatus, setFilterStatus] = useState('ALL');
+  const [highlightOrderId, setHighlightOrderId] = useState(null);
+  const prevOrdersRef = useRef(new Set());
+
+  // Sound notification
+  const playSound = () => {
+    try {
+      const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2teleU04teleU04teleU04teleU04teleU04teleU04teleU04teleU04teleU04teleU04teleU04teleU04tl');
+      audio.volume = 0.3;
+      audio.play().catch(() => {});
+    } catch (e) {}
+  };
 
   useEffect(() => {
     loadOrders();
 
-    // Kết nối SSE để nhận đơn hàng mới & cập nhật real-time
     const userData = localStorage.getItem('user');
     const token = localStorage.getItem('token');
     if (userData && token) {
@@ -29,8 +39,11 @@ const AdminOrdersPage = () => {
       sseService.onNewOrder((data) => {
         if (data.order) {
           setOrders(prev => {
-            const exists = prev.find(o => o._id === data.order._id);
-            if (!exists) {
+            if (!prev.find(o => o._id === data.order._id)) {
+              // Highlight đơn mới
+              setHighlightOrderId(data.order._id);
+              setTimeout(() => setHighlightOrderId(null), 3000);
+              playSound();
               return [data.order, ...prev];
             }
             return prev;
@@ -39,12 +52,18 @@ const AdminOrdersPage = () => {
         }
       });
 
-      // Lắng nghe cập nhật trạng thái đơn hàng
+      // Lắng nghe cập nhật trạng thái (từ user hoặc admin khác)
       sseService.onOrderUpdate((data) => {
-        if (data.orderId) {
+        if (data.orderId && data.order) {
           setOrders(prev => {
             const idx = prev.findIndex(o => o._id === data.orderId);
-            if (idx !== -1 && data.order) {
+            if (idx !== -1) {
+              // Highlight nếu là cập nhật từ bên ngoài (không phải thao tác của mình)
+              if (!updatingId) {
+                setHighlightOrderId(data.orderId);
+                setTimeout(() => setHighlightOrderId(null), 2000);
+                playSound();
+              }
               const updated = [...prev];
               updated[idx] = { ...updated[idx], ...data.order };
               return updated;
@@ -62,12 +81,6 @@ const AdminOrdersPage = () => {
       sseService.disconnect();
     };
   }, []);
-
-  const loadOrders = async () => {
-    try {
-      setLoading(true);
-      const res = await orderService.getAllOrders();
-      setOrders(res.data.data);
       setError('');
 
       const pendingCount = res.data.data.filter(order => order.status === 'PENDING').length;
@@ -172,6 +185,19 @@ const AdminOrdersPage = () => {
 
   return (
     <div className="container">
+      <style>{`
+        @keyframes pulse {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.02); }
+        }
+        @keyframes slideIn {
+          from { opacity: 0; transform: translateY(-10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .order-card-new {
+          animation: slideIn 0.4s ease-out, pulse 0.5s ease-in-out;
+        }
+      `}</style>
       {/* Header */}
       <div style={{
         marginBottom: '2rem',
@@ -269,13 +295,17 @@ const AdminOrdersPage = () => {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           {getFilteredOrders().map((order) => {
             const statusInfo = getStatusBadge(order.status);
+            const isHighlighted = highlightOrderId === order._id;
             return (
               <div key={order._id} style={{
                 background: 'white',
                 borderRadius: '16px',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                boxShadow: isHighlighted
+                  ? '0 0 0 3px #fa709a, 0 4px 12px rgba(250,112,154,0.4)'
+                  : '0 4px 12px rgba(0,0,0,0.08)',
                 overflow: 'hidden',
-                transition: 'all 0.3s ease'
+                transition: 'all 0.3s ease',
+                animation: isHighlighted ? 'pulse 1s ease-in-out' : 'none'
               }}>
                 {/* Order Header */}
                 <div style={{

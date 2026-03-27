@@ -5,7 +5,8 @@
 
 const Order = require('../models/Order');
 
-// SSE clients map - lưu theo userId
+// SSE clients map - lưu theo userId với thông tin role
+// Format: Map<userId, { res, role }>
 const sseClients = new Map();
 
 // SSE Endpoint - Real-time order updates
@@ -24,8 +25,8 @@ const orderSSEHandler = async (req, res, next) => {
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.flushHeaders();
 
-  // Lưu connection vào Map
-  sseClients.set(userId, res);
+  // Lưu connection vào Map với role
+  sseClients.set(userId, { res, role: userRole });
 
   // Gửi heartbeat để giữ kết nối (15s thay vì 25s - tránh Render kill)
   const heartbeatInterval = setInterval(() => {
@@ -47,6 +48,43 @@ const orderSSEHandler = async (req, res, next) => {
   });
 };
 
+// Labels cho status
+const statusLabels = {
+  PENDING: 'Chờ xác nhận',
+  CONFIRMED: 'Đã xác nhận',
+  SHIPPED: 'Đã giao ĐVVC',
+  DELIVERING: 'Đang giao',
+  ARRIVED: 'Đã đến nơi',
+  PAID_TO_SHIPPER: 'Đã thanh toán',
+  COMPLETED: 'Hoàn thành',
+  CANCELLED: 'Đã hủy',
+};
+
+// Gửi event tới một client
+const sendToClient = (userId, eventData) => {
+  const client = sseClients.get(userId);
+  if (client) {
+    try {
+      client.res.write(`data: ${JSON.stringify(eventData)}\n\n`);
+    } catch (e) {
+      sseClients.delete(userId);
+    }
+  }
+};
+
+// Gửi event tới tất cả admin đang kết nối
+const sendToAllAdmins = (eventData) => {
+  for (const [userId, client] of sseClients.entries()) {
+    if (client.role === 'ADMIN' || client.role === 'STAFF') {
+      try {
+        client.res.write(`data: ${JSON.stringify(eventData)}\n\n`);
+      } catch (e) {
+        sseClients.delete(userId);
+      }
+    }
+  }
+};
+
 // Hàm broadcast đơn hàng mới cho tất cả admin
 const broadcastNewOrder = async (order) => {
   try {
@@ -58,60 +96,37 @@ const broadcastNewOrder = async (order) => {
       message: `📦 Đơn hàng mới #${orderIdShort} từ ${order.user?.name || 'Khách hàng'}`,
     };
 
-    // Gửi tới tất cả clients (vì chúng ta lưu theo userId, gửi broadcast bằng cách duyệt tất cả)
-    for (const [userId, res] of sseClients.entries()) {
-      try {
-        res.write(`data: ${JSON.stringify(eventData)}\n\n`);
-      } catch (e) {
-        sseClients.delete(userId);
-      }
-    }
+    // Gửi tới tất cả admin
+    sendToAllAdmins(eventData);
   } catch (err) {
     console.error('Error broadcasting new order:', err);
   }
 };
 
-// Hàm broadcast cập nhật đơn hàng tới user
+// Hàm broadcast cập nhật đơn hàng - gửi cho user VÀ admin
 const broadcastOrderUpdate = async (orderId, oldStatus, newStatus) => {
   try {
-    // Lấy thông tin đơn hàng đầy đủ
     const order = await Order.findById(orderId)
       .populate('user', 'name email')
       .populate('items.product', 'name price image');
 
     if (!order) return;
 
-    const userId = order.user._id.toString();
-    const res = sseClients.get(userId);
-
-    const statusLabels = {
-      PENDING: 'Chờ xác nhận',
-      CONFIRMED: 'Đã xác nhận',
-      SHIPPED: 'Đã giao ĐVVC',
-      DELIVERING: 'Đang giao',
-      ARRIVED: 'Đã đến nơi',
-      PAID_TO_SHIPPER: 'Đã thanh toán',
-      COMPLETED: 'Hoàn thành',
-      CANCELLED: 'Đã hủy',
+    const eventData = {
+      type: 'ORDER_STATUS_CHANGED',
+      orderId: order._id,
+      oldStatus,
+      newStatus,
+      statusLabel: statusLabels[newStatus] || newStatus,
+      order: order,
+      message: `Đơn hàng #${order._id.toString().slice(-6).toUpperCase()} đã được cập nhật: ${statusLabels[newStatus] || newStatus}`,
     };
 
-    if (res) {
-      const eventData = {
-        type: 'ORDER_STATUS_CHANGED',
-        orderId: order._id,
-        oldStatus,
-        newStatus,
-        statusLabel: statusLabels[newStatus],
-        order: order,
-        message: `Đơn hàng #${order._id.toString().slice(-6).toUpperCase()} đã được cập nhật: ${statusLabels[newStatus]}`,
-      };
+    // Gửi cho chủ đơn hàng (user)
+    sendToClient(order.user._id.toString(), eventData);
 
-      try {
-        res.write(`data: ${JSON.stringify(eventData)}\n\n`);
-      } catch (e) {
-        sseClients.delete(userId);
-      }
-    }
+    // Gửi cho tất cả admin đang kết nối
+    sendToAllAdmins(eventData);
   } catch (err) {
     console.error('Error broadcasting order update:', err);
   }
