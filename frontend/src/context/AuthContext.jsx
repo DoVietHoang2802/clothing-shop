@@ -1,6 +1,8 @@
 import React, { createContext, useState, useEffect } from 'react';
 import authService from '../services/authService';
-import socketService from '../config/socket';
+// Socket.io bị tắt vì Render free không hỗ trợ WebSocket
+// Real-time sử dụng SSE thay thế
+// import socketService from '../config/socket';
 
 export const AuthContext = createContext();
 
@@ -20,8 +22,7 @@ export const AuthProvider = ({ children }) => {
           id: decoded.id,
           role: decoded.role,
         });
-        // Kết nối socket khi có user đã đăng nhập trước đó
-        socketService.connect(decoded.id);
+        // Socket.io bị tắt - dùng SSE thay thế
       }
     }
     setLoading(false);
@@ -40,9 +41,6 @@ export const AuthProvider = ({ children }) => {
         id: user.id,
         role: user.role,
       });
-
-      // Kết nối socket sau khi đăng nhập
-      socketService.connect(user.id);
 
       return response.data;
     } catch (error) {
@@ -64,9 +62,6 @@ export const AuthProvider = ({ children }) => {
         role: user.role,
       });
 
-      // Kết nối socket sau khi đăng nhập
-      socketService.connect(user.id);
-
       return response.data;
     } catch (error) {
       throw error.response?.data || error;
@@ -87,9 +82,6 @@ export const AuthProvider = ({ children }) => {
         role: user.role,
       });
 
-      // Kết nối socket sau khi đăng ký
-      socketService.connect(user.id);
-
       return response.data;
     } catch (error) {
       throw error.response?.data || error;
@@ -97,8 +89,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
-    // Ngắt kết nối socket khi đăng xuất
-    socketService.disconnect();
+    // Socket.io bị tắt - dùng SSE thay thế
     authService.logout();
     setToken(null);
     setUser(null);
