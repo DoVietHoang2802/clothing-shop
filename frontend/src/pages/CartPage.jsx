@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import orderService from '../services/orderService';
 import addressService from '../services/addressService';
+import momoService from '../services/momoService';
 import CouponInput from '../components/CouponInput';
 
 const CartPage = () => {
@@ -175,6 +176,24 @@ const CartPage = () => {
         } catch (payErr) {
           console.error('Payment error:', payErr);
           setError('Lỗi khi tạo link thanh toán');
+          setLoading(false);
+          return;
+        }
+      }
+
+      // Nếu là MoMo, tạo payment và redirect
+      if (paymentMethod === 'MOMO') {
+        try {
+          const momoRes = await momoService.createPayment(orderId);
+
+          if (momoRes.data.success && momoRes.data.data.payUrl) {
+            // Redirect đến trang thanh toán MoMo
+            window.location.href = momoRes.data.data.payUrl;
+            return;
+          }
+        } catch (payErr) {
+          console.error('MoMo payment error:', payErr);
+          setError(payErr.response?.data?.message || 'Lỗi khi tạo link thanh toán MoMo');
           setLoading(false);
           return;
         }
@@ -490,6 +509,30 @@ const CartPage = () => {
                   <div style={{ fontSize: '0.8rem', color: '#7f8c8d' }}>Thanh toán khi nhận hàng</div>
                 </label>
 
+                {/* MoMo Option */}
+                <label style={{
+                  flex: 1,
+                  padding: '1rem',
+                  border: paymentMethod === 'MOMO' ? '2px solid #a50064' : '2px solid #ddd',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  background: paymentMethod === 'MOMO' ? '#fff5f8' : 'white',
+                  transition: 'all 0.3s ease',
+                  textAlign: 'center'
+                }}>
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    value="MOMO"
+                    checked={paymentMethod === 'MOMO'}
+                    onChange={(e) => setPaymentMethod(e.target.value)}
+                    style={{ display: 'none' }}
+                  />
+                  <div style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>💜</div>
+                  <div style={{ fontWeight: '600', color: '#2c3e50' }}>MoMo</div>
+                  <div style={{ fontSize: '0.8rem', color: '#7f8c8d' }}>Thanh toán qua MoMo</div>
+                </label>
+
                 {/* VNPay Option */}
                 <label style={{
                   flex: 1,
@@ -516,8 +559,8 @@ const CartPage = () => {
               </div>
             </div>
 
-            {/* Shipping Address Form - Show for both COD and VNPAY */}
-            {(paymentMethod === 'COD' || paymentMethod === 'VNPAY') && (
+            {/* Shipping Address Form - Show for all payment methods */}
+            {(paymentMethod === 'COD' || paymentMethod === 'VNPAY' || paymentMethod === 'MOMO') && (
               <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '2px solid #f0f0f0' }}>
                 <h4 style={{ margin: '0 0 1rem 0', fontSize: '1rem', color: '#2c3e50' }}>
                   📍 Địa Chỉ Giao Hàng
@@ -704,7 +747,10 @@ const CartPage = () => {
                   marginBottom: '0.75rem'
                 }}
               >
-                {loading ? '⏳ Đang Xử Lý...' : paymentMethod === 'COD' ? '📦 Đặt Hàng (COD)' : '💳 Thanh Toán'}
+                {loading ? '⏳ Đang Xử Lý...' :
+                  paymentMethod === 'COD' ? '📦 Đặt Hàng (COD)' :
+                  paymentMethod === 'MOMO' ? '💜 Thanh Toán MoMo' :
+                  '💳 Thanh Toán VNPay'}
               </button>
 
               <button

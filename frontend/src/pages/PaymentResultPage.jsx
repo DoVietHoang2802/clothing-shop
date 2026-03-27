@@ -8,19 +8,27 @@ const PaymentResultPage = () => {
   const [loading, setLoading] = useState(true);
   const [orderData, setOrderData] = useState(null);
 
-  const success = searchParams.get('success') === 'true';
+  // Xử lý cả VNPay và MoMo callback
+  const status = searchParams.get('status');
+  const success = status === 'success' || searchParams.get('success') === 'true';
+  const resultCode = searchParams.get('resultCode');
   const message = searchParams.get('message') || '';
   const orderId = searchParams.get('orderId');
   const amount = searchParams.get('amount');
+  const transId = searchParams.get('transId');
+
+  // MoMo success = resultCode === '0'
+  const isMomoSuccess = resultCode === '0';
+  const isSuccess = success || isMomoSuccess;
 
   useEffect(() => {
     // Nếu có orderId, lấy thông tin đơn hàng
-    if (orderId && success) {
+    if (orderId && isSuccess) {
       loadOrderInfo();
     } else {
       setLoading(false);
     }
-  }, [orderId]);
+  }, [orderId, isSuccess]);
 
   const loadOrderInfo = async () => {
     try {
@@ -90,10 +98,10 @@ const PaymentResultPage = () => {
         {/* Title */}
         <h2 style={{
           margin: '0 0 1rem 0',
-          color: success ? '#27ae60' : '#e74c3c',
+          color: isSuccess ? '#27ae60' : '#e74c3c',
           fontSize: '1.8rem'
         }}>
-          {success ? 'Thanh toán thành công!' : 'Thanh toán thất bại'}
+          {isSuccess ? 'Thanh toán thành công!' : 'Thanh toán thất bại'}
         </h2>
 
         {/* Message */}
@@ -102,7 +110,7 @@ const PaymentResultPage = () => {
           marginBottom: '1.5rem',
           fontSize: '1rem'
         }}>
-          {message || (success ? 'Cảm ơn bạn đã mua sắm!' : 'Vui lòng thử lại hoặc liên hệ hỗ trợ.')}
+          {message || (isSuccess ? 'Cảm ơn bạn đã mua sắm!' : 'Vui lòng thử lại hoặc liên hệ hỗ trợ.')}
         </p>
 
         {/* Order Info */}
@@ -126,8 +134,16 @@ const PaymentResultPage = () => {
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
               <span style={{ color: '#7f8c8d' }}>Phương thức:</span>
-              <span style={{ fontWeight: '600', color: '#3498db' }}>VNPay</span>
+              <span style={{ fontWeight: '600', color: '#3498db' }}>
+                {orderData.paymentMethod === 'MOMO' ? 'MoMo' : 'VNPay'}
+              </span>
             </div>
+            {transId && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                <span style={{ color: '#7f8c8d' }}>Mã giao dịch:</span>
+                <span style={{ fontWeight: '600', color: '#9b59b6' }}>{transId}</span>
+              </div>
+            )}
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span style={{ color: '#7f8c8d' }}>Trạng thái:</span>
               <span style={{
@@ -158,7 +174,7 @@ const PaymentResultPage = () => {
             to="/my-orders"
             style={{
               padding: '1rem',
-              background: success ? 'linear-gradient(135deg, #27ae60 0%, #229954 100%)' : 'linear-gradient(135deg, #3498db 0%, #2980b9 100%)',
+              background: isSuccess ? 'linear-gradient(135deg, #27ae60 0%, #229954 100%)' : 'linear-gradient(135deg, #3498db 0%, #2980b9 100%)',
               color: 'white',
               borderRadius: '8px',
               textDecoration: 'none',

@@ -67,7 +67,7 @@ const orderSchema = new mongoose.Schema({
   // Thông tin thanh toán
   paymentMethod: {
     type: String,
-    enum: ['COD', 'VNPAY'],
+    enum: ['COD', 'VNPAY', 'MOMO'],
     default: 'COD',
   },
   paymentStatus: {
@@ -75,6 +75,12 @@ const orderSchema = new mongoose.Schema({
     enum: ['PENDING', 'PAID', 'FAILED', 'REFUNDED'],
     default: 'PENDING',
   },
+  // MoMo specific fields
+  momoOrderId: String,
+  momoRequestId: String,
+  momoTransId: String,
+  momoMessage: String,
+  paidAt: Date,
   // Trạng thái đơn hàng
   // Flow: PENDING → SHIPPING → PAID_TO_SHIPPER → COMPLETED
   status: {
