@@ -244,7 +244,16 @@ const getMyOrders = asyncHandler(async (req, res, next) => {
   const userId = req.user.id;
 
   try {
-    const orders = await Order.find({ user: userId })
+    // Chỉ hiện đơn hàng đã thanh toán hoặc COD
+    // Ẩn đơn MoMo đang chờ thanh toán (sẽ bị xóa khi hủy)
+    const orders = await Order.find({
+      user: userId,
+      $or: [
+        { paymentStatus: 'PAID' },
+        { paymentMethod: 'COD' },
+        { paymentStatus: { $ne: 'PENDING' } }
+      ]
+    })
       .populate('user', 'name email')
       .populate('items.product', 'name price image')
       .sort({ createdAt: -1 });
