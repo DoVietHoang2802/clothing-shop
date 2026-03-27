@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import orderService from '../../services/orderService';
+import sseService from '../../config/sse';
 import { useNotifications } from '../../context/NotificationContext';
+import { toast } from '../../components/ToastNotification';
 
 const AdminOrdersPage = () => {
   const navigate = useNavigate();
@@ -16,6 +18,49 @@ const AdminOrdersPage = () => {
 
   useEffect(() => {
     loadOrders();
+
+    // Kết nối SSE để nhận đơn hàng mới & cập nhật real-time
+    const userData = localStorage.getItem('user');
+    const token = localStorage.getItem('token');
+    if (userData && token) {
+      sseService.connect(JSON.parse(userData).id);
+
+      // Lắng nghe đơn hàng mới
+      sseService.onNewOrder((data) => {
+        if (data.order) {
+          setOrders(prev => {
+            const exists = prev.find(o => o._id === data.order._id);
+            if (!exists) {
+              return [data.order, ...prev];
+            }
+            return prev;
+          });
+          toast.success(data.message || '📦 Có đơn hàng mới!');
+        }
+      });
+
+      // Lắng nghe cập nhật trạng thái đơn hàng
+      sseService.onOrderUpdate((data) => {
+        if (data.orderId) {
+          setOrders(prev => {
+            const idx = prev.findIndex(o => o._id === data.orderId);
+            if (idx !== -1 && data.order) {
+              const updated = [...prev];
+              updated[idx] = { ...updated[idx], ...data.order };
+              return updated;
+            }
+            return prev;
+          });
+          if (data.message) {
+            toast.info(data.message);
+          }
+        }
+      });
+    }
+
+    return () => {
+      sseService.disconnect();
+    };
   }, []);
 
   const loadOrders = async () => {

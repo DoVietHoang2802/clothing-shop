@@ -47,6 +47,30 @@ const orderSSEHandler = async (req, res, next) => {
   });
 };
 
+// Hàm broadcast đơn hàng mới cho tất cả admin
+const broadcastNewOrder = async (order) => {
+  try {
+    const orderIdShort = order._id.toString().slice(-6).toUpperCase();
+    const eventData = {
+      type: 'NEW_ORDER',
+      orderId: order._id,
+      order: order,
+      message: `📦 Đơn hàng mới #${orderIdShort} từ ${order.user?.name || 'Khách hàng'}`,
+    };
+
+    // Gửi tới tất cả clients (vì chúng ta lưu theo userId, gửi broadcast bằng cách duyệt tất cả)
+    for (const [userId, res] of sseClients.entries()) {
+      try {
+        res.write(`data: ${JSON.stringify(eventData)}\n\n`);
+      } catch (e) {
+        sseClients.delete(userId);
+      }
+    }
+  } catch (err) {
+    console.error('Error broadcasting new order:', err);
+  }
+};
+
 // Hàm broadcast cập nhật đơn hàng tới user
 const broadcastOrderUpdate = async (orderId, oldStatus, newStatus) => {
   try {
@@ -96,4 +120,5 @@ const broadcastOrderUpdate = async (orderId, oldStatus, newStatus) => {
 module.exports = {
   orderSSEHandler,
   broadcastOrderUpdate,
+  broadcastNewOrder,
 };

@@ -184,6 +184,23 @@ const createOrder = asyncHandler(async (req, res, next) => {
   await order.populate('user', 'name email');
   await order.populate('items.product', 'name price image');
 
+  // Broadcast SSE thông báo đơn hàng mới cho ALL admins
+  const orderIdShort = order._id.toString().slice(-6).toUpperCase();
+  const io = req.app.get('io');
+  if (io) {
+    io.emit('new_order', {
+      type: 'NEW_ORDER',
+      orderId: order._id,
+      order: order,
+      message: `📦 Đơn hàng mới #${orderIdShort} từ ${order.user?.name || 'Khách hàng'}`,
+    });
+  }
+
+  // SSE broadcast cho admin (nếu có admin đang kết nối)
+  // Broadcast tới tất cả SSE clients có role admin (broadcast global event)
+  const { broadcastNewOrder } = require('./orderSSEController');
+  broadcastNewOrder(order);
+
   res.status(201).json({
     success: true,
     message: 'Tạo đơn hàng thành công',
@@ -566,7 +583,7 @@ const confirmPaidToShipper = asyncHandler(async (req, res, next) => {
   const { id } = req.params;
   const userId = req.user.id;
 
-  const order = await Order.findById(id);
+  let order = await Order.findById(id);
 
   if (!order) {
     return res.status(404).json({
@@ -589,7 +606,7 @@ const confirmPaidToShipper = asyncHandler(async (req, res, next) => {
   if (order.status !== 'ARRIVED') {
     return res.status(400).json({
       success: false,
-      message: 'Chỉ có thể xác nhận thanh toán khi đơn hàng đã đến nơi',
+      message: 'Chỉ có thể xác nhận thanh toán khi đơn hàng đã đến nơi. Trạng thái hiện tại: ' + order.status,
       data: null,
     });
   }
@@ -603,6 +620,8 @@ const confirmPaidToShipper = asyncHandler(async (req, res, next) => {
     });
   }
 
+  const oldStatus = order.status;
+
   // Update status
   order.status = 'PAID_TO_SHIPPER';
   order.paymentStatus = 'PAID';
@@ -610,6 +629,33 @@ const confirmPaidToShipper = asyncHandler(async (req, res, next) => {
 
   await order.populate('user', 'name email');
   await order.populate('items.product', 'name price image');
+
+  // Broadcast SSE cho user và admin
+  broadcastOrderUpdate(order._id, oldStatus, 'PAID_TO_SHIPPER');
+
+  // Tạo notification cho user
+  const orderIdShort = order._id.toString().slice(-6).toUpperCase();
+  await createNotification({
+    userId: order.user._id,
+    type: 'ORDER_STATUS',
+    title: 'Đã xác nhận thanh toán cho shipper',
+    message: `Đơn hàng #${orderIdShort} - Bạn đã xác nhận thanh toán. Chờ admin xác nhận hoàn tất.`,
+    link: `/my-orders`,
+    data: { orderId: order._id.toString(), oldStatus, newStatus: 'PAID_TO_SHIPPER' },
+  });
+
+  // Socket.io broadcast nếu có
+  const io = req.app.get('io');
+  if (io) {
+    io.emit('admin_order_updated', {
+      type: 'ORDER_STATUS_CHANGED',
+      orderId: order._id,
+      oldStatus,
+      newStatus: 'PAID_TO_SHIPPER',
+      statusLabel: 'Đã thanh toán cho shipper',
+      order: order,
+    });
+  }
 
   res.status(200).json({
     success: true,

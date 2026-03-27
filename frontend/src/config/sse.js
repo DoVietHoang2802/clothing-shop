@@ -44,6 +44,8 @@ class SSEService {
 
           if (data.type === 'ORDER_STATUS_CHANGED') {
             this.emit('order_updated', data);
+          } else if (data.type === 'NEW_ORDER') {
+            this.emit('new_order', data);
           } else if (data.type === 'connected') {
             console.log('SSE connected:', data.userId);
           }
@@ -99,6 +101,16 @@ class SSEService {
         this.listeners.order_updated = [];
       }
       this.listeners.order_updated.push(callback);
+    }
+  }
+
+  // Listen for new orders (admin)
+  onNewOrder(callback) {
+    if (typeof callback === 'function') {
+      if (!this.listeners.new_order) {
+        this.listeners.new_order = [];
+      }
+      this.listeners.new_order.push(callback);
     }
   }
 
