@@ -81,7 +81,13 @@ const AdminOrdersPage = () => {
       sseService.disconnect();
     };
   }, []);
+
+  const loadOrders = async () => {
+    try {
+      setLoading(true);
       setError('');
+      const res = await orderService.getAllOrders();
+      setOrders(res.data.data);
 
       const pendingCount = res.data.data.filter(order => order.status === 'PENDING').length;
       if (pendingCount === 0) {
