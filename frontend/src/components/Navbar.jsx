@@ -2,11 +2,19 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useNotifications } from '../context/NotificationContext';
+import { toast } from './ToastNotification';
 
 const Navbar = () => {
   const { isAuthenticated, user, logout } = useAuth();
-  const { unreadCount, markAsRead, markAllAsRead } = useNotifications();
+  const { unreadCount, markAsRead, markAllAsRead, toastNotification } = useNotifications();
   const [cartCount, setCartCount] = useState(0);
+
+  // Hiển thị toast khi có notification mới qua SSE
+  useEffect(() => {
+    if (toastNotification) {
+      toast.info(toastNotification.message || 'Bạn có thông báo mới!');
+    }
+  }, [toastNotification]);
 
   // Đồng bộ số lượng sản phẩm trong giỏ từ localStorage
   useEffect(() => {

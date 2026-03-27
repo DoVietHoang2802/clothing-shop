@@ -184,8 +184,9 @@ const createOrder = asyncHandler(async (req, res, next) => {
   await order.populate('user', 'name email');
   await order.populate('items.product', 'name price image');
 
-  // Broadcast SSE thông báo đơn hàng mới cho ALL admins
   const orderIdShort = order._id.toString().slice(-6).toUpperCase();
+
+  // Broadcast Socket.io cho tất cả admins (nếu có)
   const io = req.app.get('io');
   if (io) {
     io.emit('new_order', {
@@ -196,10 +197,23 @@ const createOrder = asyncHandler(async (req, res, next) => {
     });
   }
 
-  // SSE broadcast cho admin (nếu có admin đang kết nối)
-  // Broadcast tới tất cả SSE clients có role admin (broadcast global event)
+  // SSE broadcast tới tất cả admin đang kết nối
   const { broadcastNewOrder } = require('./orderSSEController');
   broadcastNewOrder(order);
+
+  // Tạo notification cho admin (để hiển thị trong trang notifications)
+  const User = require('../models/User');
+  const admins = await User.find({ role: 'ADMIN' }).select('_id');
+  for (const admin of admins) {
+    await createNotification({
+      userId: admin._id,
+      type: 'ORDER_STATUS',
+      title: '📦 Đơn hàng mới',
+      message: `Đơn hàng #${orderIdShort} từ ${order.user?.name || 'Khách hàng'} - ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(order.finalPrice || order.totalPrice)}`,
+      link: `/admin/orders`,
+      data: { orderId: order._id.toString() },
+    });
+  }
 
   res.status(201).json({
     success: true,

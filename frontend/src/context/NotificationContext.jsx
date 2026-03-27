@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useState, useEffect, useCallback, useRef } from 'react';
 import notificationService from '../services/notificationService';
 import notificationSSE from '../config/notificationSSE';
 
@@ -9,6 +9,8 @@ export const NotificationProvider = ({ children }) => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
+  const [toastNotification, setToastNotification] = useState(null);
+  const pollingRef = useRef(null);
 
   // Load notifications from API
   const loadNotifications = useCallback(async () => {
@@ -51,6 +53,21 @@ export const NotificationProvider = ({ children }) => {
     return null;
   };
 
+  // Polling fallback - chạy mỗi 10s khi SSE không hoạt động
+  const startPolling = useCallback(() => {
+    if (pollingRef.current) return;
+    pollingRef.current = setInterval(() => {
+      loadUnreadCount();
+    }, 10000);
+  }, [loadUnreadCount]);
+
+  const stopPolling = useCallback(() => {
+    if (pollingRef.current) {
+      clearInterval(pollingRef.current);
+      pollingRef.current = null;
+    }
+  }, []);
+
   // Connect to SSE on mount
   useEffect(() => {
     const userId = getUserId();
@@ -67,14 +84,19 @@ export const NotificationProvider = ({ children }) => {
       notificationSSE.onNotification((newNotification) => {
         setNotifications(prev => [newNotification, ...prev]);
         setUnreadCount(prev => prev + 1);
+        // Set toast notification để Navbar hiển thị
+        setToastNotification(newNotification);
+        // Clear toast sau 5s
+        setTimeout(() => setToastNotification(null), 5000);
       });
 
       return () => {
         notificationSSE.disconnect();
+        stopPolling();
         setIsConnected(false);
       };
     }
-  }, [loadNotifications, loadUnreadCount]);
+  }, [loadNotifications, loadUnreadCount, stopPolling]);
 
   // Mark single notification as read
   const markAsRead = async (notificationId) => {
@@ -137,6 +159,7 @@ export const NotificationProvider = ({ children }) => {
     unreadCount,
     loading,
     isConnected,
+    toastNotification,
     loadNotifications,
     loadUnreadCount,
     markAsRead,

@@ -17,7 +17,7 @@ const notificationSSEHandler = async (req, res) => {
 
   notificationClients.set(userId, res);
 
-  // Heartbeat
+  // Heartbeat (15s thay vì 25s - tránh server kill connection)
   const heartbeatInterval = setInterval(() => {
     try {
       res.write(': heartbeat\n\n');
@@ -25,7 +25,7 @@ const notificationSSEHandler = async (req, res) => {
       clearInterval(heartbeatInterval);
       notificationClients.delete(userId);
     }
-  }, 25000);
+  }, 15000);
 
   res.write(`data: ${JSON.stringify({ type: 'connected' })}\n\n`);
 
