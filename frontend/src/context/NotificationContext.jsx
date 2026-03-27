@@ -138,7 +138,6 @@ export const NotificationProvider = ({ children }) => {
     notifications,
     unreadCount,
     loading,
-    isConnected,
     toastNotification,
     loadNotifications,
     loadUnreadCount,
