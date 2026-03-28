@@ -425,7 +425,8 @@ const MyOrdersPage = () => {
                 {isExpanded && (
                   <div style={{ borderTop: '1px solid #eee', padding: '1.5rem' }}>
                     {/* Thông báo đặc biệt cho ARRIVED */}
-                    {order.status === 'ARRIVED' && (
+                    {/* Chỉ hiện thông báo thanh toán cho shipper khi là COD */}
+                    {order.status === 'ARRIVED' && order.paymentMethod === 'COD' && (
                       <div style={{
                         padding: '1rem',
                         marginBottom: '1rem',
@@ -436,6 +437,22 @@ const MyOrdersPage = () => {
                       }}>
                         <p style={{ margin: 0, fontSize: '0.95rem' }}>
                           🔔 Đơn hàng đã đến nơi! Vui lòng thanh toán <strong>{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(order.finalPrice || order.totalPrice)}</strong> cho shipper
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Thông báo đã thanh toán MoMo */}
+                    {order.status === 'ARRIVED' && order.paymentMethod === 'MOMO' && (
+                      <div style={{
+                        padding: '1rem',
+                        marginBottom: '1rem',
+                        background: 'linear-gradient(135deg, #a50064 0%, #880055 100%)',
+                        borderRadius: '8px',
+                        color: 'white',
+                        textAlign: 'center'
+                      }}>
+                        <p style={{ margin: 0, fontSize: '0.95rem' }}>
+                          💜 Đơn hàng đã thanh toán qua MoMo! Đang chờ giao hàng
                         </p>
                       </div>
                     )}

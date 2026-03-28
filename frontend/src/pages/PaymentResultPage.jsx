@@ -85,14 +85,14 @@ const PaymentResultPage = () => {
           width: '80px',
           height: '80px',
           borderRadius: '50%',
-          background: success ? 'linear-gradient(135deg, #27ae60 0%, #229954 100%)' : 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)',
+          background: isSuccess ? 'linear-gradient(135deg, #27ae60 0%, #229954 100%)' : 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           margin: '0 auto 1.5rem',
           fontSize: '2.5rem'
         }}>
-          {success ? '✓' : '✕'}
+          {isSuccess ? '✓' : '✕'}
         </div>
 
         {/* Title */}
