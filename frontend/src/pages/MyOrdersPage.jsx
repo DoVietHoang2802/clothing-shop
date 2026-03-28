@@ -125,6 +125,27 @@ const MyOrdersPage = () => {
     }
   };
 
+  // Xác nhận đã nhận được hàng (cho MoMo - chuyển thẳng sang COMPLETED)
+  const handleReceivedOrder = async (orderId) => {
+    if (!window.confirm('Bạn đã nhận được hàng?')) {
+      return;
+    }
+
+    try {
+      setConfirmingPayment(orderId);
+      setError('');
+      await orderService.updateOrderStatus(orderId, 'COMPLETED');
+      setSuccess('✅ Đã xác nhận hoàn tất đơn hàng!');
+      await loadOrders();
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Xác nhận thất bại');
+      console.error(err);
+    } finally {
+      setConfirmingPayment(null);
+    }
+  };
+
   const handleDeleteOrder = async (orderId) => {
     if (!window.confirm('Bạn chắc chắn muốn xóa đơn hàng này? Hành động này không thể hoàn tác.')) {
       return;
@@ -630,7 +651,7 @@ const MyOrdersPage = () => {
 
                     {/* Action Buttons */}
                     <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-                      {/* Nút xác nhận đã thanh toán cho shipper */}
+                      {/* Nút xác nhận đã thanh toán cho shipper (COD) */}
                       {order.status === 'ARRIVED' && order.paymentMethod === 'COD' && (
                         <button
                           onClick={(e) => { e.stopPropagation(); handleConfirmPaidToShipper(order._id); }}
@@ -648,6 +669,27 @@ const MyOrdersPage = () => {
                           }}
                         >
                           {confirmingPayment === order._id ? '⏳ Đang xác nhận...' : '💵 Đã Thanh Toán Cho Shipper'}
+                        </button>
+                      )}
+
+                      {/* Nút xác nhận đã nhận hàng (MoMo) */}
+                      {order.status === 'ARRIVED' && order.paymentMethod === 'MOMO' && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleReceivedOrder(order._id); }}
+                          disabled={confirmingPayment === order._id}
+                          style={{
+                            padding: '0.6rem 1rem',
+                            background: confirmingPayment === order._id ? '#a50064' : 'linear-gradient(135deg, #a50064 0%, #880055 100%)',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '6px',
+                            cursor: confirmingPayment === order._id ? 'not-allowed' : 'pointer',
+                            fontWeight: '600',
+                            fontSize: '0.85rem',
+                            opacity: confirmingPayment === order._id ? 0.6 : 1
+                          }}
+                        >
+                          {confirmingPayment === order._id ? '⏳ Đang xác nhận...' : '📦 Đã Nhận Được Hàng'}
                         </button>
                       )}
 
