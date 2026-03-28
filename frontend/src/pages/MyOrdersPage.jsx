@@ -452,7 +452,7 @@ const MyOrdersPage = () => {
                         textAlign: 'center'
                       }}>
                         <p style={{ margin: 0, fontSize: '0.95rem' }}>
-                          💜 Đơn hàng đã thanh toán qua MoMo! Đang chờ giao hàng
+                          💜 Đã nhận được hàng! Vui lòng giao hàng
                         </p>
                       </div>
                     )}
