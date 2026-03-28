@@ -379,9 +379,11 @@ const AdminOrdersPage = () => {
                           <p style={{
                             margin: '0.25rem 0 0 0',
                             fontWeight: '600',
-                            color: order.paymentMethod === 'COD' ? '#e67e22' : '#3498db'
+                            color: order.paymentMethod === 'MOMO' ? '#a50064' :
+                                   order.paymentMethod === 'COD' ? '#e67e22' : '#3498db'
                           }}>
-                            {order.paymentMethod === 'COD' ? '📦 COD (Khi nhận hàng)' : '🏦 VNPay'}
+                            {order.paymentMethod === 'MOMO' ? '💜 MoMo' :
+                             order.paymentMethod === 'COD' ? '📦 COD (Khi nhận hàng)' : '🏦 VNPay'}
                           </p>
                         </>
                       )}

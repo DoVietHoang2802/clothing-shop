@@ -573,7 +573,8 @@ const MyOrdersPage = () => {
                         <div style={{ padding: '0.75rem', background: '#f8f9fa', borderRadius: '8px' }}>
                           <div style={{ fontWeight: '600', color: '#2c3e50', fontSize: '0.85rem', marginBottom: '0.5rem' }}>💳 Thanh toán:</div>
                           <div style={{ color: '#7f8c8d', fontSize: '0.8rem' }}>
-                            {order.paymentMethod === 'COD' ? '📦 COD (Thanh toán khi nhận hàng)' : '🏦 VNPay'}
+                            {order.paymentMethod === 'MOMO' ? '💜 MoMo' :
+                             order.paymentMethod === 'COD' ? '📦 COD (Thanh toán khi nhận hàng)' : '🏦 VNPay'}
                           </div>
                         </div>
                       )}
