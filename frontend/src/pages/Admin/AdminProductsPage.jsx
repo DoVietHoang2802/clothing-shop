@@ -49,6 +49,12 @@ const AdminProductsPage = () => {
   };
 
   const handleSubmit = async () => {
+    // Kiểm tra đang upload không
+    if (uploading) {
+      setError('Vui lòng đợi upload ảnh xong');
+      return;
+    }
+
     if (!formData.name || !formData.category || !formData.price) {
       setError('Vui lòng điền đầy đủ thông tin bắt buộc');
       return;

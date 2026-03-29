@@ -23,9 +23,11 @@ const storage = multer.diskStorage({
 // File filter - only images
 const fileFilter = (req, file, cb) => {
   const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+  console.log('Upload attempt - MIME type:', file.mimetype, 'Original name:', file.originalname);
   if (allowedTypes.includes(file.mimetype)) {
     cb(null, true);
   } else {
+    console.log('Upload rejected - unsupported MIME type:', file.mimetype);
     cb(new Error('Chỉ chấp nhận file ảnh (JPG, PNG, GIF, WebP)'), false);
   }
 };
