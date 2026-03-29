@@ -1,14 +1,12 @@
-# 📋 Hướng Dẫn Test API - Deployed
+# 📋 API TEST DOCUMENTATION - DEPLOYED
 
 **Base URL:** `https://clothing-shop-api-8wae.onrender.com/api`
 
-**Frontend URL:** `https://clothing-shop-ashy.vercel.app`
-
-**Tools:** Postman, Thunder Client, hoặc cURL
+**Frontend:** `https://clothing-shop-ashy.vercel.app`
 
 ---
 
-## 🔐 1. AUTH - Xác Thực
+## 🔐 1. AUTHENTICATION - Xác thực
 
 ### 1.1 Đăng ký tài khoản
 ```
@@ -17,13 +15,13 @@ Content-Type: application/json
 
 Body:
 {
-  "name": "Nguyễn Văn Demo",
-  "email": "demo@deployed.com",
-  "password": "123456"
+  "name": "Nguyen Van A",
+  "email": "usertest@gmail.com",
+  "password": "Password123@"
 }
 
-✅ Test: Thành công
-❌ Lỗi: Email đã tồn tại (409 Conflict)
+✅ Test: Đăng ký thành công
+❌ Lỗi: Email đã tồn tại
 ```
 
 ### 1.2 Đăng nhập
@@ -33,12 +31,12 @@ Content-Type: application/json
 
 Body:
 {
-  "email": "demo@deployed.com",
-  "password": "123456"
+  "email": "usertest@gmail.com",
+  "password": "Password123@"
 }
 
-✅ Test: Thành công - Nhận được token
-❌ Lỗi: Email hoặc mật khẩu không đúng (401)
+✅ Test: Đăng nhập thành công → nhận token JWT
+❌ Lỗi: Sai mật khẩu / Email không tồn tại
 ```
 
 ### 1.3 Quên mật khẩu
@@ -48,31 +46,35 @@ Content-Type: application/json
 
 Body:
 {
-  "email": "demo@deployed.com"
+  "email": "usertest@gmail.com"
 }
+
+✅ Test: Gửi email reset mật khẩu thành công
 ```
 
-### 1.4 Health Check
+### 1.4 Đăng nhập Google (OAuth)
 ```
-GET /api/health
+POST /api/auth/google
+Content-Type: application/json
 
-✅ Kết quả:
+Body:
 {
-  "success": true,
-  "message": "Server is running"
+  "idToken": "google_id_token_here"
 }
+
+✅ Test: Đăng nhập/đăng ký bằng Google thành công
 ```
 
 ---
 
-## 👤 2. USER - Người Dùng
+## 👤 2. USER - Người dùng
 
 ### 2.1 Lấy thông tin profile
 ```
 GET /api/users/profile
 Headers: Authorization: Bearer <token>
 
-✅ Test: Lấy được thông tin user hiện tại
+✅ Test: Lấy thông tin user hiện tại
 ```
 
 ### 2.2 Cập nhật profile
@@ -83,80 +85,112 @@ Content-Type: application/json
 
 Body:
 {
-  "name": "Tên Mới Updated",
-  "avatar": "https://example.com/avatar.jpg"
+  "name": "Nguyen Van B"
 }
+
+✅ Test: Cập nhật tên thành công
 ```
 
----
-
-## 📦 3. PRODUCTS - Sản Phẩm
-
-### 3.1 Lấy danh sách sản phẩm (Public)
+### 2.3 Đổi mật khẩu
 ```
-GET /api/products
-
-✅ Test: Lấy được danh sách sản phẩm với phân trang
-```
-
-### 3.2 Lấy chi tiết sản phẩm (Public)
-```
-GET /api/products/:id
-
-✅ Test: Lấy được chi tiết sản phẩm
-❌ Lỗi: Sản phẩm không tồn tại (404)
-```
-
-### 3.3 Tìm kiếm sản phẩm
-```
-GET /api/products?search=áo&category=<id>&sortBy=price_asc
-
-✅ Test: Lọc và sắp xếp theo yêu cầu
-```
-
-### 3.4 Tạo sản phẩm (Admin/Staff)
-```
-POST /api/products
+PUT /api/users/change-password
 Headers: Authorization: Bearer <token>
 Content-Type: application/json
 
 Body:
 {
-  "name": "Sản Phẩm Mới",
-  "description": "Mô tả sản phẩm",
-  "price": 299000,
-  "stock": 100,
-  "category": "<category_id>"
+  "currentPassword": "OldPassword123@",
+  "newPassword": "NewPassword123@"
 }
 
-✅ Test: Tạo thành công
-❌ Lỗi: Không có quyền (403)
+✅ Test: Đổi mật khẩu thành công
+❌ Lỗi: Mật khẩu hiện tại không đúng
 ```
 
-### 3.5 Upload ảnh sản phẩm
+### 2.4 Upload avatar
 ```
-POST /api/products/upload
+POST /api/users/avatar
 Headers: Authorization: Bearer <token>
 Content-Type: multipart/form-data
 
-Body:
-- image: <file>
+Form Data:
+- avatar: (chọn file ảnh)
 
-✅ Test: Upload thành công, nhận URL ảnh
+✅ Test: Upload avatar thành công → nhận URL ảnh
 ```
 
 ---
 
-## 📂 4. CATEGORIES - Danh Mục
+## 📦 3. ADDRESS - Địa chỉ
 
-### 4.1 Lấy danh sách danh mục (Public)
+### 3.1 Lấy danh sách địa chỉ
+```
+GET /api/addresses
+Headers: Authorization: Bearer <token>
+
+✅ Test: Lấy danh sách địa chỉ của user
+```
+
+### 3.2 Thêm địa chỉ mới
+```
+POST /api/addresses
+Headers: Authorization: Bearer <token>
+Content-Type: application/json
+
+Body:
+{
+  "fullName": "Nguyen Van A",
+  "phone": "0123456789",
+  "address": "123 Đường ABC",
+  "city": "TPHCM",
+  "district": "Quan 1",
+  "ward": "Phường Bến Nghé",
+  "isDefault": true
+}
+
+✅ Test: Thêm địa chỉ thành công
+```
+
+### 3.3 Cập nhật địa chỉ
+```
+PUT /api/addresses/:id
+Headers: Authorization: Bearer <token>
+Content-Type: application/json
+
+Body:
+{
+  "fullName": "Nguyen Van B",
+  "phone": "0987654321",
+  "address": "456 Đường XYZ",
+  "city": "Hanoi",
+  "district": "Ba Đình",
+  "ward": "Phường Liễu Giai",
+  "isDefault": false
+}
+
+✅ Test: Cập nhật địa chỉ thành công
+```
+
+### 3.4 Xóa địa chỉ
+```
+DELETE /api/addresses/:id
+Headers: Authorization: Bearer <token>
+
+✅ Test: Xóa địa chỉ thành công
+```
+
+---
+
+## 🏷️ 4. CATEGORY - Danh mục
+
+### 4.1 Lấy danh sách danh mục
 ```
 GET /api/categories
 
-✅ Test: Lấy được tất cả danh mục
+✅ Test: Lấy danh sách tất cả danh mục
 ```
 
-### 4.2 Tạo danh mục (Admin)
+### 4.2 Thêm danh mục (Admin)
 ```
 POST /api/categories
 Headers: Authorization: Bearer <token>
@@ -164,18 +198,169 @@ Content-Type: application/json
 
 Body:
 {
-  "name": "Danh Mục Mới",
-  "description": "Mô tả danh mục"
+  "name": "Áo Thun",
+  "description": "Các loại áo thun nam nữ"
 }
 
-✅ Test: Tạo thành công
+✅ Test: Thêm danh mục thành công (chỉ ADMIN/STAFF)
+```
+
+### 4.3 Cập nhật danh mục (Admin)
+```
+PUT /api/categories/:id
+Headers: Authorization: Bearer <token>
+Content-Type: application/json
+
+Body:
+{
+  "name": "Áo Thun Nam",
+  "description": "Áo thun dành cho nam giới"
+}
+
+✅ Test: Cập nhật danh mục thành công
+```
+
+### 4.4 Xóa danh mục (Admin)
+```
+DELETE /api/categories/:id
+Headers: Authorization: Bearer <token>
+
+✅ Test: Xóa danh mục thành công
 ```
 
 ---
 
-## 🛒 5. ORDERS - Đơn Hàng
+## 👕 5. PRODUCT - Sản phẩm
 
-### 5.1 Tạo đơn hàng (User)
+### 5.1 Lấy danh sách sản phẩm
+```
+GET /api/products
+Query params: ?limit=20&page=1&category=id
+
+✅ Test: Lấy danh sách sản phẩm (phân trang)
+```
+
+### 5.2 Lấy chi tiết sản phẩm
+```
+GET /api/products/:id
+
+✅ Test: Lấy thông tin chi tiết sản phẩm
+```
+
+### 5.3 Thêm sản phẩm (Admin)
+```
+POST /api/products
+Headers: Authorization: Bearer <token>
+Content-Type: application/json
+
+Body:
+{
+  "name": "Áo Thun Nam Cao Cấp",
+  "description": "Áo thun nam chất lượng cao",
+  "price": 299000,
+  "stock": 50,
+  "category": "category_id_here",
+  "image": "https://example.com/image.jpg"
+}
+
+✅ Test: Thêm sản phẩm thành công
+```
+
+### 5.4 Upload hình ảnh sản phẩm
+```
+POST /api/products/upload
+Headers: Authorization: Bearer <token>
+Content-Type: multipart/form-data
+
+Form Data:
+- image: (chọn file ảnh JPG/PNG/GIF/WebP, tối đa 5MB)
+
+✅ Test: Upload ảnh thành công → nhận URL ảnh
+❌ Lỗi: File không đúng định dạng / Kích thước quá lớn
+```
+
+### 5.5 Cập nhật sản phẩm (Admin)
+```
+PUT /api/products/:id
+Headers: Authorization: Bearer <token>
+Content-Type: application/json
+
+Body:
+{
+  "name": "Áo Thun Nam VIP",
+  "price": 399000,
+  "stock": 30
+}
+
+✅ Test: Cập nhật sản phẩm thành công
+```
+
+### 5.6 Xóa sản phẩm (Admin)
+```
+DELETE /api/products/:id
+Headers: Authorization: Bearer <token>
+
+✅ Test: Xóa sản phẩm thành công
+```
+
+---
+
+## 🎫 6. COUPON - Mã giảm giá
+
+### 6.1 Lấy danh sách coupon
+```
+GET /api/coupons
+
+✅ Test: Lấy danh sách coupon còn hiệu lực
+```
+
+### 6.2 Tạo coupon (Admin)
+```
+POST /api/coupons
+Headers: Authorization: Bearer <token>
+Content-Type: application/json
+
+Body:
+{
+  "code": "SUMMER2026",
+  "discountType": "PERCENTAGE",
+  "discountValue": 20,
+  "minOrderValue": 100000,
+  "maxDiscount": 50000,
+  "usageLimit": 100,
+  "expiresAt": "2026-12-31"
+}
+
+✅ Test: Tạo coupon giảm giá 20% thành công
+```
+
+### 6.3 Cập nhật coupon (Admin)
+```
+PUT /api/coupons/:id
+Headers: Authorization: Bearer <token>
+Content-Type: application/json
+
+Body:
+{
+  "usageLimit": 200
+}
+
+✅ Test: Cập nhật coupon thành công
+```
+
+### 6.4 Xóa coupon (Admin)
+```
+DELETE /api/coupons/:id
+Headers: Authorization: Bearer <token>
+
+✅ Test: Xóa coupon thành công
+```
+
+---
+
+## 📝 7. ORDER - Đơn hàng
+
+### 7.1 Tạo đơn hàng COD
 ```
 POST /api/orders
 Headers: Authorization: Bearer <token>
@@ -184,34 +369,63 @@ Content-Type: application/json
 Body:
 {
   "items": [
-    {
-      "productId": "<product_id>",
-      "quantity": 1,
-      "size": "M",
-      "color": "Đen"
-    }
+    { "productId": "product_id", "quantity": 2 }
   ],
+  "couponCode": "SUMMER2026",
   "shippingAddress": {
-    "fullName": "Nguyễn Văn Demo",
-    "phone": "0909123456",
-    "address": "123 Đường Test, Quận 1, TP.HCM"
+    "fullName": "Nguyen Van A",
+    "phone": "0123456789",
+    "address": "123 Đường ABC, P.Bến Nghé, Q.1, TPHCM"
   },
   "paymentMethod": "COD"
 }
 
-✅ Test: Tạo đơn hàng thành công, stock giảm
-❌ Lỗi: Sản phẩm hết hàng (400)
+✅ Test: Tạo đơn hàng COD thành công
+- Stock sản phẩm tự động trừ
+- Giảm stock khi tạo đơn
 ```
 
-### 5.2 Lấy đơn hàng của tôi (User)
+### 7.2 Tạo đơn hàng MoMo
+```
+POST /api/orders
+Headers: Authorization: Bearer <token>
+Content-Type: application/json
+
+Body:
+{
+  "items": [
+    { "productId": "product_id", "quantity": 1 }
+  ],
+  "shippingAddress": {
+    "fullName": "Nguyen Van A",
+    "phone": "0123456789",
+    "address": "123 Đường ABC, TPHCM"
+  },
+  "paymentMethod": "MOMO"
+}
+
+✅ Test: Tạo đơn hàng MoMo → nhận payUrl để redirect thanh toán
+⚠️ Lưu ý: Stock CHƯA trừ, chỉ trừ khi thanh toán MoMo thành công
+```
+
+### 7.3 Lấy đơn hàng của tôi
 ```
 GET /api/orders/my
 Headers: Authorization: Bearer <token>
 
-✅ Test: Lấy danh sách đơn hàng của user đó
+✅ Test: Lấy danh sách đơn hàng của user
+- Đơn MoMo đang chờ thanh toán sẽ bị ẨN
 ```
 
-### 5.3 Cập nhật trạng thái đơn hàng (Admin/Staff)
+### 7.4 Lấy chi tiết đơn hàng
+```
+GET /api/orders/:id
+Headers: Authorization: Bearer <token>
+
+✅ Test: Lấy thông tin chi tiết đơn hàng
+```
+
+### 7.5 Cập nhật trạng thái đơn hàng (Admin)
 ```
 PUT /api/orders/:id/status
 Headers: Authorization: Bearer <token>
@@ -222,86 +436,95 @@ Body:
   "status": "CONFIRMED"
 }
 
-✅ Test: Cập nhật thành công, stock không đổi
+Các status hợp lệ:
+- PENDING (Chờ xác nhận)
+- CONFIRMED (Đã xác nhận)
+- SHIPPED (Đã giao ĐVVC)
+- DELIVERING (Đang giao)
+- ARRIVED (Đã đến nơi)
+- COMPLETED (Hoàn tất)
+- CANCELLED (Đã hủy)
+
+✅ Test: Cập nhật trạng thái thành công
+- Khi COMPLETED: Hoàn stock
+- Khi CANCELLED: Hoàn stock + xóa coupon usage
 ```
 
-### 5.4 Hủy đơn hàng (User)
+### 7.6 Xác nhận thanh toán cho shipper (COD)
 ```
-PUT /api/orders/:id/cancel
+POST /api/orders/:id/confirm-paid-shipper
 Headers: Authorization: Bearer <token>
 
-✅ Test: Hủy thành công, stock được restore
-❌ Lỗi: Đơn đang giao, không thể hủy (400)
+✅ Test: Xác nhận đã thanh toán cho shipper
+```
+
+### 7.7 Hủy đơn hàng
+```
+DELETE /api/orders/:id
+Headers: Authorization: Bearer <token>
+
+✅ Test: Hủy đơn hàng thành công
+- Hoàn stock sản phẩm
+```
+
+### 7.8 Lấy tất cả đơn hàng (Admin)
+```
+GET /api/orders/all
+Headers: Authorization: Bearer <token>
+
+✅ Test: Lấy danh sách tất cả đơn hàng
 ```
 
 ---
 
-## 🎫 6. COUPONS - Mã Giảm Giá
+## 💳 8. MOMO PAYMENT - Thanh toán MoMo
 
-### 6.1 Validate coupon
+### 8.1 Tạo thanh toán MoMo
 ```
-POST /api/coupons/validate
-Content-Type: application/json
-
-Body:
-{
-  "code": "SUMMER2024",
-  "orderTotal": 500000
-}
-
-✅ Test: Coupon hợp lệ, tính được giảm giá
-❌ Lỗi: Coupon không tồn tại hoặc đã hết hạn
-```
-
-### 6.2 Áp dụng coupon khi tạo đơn
-```
-POST /api/orders
-Headers: Authorization: Bearer <token>
-Content-Type: application/json
-
-Body:
-{
-  "items": [...],
-  "shippingAddress": {...},
-  "paymentMethod": "COD",
-  "couponCode": "SUMMER2024"
-}
-
-✅ Test: Giảm giá được áp dụng vào finalPrice
-```
-
----
-
-## ❤️ 7. WISHLIST - Yêu Thích
-
-### 7.1 Thêm vào wishlist
-```
-POST /api/wishlist
+POST /api/momo/create
 Headers: Authorization: Bearer <token>
 Content-Type: application/json
 
 Body:
 {
-  "productId": "<product_id>"
+  "orderId": "order_id_here"
 }
 
-✅ Test: Thêm thành công
-❌ Lỗi: Đã có trong wishlist
+✅ Test: Tạo payment MoMo thành công → nhận payUrl
 ```
 
-### 7.2 Lấy danh sách wishlist
+### 8.2 Callback từ MoMo (IPN)
 ```
-GET /api/wishlist
+POST /api/momo/ipn
+
+MoMo sẽ gọi tự động khi:
+- Thanh toán thành công (resultCode=0) → Cập nhật PAID + Trừ stock
+- Hủy/thất bại (resultCode≠0) → Xóa đơn + Hoàn stock
+```
+
+### 8.3 Return URL sau thanh toán
+```
+GET /api/momo/return?resultCode=0&orderId=...
+
+resultCode:
+- 0: Thành công
+- 1006: User hủy
+- 1007: Timeout
+```
+
+### 8.4 Query trạng thái giao dịch
+```
+GET /api/momo/query/:orderId
 Headers: Authorization: Bearer <token>
 
-✅ Test: Lấy được danh sách sản phẩm yêu thích
+✅ Test: Kiểm tra trạng thái giao dịch MoMo
 ```
 
 ---
 
-## ⭐ 8. REVIEWS - Đánh Giá
+## ⭐ 9. REVIEW - Đánh giá
 
-### 8.1 Đánh giá sản phẩm (User đã mua)
+### 9.1 Thêm đánh giá sản phẩm
 ```
 POST /api/reviews
 Headers: Authorization: Bearer <token>
@@ -309,185 +532,254 @@ Content-Type: application/json
 
 Body:
 {
-  "productId": "<product_id>",
+  "productId": "product_id",
   "rating": 5,
-  "comment": "Sản phẩm rất tốt!"
+  "comment": "Sản phẩm rất tốt, giao hàng nhanh!"
 }
 
-✅ Test: Đánh giá được tạo
-❌ Lỗi: Đã đánh giá sản phẩm này rồi
+✅ Test: Thêm đánh giá thành công
 ```
 
-### 8.2 Xem đánh giá sản phẩm (Public)
+### 9.2 Lấy đánh giá theo sản phẩm
 ```
 GET /api/reviews/product/:productId
 
-✅ Test: Xem được danh sách đánh giá
+✅ Test: Lấy danh sách đánh giá của sản phẩm
+```
+
+### 9.3 Xóa đánh giá
+```
+DELETE /api/reviews/:id
+Headers: Authorization: Bearer <token>
+
+✅ Test: Xóa đánh giá thành công
 ```
 
 ---
 
-## 💬 9. CHAT - Nhắn Tin
+## ❤️ 10. WISHLIST - Yêu thích
 
-### 9.1 Lấy danh sách admin/staff để chat
+### 10.1 Lấy danh sách yêu thích
 ```
-GET /api/chat/users/list
+GET /api/wishlist
 Headers: Authorization: Bearer <token>
 
-✅ Test: Lấy được danh sách admin/staff
+✅ Test: Lấy danh sách sản phẩm yêu thích
 ```
 
-### 9.2 Gửi tin nhắn
+### 10.2 Thêm vào yêu thích
 ```
-POST /api/chat/send
+POST /api/wishlist
 Headers: Authorization: Bearer <token>
 Content-Type: application/json
 
 Body:
 {
-  "receiverId": "<admin_id>",
+  "productId": "product_id"
+}
+
+✅ Test: Thêm sản phẩm vào yêu thích
+```
+
+### 10.3 Xóa khỏi yêu thích
+```
+DELETE /api/wishlist/:productId
+Headers: Authorization: Bearer <token>
+
+✅ Test: Xóa sản phẩm khỏi yêu thích
+```
+
+---
+
+## 💬 11. CHAT - Nhắn tin
+
+### 11.1 Lấy danh sách cuộc trò chuyện
+```
+GET /api/chat/conversations
+Headers: Authorization: Bearer <token>
+
+✅ Test: Lấy danh sách cuộc trò chuyện
+```
+
+### 11.2 Lấy tin nhắn trong cuộc trò chuyện
+```
+GET /api/chat/conversations/:conversationId/messages
+Headers: Authorization: Bearer <token>
+
+✅ Test: Lấy tin nhắn trong cuộc trò chuyện
+```
+
+### 11.3 Gửi tin nhắn
+```
+POST /api/chat/messages
+Headers: Authorization: Bearer <token>
+Content-Type: application/json
+
+Body:
+{
+  "conversationId": "conversation_id",
   "content": "Xin chào, tôi cần hỗ trợ!"
 }
 
-✅ Test: Tin nhắn được gửi thành công
+✅ Test: Gửi tin nhắn thành công
 ```
 
-### 9.3 Lấy cuộc trò chuyện
+### 11.4 Tạo cuộc trò chuyện mới
 ```
-GET /api/chat/:userId
-Headers: Authorization: Bearer <token>
-
-✅ Test: Lấy được lịch sử tin nhắn
-```
-
----
-
-## 💳 11. PAYMENT - Thanh Toán
-
-### 11.1 Thanh toán COD
-```
-POST /api/orders
+POST /api/chat/conversations
 Headers: Authorization: Bearer <token>
 Content-Type: application/json
 
 Body:
 {
-  "items": [...],
-  "shippingAddress": {...},
-  "paymentMethod": "COD"
+  "participantId": "user_id"
 }
 
-✅ Test: Tạo đơn hàng COD thành công
+✅ Test: Tạo cuộc trò chuyện mới với user khác
 ```
 
-### 11.2 Mock VNPay Payment
+---
+
+## 🔔 12. NOTIFICATION - Thông báo
+
+### 12.1 Lấy danh sách thông báo
 ```
-POST /api/payment/mock/create
+GET /api/notifications?limit=20
+Headers: Authorization: Bearer <token>
+
+✅ Test: Lấy danh sách thông báo
+```
+
+### 12.2 Lấy số thông báo chưa đọc
+```
+GET /api/notifications/unread-count
+Headers: Authorization: Bearer <token>
+
+✅ Test: Lấy số thông báo chưa đọc
+```
+
+### 12.3 Đánh dấu đã đọc
+```
+PUT /api/notifications/:id/read
+Headers: Authorization: Bearer <token>
+
+✅ Test: Đánh dấu thông báo đã đọc
+```
+
+### 12.4 Đánh dấu đã đọc tất cả
+```
+PUT /api/notifications/read-all
+Headers: Authorization: Bearer <token>
+
+✅ Test: Đánh dấu tất cả thông báo đã đọc
+```
+
+### 12.5 Xóa thông báo
+```
+DELETE /api/notifications/:id
+Headers: Authorization: Bearer <token>
+
+✅ Test: Xóa thông báo thành công
+```
+
+---
+
+## 🔌 13. SSE - Real-time (Server-Sent Events)
+
+### 13.1 Kết nối SSE cho orders
+```
+GET /api/orders/sse
+Headers: Authorization: Bearer <token>
+
+Event types:
+- connected: Kết nối thành công
+- NEW_ORDER: Có đơn hàng mới (Admin)
+- ORDER_STATUS_CHANGED: Trạng thái đơn thay đổi
+- new_notification: Có thông báo mới
+
+✅ Test: Kết nối SSE thành công, nhận real-time events
+```
+
+---
+
+## 📊 14. ADMIN DASHBOARD
+
+### 14.1 Thống kê dashboard
+```
+GET /api/admin/dashboard
+Headers: Authorization: Bearer <token>
+
+✅ Test: Lấy thống kê tổng quan
+- Tổng số users
+- Tổng số đơn hàng
+- Tổng doanh thu
+- Sản phẩm bán chạy
+```
+
+### 14.2 Lấy danh sách users (Admin)
+```
+GET /api/admin/users
+Headers: Authorization: Bearer <token>
+
+✅ Test: Lấy danh sách tất cả users
+```
+
+### 14.3 Cập nhật role user (Admin)
+```
+PUT /api/admin/users/:id/role
 Headers: Authorization: Bearer <token>
 Content-Type: application/json
 
 Body:
 {
-  "orderId": "<order_id>"
+  "role": "STAFF"
 }
 
-✅ Test: Tạo link thanh toán mock
+Các role: USER, STAFF, ADMIN
+
+✅ Test: Cập nhật role thành công
 ```
 
 ---
 
-## 📊 12. ADMIN - Thống Kê
+## 🔑 ROLE PERMISSIONS - Phân quyền
 
-### 12.1 Lấy thống kê (Admin)
+| Role | Quyền |
+|------|--------|
+| USER | Xem sản phẩm, mua hàng, quản lý đơn, chat |
+| STAFF | USER + CRUD sản phẩm, quản lý đơn hàng |
+| ADMIN | Full access |
+
+---
+
+## 🚨 ERROR CODES - Mã lỗi
+
+| Status | Message | Nguyên nhân |
+|--------|---------|-------------|
+| 400 | Vui lòng cung cấp tên, giá và danh mục | Thiếu field bắt buộc |
+| 401 | Không có quyền truy cập | Token hết hạn / Sai token |
+| 403 | Bạn không có quyền | Không đủ quyền thực hiện |
+| 404 | Không tìm thấy | Resource không tồn tại |
+| 500 | Lỗi máy chủ nội bộ | Lỗi server |
+
+---
+
+## 📱 PAYMENT FLOW - Luồng thanh toán
+
+### COD Flow:
 ```
-GET /api/admin/stats
-Headers: Authorization: Bearer <token>
-
-✅ Test: Lấy được tất cả số liệu thống kê
+Tạo đơn → Trừ stock → Giao hàng → Thanh toán COD → COMPLETED
 ```
 
-### 12.2 Lấy chart data (Admin)
+### MoMo Flow:
 ```
-GET /api/admin/chart-data
-Headers: Authorization: Bearer <token>
-
-✅ Test: Lấy được dữ liệu biểu đồ
+Tạo đơn (stock giữ nguyên) → Redirect MoMo
+    ↓
+Thành công → Trừ stock → Cập nhật PAID → COMPLETED
+    ↓
+Hủy/Thất bại → Xóa đơn → Stock giữ nguyên
 ```
 
 ---
 
-## 🔄 Test Flow Hoàn Chỉnh
-
-### Flow 1: User mua hàng
-```
-1. POST /api/auth/register     → Tạo tài khoản
-2. POST /api/auth/login        → Đăng nhập, lấy token
-3. GET /api/products           → Xem sản phẩm
-4. POST /api/orders            → Tạo đơn hàng (COD)
-5. GET /api/orders/my         → Xem đơn hàng
-6. PUT /api/orders/:id/cancel → Hủy đơn (nếu cần)
-```
-
-### Flow 2: Admin quản lý đơn hàng
-```
-1. POST /api/auth/login        → Đăng nhập admin
-2. GET /api/orders             → Xem tất cả đơn
-3. PUT /api/orders/:id/status  → Cập nhật trạng thái
-4. GET /api/admin/stats        → Xem thống kê
-```
-
-### Flow 3: Coupon
-```
-1. POST /api/auth/login        → Đăng nhập
-2. POST /api/coupons/validate  → Kiểm tra coupon
-3. POST /api/orders            → Tạo đơn với coupon
-```
-
----
-
-## ⚠️ Lỗi Thường Gặp
-
-| Lỗi | Nguyên nhân | Giải pháp |
-|------|-------------|------------|
-| 401 | Token hết hạn | Đăng nhập lại |
-| 403 | Không có quyền | Kiểm tra role |
-| 400 | Thiếu trường | Kiểm tra body request |
-| 404 | Không tìm thấy | Kiểm tra ID |
-| 500 | Server error | Liên hệ admin |
-
----
-
-## 📱 Test Trên Postman
-
-### Import Collection
-1. Tạo Collection mới: "Clothing Shop API"
-2. Thêm Environment:
-   - `baseUrl`: `https://clothing-shop-api-8wae.onrender.com/api`
-   - `token`: (lưu sau khi login)
-
-### Test các API theo thứ tự:
-1. Health check
-2. Register
-3. Login → Lưu token vào environment
-4. Get Profile (dùng token)
-5. Get Products
-6. Create Order
-7. Get My Orders
-
----
-
-## ✅ Checklist Test
-
-- [ ] Health check hoạt động
-- [ ] Register/Login hoạt động
-- [ ] JWT token được tạo
-- [ ] Protected routes yêu cầu token
-- [ ] Products CRUD hoạt động
-- [ ] Orders CRUD hoạt động
-- [ ] Coupon validate hoạt động
-- [ ] Chat hoạt động
-- [ ] Admin stats hoạt động
-
----
-
-**Test thành công! ✅**
+**© 2026 - Clothing Shop API Documentation**
