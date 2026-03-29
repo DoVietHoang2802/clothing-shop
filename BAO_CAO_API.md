@@ -55,7 +55,119 @@ Client ◀─────────────┘
 
 ---
 
-## 2. API ENDPOINTS
+## 2. API TỔNG HỢP (DÙNG ĐỂ GIỚI THIỆU TEST)
+
+**Base URL:** `https://clothing-shop-api-8wae.onrender.com/api`
+
+### 2.1 AUTH
+- `POST /auth/register`
+- `POST /auth/login`
+- `POST /auth/google`
+- `POST /auth/refresh-token`
+- `POST /auth/change-password`
+- `POST /auth/forgot-password`
+- `POST /auth/reset-password/:token`
+
+### 2.2 USER
+- `GET /users/profile`
+- `PUT /users/profile`
+- `GET /users` (ADMIN)
+- `PUT /users/:id/role` (ADMIN)
+- `DELETE /users/:id` (ADMIN)
+
+### 2.3 ADDRESS
+- `GET /addresses`
+- `GET /addresses/:id`
+- `POST /addresses`
+- `PUT /addresses/:id`
+- `DELETE /addresses/:id`
+- `PUT /addresses/:id/default`
+
+### 2.4 CATEGORY
+- `GET /categories`
+- `POST /categories` (ADMIN)
+- `PUT /categories/:id` (ADMIN)
+- `DELETE /categories/:id` (ADMIN)
+
+### 2.5 PRODUCT
+- `GET /products`
+- `GET /products/:id`
+- `POST /products` (ADMIN/STAFF)
+- `PUT /products/:id` (ADMIN/STAFF)
+- `DELETE /products/:id` (ADMIN)
+- `POST /products/upload` (ADMIN/STAFF)
+
+### 2.6 COUPON
+- `POST /coupons/validate`
+- `GET /coupons` (ADMIN)
+- `GET /coupons/:id` (ADMIN)
+- `POST /coupons` (ADMIN)
+- `PUT /coupons/:id` (ADMIN)
+- `DELETE /coupons/:id` (ADMIN)
+
+### 2.7 ORDER
+- `GET /orders/sse`
+- `POST /orders`
+- `GET /orders/my`
+- `GET /orders/:id`
+- `GET /orders` (ADMIN/STAFF)
+- `PUT /orders/:id/status` (ADMIN/STAFF)
+- `PUT /orders/:id/paid-to-shipper` (USER)
+- `PUT /orders/:id/cancel`
+- `DELETE /orders/:id`
+- `DELETE /orders/admin/:id` (ADMIN)
+
+### 2.8 MOMO
+- `POST /momo/create`
+- `POST /momo/ipn`
+- `GET /momo/return`
+- `GET /momo/query/:orderId`
+
+### 2.9 REVIEW
+- `GET /reviews/product/:productId`
+- `GET /reviews/product/:productId/average`
+- `POST /reviews` (USER)
+- `PUT /reviews/:id` (USER)
+- `DELETE /reviews/:id` (USER)
+
+### 2.10 WISHLIST
+- `GET /wishlist`
+- `POST /wishlist`
+- `DELETE /wishlist/:productId`
+- `GET /wishlist/check/:productId`
+
+### 2.11 CHAT
+- `GET /chat/sse`
+- `POST /chat/send`
+- `GET /chat/conversations/all`
+- `GET /chat/users/list`
+- `GET /chat/:userId`
+- `PUT /chat/read/:userId`
+- `GET /chat/unread/count`
+- `DELETE /chat/message/:id`
+- `DELETE /chat/conversation/:userId`
+
+### 2.12 NOTIFICATION
+- `GET /notifications`
+- `GET /notifications/unread-count`
+- `PUT /notifications/read-all`
+- `DELETE /notifications/read`
+- `GET /notifications/:id`
+- `PUT /notifications/:id/read`
+- `DELETE /notifications/:id`
+
+### 2.13 ADMIN
+- `GET /admin/stats`
+- `GET /admin/stats/chart`
+
+### 2.14 PAYMENT (MOCK LEGACY)
+- `POST /payment/vnpay/create`
+- `POST /payment/mock/confirm`
+- `POST /payment/mock/cancel`
+
+---
+
+## 3. API ENDPOINTS CHI TIẾT
 
 ---
 
