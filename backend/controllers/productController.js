@@ -154,10 +154,10 @@ const getProductById = asyncHandler(async (req, res, next) => {
 const createProduct = asyncHandler(async (req, res, next) => {
   const { name, description, price, stock, image, category } = req.body;
 
-  if (!name || !description || !price || !category) {
+  if (!name || !price || !category) {
     return res.status(400).json({
       success: false,
-      message: 'Vui lòng cung cấp name, description, price, category',
+      message: 'Vui lòng cung cấp tên, giá và danh mục sản phẩm',
       data: null,
     });
   }
