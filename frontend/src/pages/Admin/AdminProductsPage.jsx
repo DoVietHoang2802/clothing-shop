@@ -13,6 +13,7 @@ const AdminProductsPage = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [imageMode, setImageMode] = useState('upload'); // 'upload' hoặc 'url'
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -141,6 +142,26 @@ const AdminProductsPage = () => {
       }
     };
     uploadImage();
+  };
+
+  // Xử lý khi nhập URL ảnh - tự động preview
+  const handleImageUrlChange = (url) => {
+    setFormData({ ...formData, image: url });
+    // Validate URL và preview nếu hợp lệ
+    if (url && (url.startsWith('http://') || url.startsWith('https://'))) {
+      setImagePreview(url);
+    } else {
+      setImagePreview('');
+    }
+  };
+
+  // Xóa ảnh
+  const handleRemoveImage = () => {
+    setFormData({ ...formData, image: '' });
+    setImagePreview('');
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const filteredProducts = products.filter(product =>
@@ -431,6 +452,43 @@ const AdminProductsPage = () => {
               </div>
               <div style={{ gridColumn: '1 / -1' }}>
                 <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>Hình ảnh sản phẩm</label>
+
+                {/* Toggle buttons */}
+                <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
+                  <button
+                    type="button"
+                    onClick={() => { setImageMode('upload'); setFormData({ ...formData, image: '' }); setImagePreview(''); }}
+                    style={{
+                      padding: '0.5rem 1rem',
+                      background: imageMode === 'upload' ? '#4facfe' : '#f0f0f0',
+                      color: imageMode === 'upload' ? 'white' : '#333',
+                      border: 'none',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      fontWeight: '600',
+                      fontSize: '0.9rem'
+                    }}
+                  >
+                    📁 Từ máy
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setImageMode('url'); setFormData({ ...formData, image: '' }); setImagePreview(''); }}
+                    style={{
+                      padding: '0.5rem 1rem',
+                      background: imageMode === 'url' ? '#4facfe' : '#f0f0f0',
+                      color: imageMode === 'url' ? 'white' : '#333',
+                      border: 'none',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      fontWeight: '600',
+                      fontSize: '0.9rem'
+                    }}
+                  >
+                    🔗 Từ URL
+                  </button>
+                </div>
+
                 <div style={{
                   display: 'flex',
                   gap: '1rem',
@@ -439,77 +497,106 @@ const AdminProductsPage = () => {
                 }}>
                   {/* Image preview */}
                   {(imagePreview || formData.image) && (
-                    <div style={{ position: 'relative' }}>
-                      <img
-                        src={imagePreview || formData.image}
-                        alt="Preview"
+                    <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
+                      <div style={{ position: 'relative' }}>
+                        <img
+                          src={imagePreview || formData.image}
+                          alt="Preview"
+                          onError={(e) => { e.target.src = 'https://via.placeholder.com/120?text=Lỗi'; }}
+                          style={{
+                            width: '120px',
+                            height: '120px',
+                            objectFit: 'cover',
+                            borderRadius: '8px',
+                            border: '2px solid #e0e0e0'
+                          }}
+                        />
+                        {uploading && (
+                          <div style={{
+                            position: 'absolute',
+                            top: 0, left: 0, right: 0, bottom: 0,
+                            background: 'rgba(255,255,255,0.8)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            borderRadius: '8px'
+                          }}>
+                            ⏳
+                          </div>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleRemoveImage}
                         style={{
-                          width: '120px',
-                          height: '120px',
-                          objectFit: 'cover',
-                          borderRadius: '8px',
-                          border: '2px solid #e0e0e0'
+                          padding: '0.3rem 0.6rem',
+                          background: '#fee',
+                          color: '#e74c3c',
+                          border: '1px solid #e74c3c',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          fontSize: '0.75rem',
+                          fontWeight: '600'
                         }}
-                      />
-                      {uploading && (
-                        <div style={{
-                          position: 'absolute',
-                          top: 0, left: 0, right: 0, bottom: 0,
-                          background: 'rgba(255,255,255,0.8)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          borderRadius: '8px'
-                        }}>
-                          ⏳
-                        </div>
-                      )}
+                      >
+                        🗑️ Xóa ảnh
+                      </button>
                     </div>
                   )}
 
-                  {/* Upload button */}
-                  <div>
-                    <input
-                      type="file"
-                      ref={fileInputRef}
-                      onChange={handleImageSelect}
-                      accept="image/*"
-                      style={{ display: 'none' }}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={uploading}
-                      style={{
-                        padding: '0.75rem 1.5rem',
-                        background: uploading ? '#ccc' : '#4facfe',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '8px',
-                        cursor: uploading ? 'not-allowed' : 'pointer',
-                        fontWeight: '600'
-                      }}
-                    >
-                      {uploading ? '⏳ Đang upload...' : '📷 Chọn ảnh'}
-                    </button>
+                  {/* Upload mode - chọn file từ máy */}
+                  {imageMode === 'upload' && (
+                    <div>
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleImageSelect}
+                        accept="image/*"
+                        style={{ display: 'none' }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={uploading}
+                        style={{
+                          padding: '0.75rem 1.5rem',
+                          background: uploading ? '#ccc' : '#4facfe',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '8px',
+                          cursor: uploading ? 'not-allowed' : 'pointer',
+                          fontWeight: '600'
+                        }}
+                      >
+                        {uploading ? '⏳ Đang upload...' : '📷 Chọn ảnh từ máy'}
+                      </button>
+                      <p style={{ marginTop: '0.5rem', color: '#7f8c8d', fontSize: '0.8rem' }}>
+                        JPG, PNG, GIF (tối đa 5MB)
+                      </p>
+                    </div>
+                  )}
 
-                    {/* URL fallback */}
-                    <div style={{ marginTop: '0.5rem' }}>
+                  {/* URL mode - nhập link ảnh */}
+                  {imageMode === 'url' && (
+                    <div style={{ width: '100%', maxWidth: '400px' }}>
                       <input
                         type="text"
                         value={formData.image}
-                        onChange={(e) => { setFormData({ ...formData, image: e.target.value }); setImagePreview(''); }}
-                        placeholder="Hoặc dán URL ảnh..."
+                        onChange={(e) => handleImageUrlChange(e.target.value)}
+                        placeholder="Dán URL ảnh vào đây..."
                         style={{
-                          width: '250px',
-                          padding: '0.5rem',
+                          width: '100%',
+                          padding: '0.75rem',
                           border: '2px solid #e0e0e0',
                           borderRadius: '8px',
-                          fontSize: '0.85rem'
+                          fontSize: '0.9rem'
                         }}
                       />
+                      <p style={{ marginTop: '0.5rem', color: '#7f8c8d', fontSize: '0.8rem' }}>
+                        Ví dụ: https://example.com/image.jpg
+                      </p>
                     </div>
-                  </div>
+                  )}
                 </div>
               </div>
               <div style={{ gridColumn: '1 / -1' }}>
