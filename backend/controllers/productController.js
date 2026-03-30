@@ -281,7 +281,9 @@ const uploadProductImage = asyncHandler(async (req, res, next) => {
     });
   }
 
-  const baseUrl = `${req.protocol}://${req.get('host')}`;
+  // Luôn dùng https để tránh Mixed Content khi deploy
+  const protocol = process.env.API_PROTOCOL || req.protocol;
+  const baseUrl = `${protocol}://${req.get('host')}`;
   const imageUrl = `${baseUrl}/uploads/${req.file.filename}`;
 
   res.status(200).json({

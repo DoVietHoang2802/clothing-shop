@@ -26,6 +26,11 @@ const orderService = {
     return api.put(`/orders/${id}/paid-to-shipper`);
   },
 
+  // User xác nhận đã nhận hàng (MOMO)
+  confirmReceivedOrder: (id) => {
+    return api.put(`/orders/${id}/received`);
+  },
+
   cancelOrder: (id) => {
     return api.put(`/orders/${id}/cancel`);
   },

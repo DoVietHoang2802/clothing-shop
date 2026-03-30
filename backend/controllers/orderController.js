@@ -623,6 +623,94 @@ const deleteOrderAdmin = asyncHandler(async (req, res, next) => {
   });
 });
 
+// @desc    User xác nhận đã nhận hàng (MOMO)
+// @route   PUT /api/orders/:id/received
+// @access  Private/USER
+const confirmReceivedOrder = asyncHandler(async (req, res, next) => {
+  const { id } = req.params;
+  const userId = req.user.id;
+
+  let order = await Order.findById(id);
+
+  if (!order) {
+    return res.status(404).json({
+      success: false,
+      message: 'Đơn hàng không tìm thấy',
+      data: null,
+    });
+  }
+
+  if (order.user.toString() !== userId) {
+    return res.status(403).json({
+      success: false,
+      message: 'Bạn không có quyền cập nhật đơn hàng này',
+      data: null,
+    });
+  }
+
+  if (order.paymentMethod !== 'MOMO') {
+    return res.status(400).json({
+      success: false,
+      message: 'Chức năng này chỉ áp dụng cho đơn hàng MoMo',
+      data: null,
+    });
+  }
+
+  if (order.status !== 'ARRIVED') {
+    return res.status(400).json({
+      success: false,
+      message: 'Chỉ có thể xác nhận đã nhận hàng khi đơn hàng ở trạng thái ARRIVED. Trạng thái hiện tại: ' + order.status,
+      data: null,
+    });
+  }
+
+  const oldStatus = order.status;
+
+  // Chuyển thẳng sang hoàn tất cho đơn MoMo
+  order.status = 'COMPLETED';
+  order.paymentStatus = 'PAID';
+  order = await order.save();
+
+  // Tăng soldCount khi hoàn tất
+  for (const item of order.items) {
+    await Product.findByIdAndUpdate(
+      item.product,
+      { $inc: { soldCount: item.quantity } },
+      { new: true }
+    );
+  }
+
+  await order.populate('user', 'name email');
+  await order.populate('items.product', 'name price image');
+
+  broadcastOrderUpdate(order, oldStatus, 'COMPLETED');
+
+  const orderIdShort = order._id.toString().slice(-6).toUpperCase();
+
+  await createNotification({
+    userId: order.user._id,
+    type: 'ORDER_STATUS',
+    title: '🎉 Đơn hàng đã hoàn tất',
+    message: `Đơn hàng #${orderIdShort} đã hoàn tất. Cảm ơn bạn đã mua sắm!`,
+    link: `/my-orders`,
+    data: { orderId: order._id.toString(), oldStatus, newStatus: 'COMPLETED' },
+  });
+
+  await notifyAdmins({
+    title: '✅ Khách đã nhận hàng (MoMo)',
+    message: `Đơn hàng #${orderIdShort} đã được khách xác nhận nhận hàng và hoàn tất`,
+    type: 'ORDER_STATUS',
+    link: '/admin/orders',
+    data: { orderId: order._id.toString(), oldStatus, newStatus: 'COMPLETED' },
+  });
+
+  res.status(200).json({
+    success: true,
+    message: 'Đã xác nhận nhận hàng và hoàn tất đơn hàng',
+    data: order,
+  });
+});
+
 // @desc    User xác nhận đã thanh toán cho shipper (COD)
 // @route   PUT /api/orders/:id/paid-to-shipper
 // @access  Private/USER
@@ -713,6 +801,7 @@ module.exports = {
   getOrderById,
   getAllOrders,
   updateOrderStatus,
+  confirmReceivedOrder,
   confirmPaidToShipper,
   cancelOrder,
   deleteOrder,

@@ -134,7 +134,7 @@ const MyOrdersPage = () => {
     try {
       setConfirmingPayment(orderId);
       setError('');
-      await orderService.updateOrderStatus(orderId, 'COMPLETED');
+      await orderService.confirmReceivedOrder(orderId);
       setSuccess('✅ Đã xác nhận hoàn tất đơn hàng!');
       await loadOrders();
       setTimeout(() => setSuccess(''), 3000);
