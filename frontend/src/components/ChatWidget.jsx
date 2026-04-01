@@ -56,7 +56,7 @@ const ChatWidget = () => {
             loadConversations();
           }
         } catch (e) {
-          console.log('SSE parse error:', e);
+          console.error('SSE parse error:', e);
         }
       };
 
@@ -80,9 +80,16 @@ const ChatWidget = () => {
 
   // Xử lý tin nhắn mới từ SSE
   const handleNewMessage = (message) => {
-    const senderId = message.sender._id || message.sender;
-    const receiverId = message.receiver._id || message.receiver;
+    // Defensive: bỏ qua nếu message không hợp lệ
+    if (!message || !message._id) return;
+
+    // sender/receiver có thể là object (đã populate) hoặc string ObjectId
+    const senderId = typeof message.sender === 'object' ? message.sender?._id : message.sender;
+    const receiverId = typeof message.receiver === 'object' ? message.receiver?._id : message.receiver;
     const currentUserId = user?._id;
+
+    // Bỏ qua nếu không có sender/receiver hợp lệ
+    if (!senderId && !receiverId) return;
 
     if (isAdminOrStaff) {
       // Admin/Staff: Cập nhật danh sách cuộc trò chuyện
