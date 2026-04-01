@@ -34,7 +34,7 @@ const ChatWidget = () => {
       // EventSource không hỗ trợ headers, gửi token qua query string
       const sseUrl = `${apiBase}/chat/sse?token=${token}`;
       console.log('[SSE] Connecting to:', sseUrl);
-      console.log('[SSE] User:', user?._id, 'Role:', user?.role, 'isAdminOrStaff:', isAdminOrStaff);
+      console.log('[SSE] User:', user?.id, 'Role:', user?.role, 'isAdminOrStaff:', isAdminOrStaff);
 
       // Test trước xem endpoint có trả 401 không
       fetch(sseUrl, { method: 'GET', headers: { 'Accept': 'text/event-stream' } })
@@ -45,7 +45,7 @@ const ChatWidget = () => {
       eventSourceRef.current = eventSource;
 
       eventSource.onopen = () => {
-        console.log('[SSE] Connected! UserId:', user?._id, 'Role:', user?.role);
+        console.log('[SSE] Connected! UserId:', user?.id, 'Role:', user?.role);
       };
 
       eventSource.onmessage = (event) => {
@@ -95,7 +95,7 @@ const ChatWidget = () => {
     // sender/receiver có thể là object (đã populate) hoặc string ObjectId
     const senderId = typeof message.sender === 'object' ? message.sender?._id : message.sender;
     const receiverId = typeof message.receiver === 'object' ? message.receiver?._id : message.receiver;
-    const currentUserId = user?._id;
+    const currentUserId = user?.id;
 
     // Bỏ qua nếu không có sender/receiver hợp lệ
     if (!senderId && !receiverId) return;
@@ -539,7 +539,7 @@ const ChatWidget = () => {
                   <>
                     {messages.map((msg) => {
                       const sender = getSenderInfo(msg);
-                      const isMe = msg.sender._id === user._id || msg.sender === user._id;
+                      const isMe = msg.sender._id?.toString() === user.id || msg.sender?.toString() === user.id;
                       const isImage = msg.messageType === 'image';
 
                       // Tin nhắn của mình -> bên phải, tin nhắn của người khác -> bên trái
