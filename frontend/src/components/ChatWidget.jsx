@@ -142,17 +142,23 @@ const ChatWidget = () => {
 
   // Load data on open (chỉ gọi khi mở chat)
   useEffect(() => {
-    console.log('[DEBUG] useEffect triggered: isAuthenticated:', isAuthenticated, 'isOpen:', isOpen, 'isAdminOrStaff:', isAdminOrStaff);
     if (isAuthenticated && isOpen) {
-      console.log('[DEBUG] Calling loadConversations()...');
       if (isAdminOrStaff) {
         loadConversations();
       } else {
+        loadConversations();
         loadAdminList();
-        loadUnreadCount();
       }
     }
   }, [isAuthenticated, isOpen, isAdminOrStaff]);
+
+  // Auto-select first conversation when conversations load (for non-admin)
+  useEffect(() => {
+    if (!isAdminOrStaff && conversations.length > 0 && !selectedUser) {
+      setSelectedUser(conversations[0].user);
+      loadMessages(conversations[0].user._id);
+    }
+  }, [conversations]);
 
   // Scroll to bottom only on new messages
   useEffect(() => {
