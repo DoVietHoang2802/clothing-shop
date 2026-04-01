@@ -85,6 +85,30 @@ const sendToAllAdmins = (eventData) => {
   }
 };
 
+// Gửi event tới một user cụ thể
+const sendToUser = (userId, eventData) => {
+  const client = sseClients.get(userId);
+  if (client) {
+    try {
+      client.res.write(`data: ${JSON.stringify(eventData)}\n\n`);
+    } catch (e) {
+      sseClients.delete(userId);
+    }
+  }
+};
+
+// Broadcast tin nhắn chat tới TẤT CẢ client đang online (chat + orders dùng chung Map)
+const broadcastChatMessage = (message) => {
+  for (const [userId, client] of sseClients.entries()) {
+    try {
+      client.res.write(`data: ${JSON.stringify({ type: 'chat_new_message', message })}\n\n`);
+      client.res.write(`data: ${JSON.stringify({ type: 'chat_reload_conversations' })}\n\n`);
+    } catch (e) {
+      sseClients.delete(userId);
+    }
+  }
+};
+
 // Hàm broadcast đơn hàng mới cho tất cả admin
 const broadcastNewOrder = async (order) => {
   try {
@@ -131,5 +155,7 @@ module.exports = {
   orderSSEHandler,
   broadcastOrderUpdate,
   broadcastNewOrder,
-  sseClients, // Export để notificationController có thể dùng chung
+  sendToUser,
+  broadcastChatMessage,
+  sseClients, // Export để chatController dùng chung Map
 };

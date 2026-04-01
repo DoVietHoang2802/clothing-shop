@@ -42,11 +42,12 @@ const ChatWidget = () => {
       eventSource.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
-          if (data.type === 'new_message') {
+          // Xử lý cả event type cũ (chat cũ) và mới (unified SSE)
+          if (data.type === 'new_message' || data.type === 'chat_new_message') {
             handleNewMessage(data.message);
-          } else if (data.type === 'reload_conversations') {
+          } else if (data.type === 'reload_conversations' || data.type === 'chat_reload_conversations') {
             loadConversations();
-          } else if (data.type === 'conversation_deleted') {
+          } else if (data.type === 'conversation_deleted' || data.type === 'chat_conversation_deleted') {
             // Cuộc trò chuyện bị xóa bởi người khác
             if (selectedUser && selectedUser._id === data.deletedWith) {
               setSelectedUser(null);

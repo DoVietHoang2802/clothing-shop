@@ -1,23 +1,21 @@
 /**
  * Chat Controller - Tin nhắn giữa user và admin/staff
+ * Dùng unified SSE Map từ orderSSEController (để chat + orders dùng chung kết nối)
  */
 
 const mongoose = require('mongoose');
 const Message = require('../models/Message');
 const User = require('../models/User');
 const asyncHandler = require('../utils/asyncHandler');
+const { sseClients, sendToUser, broadcastChatMessage } = require('./orderSSEController');
 
-// Map lưu các SSE connections
-const sseClients = new Map();
-
-// SSE Endpoint - Real-time chat updates
+// SSE Endpoint - Real-time chat updates (dùng chung Map với orderSSEController)
 // @route   GET /api/chat/sse
 // @access  Private
 const sseHandler = asyncHandler(async (req, res, next) => {
   // Lấy user từ middleware đã verify
   const userId = req.user.id;
   const userRole = req.user.role;
-  const isAdminOrStaff = userRole === 'ADMIN' || userRole === 'STAFF';
 
   // Set headers cho SSE
   res.setHeader('Content-Type', 'text/event-stream');
@@ -28,12 +26,17 @@ const sseHandler = asyncHandler(async (req, res, next) => {
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.flushHeaders();
 
-  // Lưu connection vào Map
-  sseClients.set(userId, res);
+  // Lưu connection vào Map CHUNG với role info
+  sseClients.set(userId, { res, role: userRole });
 
   // Gửi heartbeat để giữ kết nối (15s - tránh Render kill)
   const heartbeatInterval = setInterval(() => {
-    res.write(': heartbeat\n\n');
+    try {
+      res.write(': heartbeat\n\n');
+    } catch (e) {
+      clearInterval(heartbeatInterval);
+      sseClients.delete(userId);
+    }
   }, 15000);
 
   // Gửi event khởi tạo
@@ -47,18 +50,9 @@ const sseHandler = asyncHandler(async (req, res, next) => {
 });
 
 // Hàm broadcast tin nhắn mới tới tất cả client đang online
-const broadcastToAll = (message) => {
-  sseClients.forEach((res, clientId) => {
-    try {
-      // Gửi cả tin nhắn mới và event reload conversations
-      res.write(`data: ${JSON.stringify({ type: 'new_message', message })}\n\n`);
-      res.write(`data: ${JSON.stringify({ type: 'reload_conversations' })}\n\n`);
-    } catch (e) {
-      // Client đã disconnect
-      sseClients.delete(clientId);
-    }
-  });
-};
+// Sử dụng unified broadcastChatMessage từ orderSSEController
+// NOTE: import broadcastChatMessage, sendToUser from orderSSEController
+// Đã được require ở trên
 
 // @desc    Gửi tin nhắn
 // @route   POST /api/chat/send
@@ -114,8 +108,8 @@ const sendMessage = asyncHandler(async (req, res, next) => {
   await message.populate('sender', 'name email avatar role');
   await message.populate('receiver', 'name email avatar role');
 
-  // Broadcast tin nhắn tới TẤT CẢ client đang online
-  broadcastToAll(message);
+  // Broadcast tin nhắn tới TẤT CẢ client đang online (dùng unified Map)
+  broadcastChatMessage(message);
 
   res.status(201).json({
     success: true,
@@ -451,7 +445,7 @@ const deleteConversation = asyncHandler(async (req, res, next) => {
     });
 
     // Broadcast event để cập nhật cho tất cả client
-    broadcastToAll({ type: 'conversation_deleted', deletedWith: userId });
+    broadcastChatMessage({ type: 'chat_conversation_deleted', deletedWith: userId });
 
     res.status(200).json({
       success: true,
