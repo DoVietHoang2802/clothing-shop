@@ -32,11 +32,20 @@ const ChatWidget = () => {
 
       const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
       // EventSource không hỗ trợ headers, gửi token qua query string
-      const eventSource = new EventSource(`${apiBase}/chat/sse?token=${token}`);
+      const sseUrl = `${apiBase}/chat/sse?token=${token}`;
+      console.log('[SSE] Connecting to:', sseUrl);
+      console.log('[SSE] User:', user?._id, 'Role:', user?.role, 'isAdminOrStaff:', isAdminOrStaff);
+
+      // Test trước xem endpoint có trả 401 không
+      fetch(sseUrl, { method: 'GET', headers: { 'Accept': 'text/event-stream' } })
+        .then(res => console.log('[SSE] Endpoint check - status:', res.status))
+        .catch(err => console.error('[SSE] Endpoint check - error:', err));
+
+      const eventSource = new EventSource(sseUrl);
       eventSourceRef.current = eventSource;
 
       eventSource.onopen = () => {
-        console.log('SSE Connected');
+        console.log('[SSE] Connected! UserId:', user?._id, 'Role:', user?.role);
       };
 
       eventSource.onmessage = (event) => {
