@@ -1,6 +1,7 @@
 const express = require('express');
 const {
   getNotifications,
+  getNotificationById,
   getUnreadCount,
   markAsRead,
   markAllAsRead,
@@ -24,26 +25,7 @@ router.put('/read-all', verifyToken, markAllAsRead);
 router.delete('/read', verifyToken, deleteReadNotifications);
 
 // GET /api/notifications/:id - Lấy 1 thông báo (sau các route đặc biệt)
-router.get('/:id', verifyToken, async (req, res) => {
-  const { id } = req.params;
-  const userId = req.user.id;
-
-  const notification = await require('../models/Notification').findOne({ _id: id, user: userId });
-
-  if (!notification) {
-    return res.status(404).json({
-      success: false,
-      message: 'Thông báo không tìm thấy',
-      data: null,
-    });
-  }
-
-  res.status(200).json({
-    success: true,
-    message: 'Lấy thông báo thành công',
-    data: notification,
-  });
-});
+router.get('/:id', verifyToken, getNotificationById);
 
 // PUT /api/notifications/:id/read - Đánh dấu đã đọc
 router.put('/:id/read', verifyToken, markAsRead);

@@ -14,21 +14,8 @@ const { verifyToken } = require('../middlewares/auth');
 
 const router = express.Router();
 
-// SSE - Real-time chat (route riêng, verify token từ query)
-router.get('/sse', async (req, res, next) => {
-  const token = req.query.token;
-  if (!token) {
-    return res.status(401).json({ success: false, message: 'Token required' });
-  }
-  try {
-    const jwt = require('jsonwebtoken');
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded;
-    next();
-  } catch (err) {
-    return res.status(401).json({ success: false, message: 'Invalid token' });
-  }
-}, sseHandler);
+// SSE - Real-time chat (verifyToken đã hỗ trợ query param)
+router.get('/sse', verifyToken, sseHandler);
 
 // All other routes require authentication
 router.use(verifyToken);

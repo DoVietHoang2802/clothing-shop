@@ -183,6 +183,30 @@ const deleteNotification = asyncHandler(async (req, res) => {
   });
 });
 
+// @desc    Lấy 1 thông báo
+// @route   GET /api/notifications/:id
+// @access  Private
+const getNotificationById = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const userId = req.user.id;
+
+  const notification = await Notification.findOne({ _id: id, user: userId });
+
+  if (!notification) {
+    return res.status(404).json({
+      success: false,
+      message: 'Thông báo không tìm thấy',
+      data: null,
+    });
+  }
+
+  res.status(200).json({
+    success: true,
+    message: 'Lấy thông báo thành công',
+    data: notification,
+  });
+});
+
 // @desc    Xóa tất cả thông báo đã đọc
 // @route   DELETE /api/notifications/read
 // @access  Private
@@ -204,6 +228,7 @@ const deleteReadNotifications = asyncHandler(async (req, res) => {
 module.exports = {
   createNotification,
   getNotifications,
+  getNotificationById,
   getUnreadCount,
   markAsRead,
   markAllAsRead,
