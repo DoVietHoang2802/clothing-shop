@@ -27,7 +27,6 @@ const orderSSEHandler = async (req, res, next) => {
 
   // Lưu connection vào Map với role
   sseClients.set(userId, { res, role: userRole });
-  console.log(`[SSE DEBUG] Client connected: ${userId} (${userRole}). Total: ${sseClients.size}`);
 
   // Gửi heartbeat để giữ kết nối (15s thay vì 25s - tránh Render kill)
   const heartbeatInterval = setInterval(() => {
@@ -46,7 +45,6 @@ const orderSSEHandler = async (req, res, next) => {
   req.on('close', () => {
     clearInterval(heartbeatInterval);
     sseClients.delete(userId);
-    console.log(`[SSE DEBUG] Client disconnected: ${userId}. Total: ${sseClients.size}`);
   });
 };
 
@@ -101,7 +99,6 @@ const sendToUser = (userId, eventData) => {
 
 // Broadcast tin nhắn chat tới TẤT CẢ client đang online (chat + orders dùng chung Map)
 const broadcastChatMessage = (message) => {
-  console.log(`[CHAT DEBUG] broadcastChatMessage: ${sseClients.size} clients connected`);
   for (const [userId, client] of sseClients.entries()) {
     try {
       client.res.write(`data: ${JSON.stringify({ type: 'chat_new_message', message })}\n\n`);
