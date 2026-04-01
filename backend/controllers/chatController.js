@@ -207,18 +207,11 @@ const getConversations = asyncHandler(async (req, res, next) => {
     let query = {};
 
     if (isAdminOrStaff) {
-      // Admin/Staff: chỉ thấy cuộc trò chuyện MÀ HỌ tham gia
-      query = {
-        $or: [
-          { sender: currentUserIdObj },
-          { receiver: currentUserIdObj },
-        ]
-      };
+      // Admin/Staff: thấy TẤT CẢ cuộc trò chuyện giữa USER với bất kỳ admin/staff nào
+      // (không lọc theo currentUserId - để admin thấy tất cả)
+      query = {};
     } else {
-      // User thường chỉ thấy cuộc trò chuyện với admin/staff
-      const adminStaffUsers = await User.find({ role: { $in: ['ADMIN', 'STAFF'] } }).select('_id');
-      const adminStaffIds = adminStaffUsers.map(u => u._id);
-
+      // User thường: chỉ thấy cuộc trò chuyện của mình
       query = {
         $or: [
           { sender: currentUserIdObj },
@@ -246,9 +239,7 @@ const getConversations = asyncHandler(async (req, res, next) => {
       let conversationKey;
 
       if (isAdminOrStaff) {
-        // Admin/Staff: gom nhóm theo USER (không phải admin-user pair)
-        // Nếu người gửi là user thường → otherUser = sender
-        // Nếu người gửi là admin/staff → bỏ qua admin gửi cho admin, lấy receiver là user
+        // Admin/Staff: gom nhóm theo USER
         const senderRole = msg.sender.role;
         const receiverRole = msg.receiver.role;
 
@@ -261,7 +252,7 @@ const getConversations = asyncHandler(async (req, res, next) => {
           otherUser = msg.receiver;
           conversationKey = `user_${msg.receiver._id.toString()}`;
         }
-        // Admin gửi cho admin → bỏ qua
+        // Admin gửi cho admin → bỏ qua (không có senderRole/receiverRole === 'USER')
       } else {
         // User thường: xác định người còn lại
         if (msg.sender._id.toString() === currentUserId) {
@@ -275,12 +266,13 @@ const getConversations = asyncHandler(async (req, res, next) => {
 
       // Chỉ lấy tin nhắn đầu tiên (mới nhất) cho mỗi user
       if (otherUser && !conversationMap.has(conversationKey)) {
-        // Đếm tin nhắn chưa đọc từ otherUser gửi đến currentUser
-        const unreadCount = await Message.countDocuments({
-          sender: otherUser._id,
-          receiver: currentUserIdObj,
-          read: false,
-        });
+        // Với user: đếm tin nhắn chưa đọc từ otherUser gửi đến currentUser
+        // Với admin: đếm tin nhắn chưa đọc từ user gửi đến bất kỳ admin/staff nào
+        const unreadQuery = isAdminOrStaff
+          ? { sender: otherUser._id, read: false }
+          : { sender: otherUser._id, receiver: currentUserIdObj, read: false };
+
+        const unreadCount = await Message.countDocuments(unreadQuery);
 
         conversationMap.set(conversationKey, {
           user: {
