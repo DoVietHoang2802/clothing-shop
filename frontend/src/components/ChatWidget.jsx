@@ -50,11 +50,16 @@ const ChatWidget = () => {
 
       eventSource.onmessage = (event) => {
         try {
+          console.log('[SSE] Raw event received:', event.data);
           const data = JSON.parse(event.data);
+          console.log('[SSE] Parsed event:', data.type, data);
+
           // Xử lý cả event type cũ (chat cũ) và mới (unified SSE)
           if (data.type === 'new_message' || data.type === 'chat_new_message') {
+            console.log('[SSE] Handling new_message, message:', data.message);
             handleNewMessage(data.message);
           } else if (data.type === 'reload_conversations' || data.type === 'chat_reload_conversations') {
+            console.log('[SSE] Reloading conversations...');
             loadConversations();
           } else if (data.type === 'conversation_deleted' || data.type === 'chat_conversation_deleted') {
             // Cuộc trò chuyện bị xóa bởi người khác
@@ -63,6 +68,8 @@ const ChatWidget = () => {
               setMessages([]);
             }
             loadConversations();
+          } else {
+            console.log('[SSE] Unknown event type:', data.type);
           }
         } catch (e) {
           console.error('SSE parse error:', e);
