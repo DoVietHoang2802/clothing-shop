@@ -211,7 +211,7 @@ const getConversations = asyncHandler(async (req, res, next) => {
       // (không lọc theo currentUserId - để admin thấy tất cả)
       query = {};
     } else {
-      // User thường: chỉ thấy cuộc trò chuyện của mình
+      // User thường: thấy TẤT CẢ cuộc trò chuyện của mình (với admin, staff, hoặc user khác)
       query = {
         $or: [
           { sender: currentUserIdObj },

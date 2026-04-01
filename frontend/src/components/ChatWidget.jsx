@@ -788,13 +788,18 @@ const ChatWidget = () => {
                 </form>
               )}
             </>
-          ) : isAdminOrStaff ? (
-            // Conversations list
+          ) : (
+            // User - conversations list (hiển thị tất cả cuộc trò chuyện giống admin)
             <div style={{ flex: 1, overflowY: 'auto' }}>
-              {conversations.length === 0 ? (
+              {loading && conversations.length === 0 ? (
+                <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#999' }}>
+                  <p>Đang tải...</p>
+                </div>
+              ) : conversations.length === 0 ? (
                 <div style={{ padding: '3rem 2rem', textAlign: 'center', color: '#999' }}>
                   <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📭</div>
                   <p style={{ fontWeight: '600', color: '#666' }}>Chưa có tin nhắn nào</p>
+                  <p style={{ fontSize: '0.8rem', marginTop: '0.5rem' }}>Hãy nhắn tin để được hỗ trợ!</p>
                 </div>
               ) : (
                 conversations.map((conv) => (
@@ -854,11 +859,6 @@ const ChatWidget = () => {
                   </div>
                 ))
               )}
-            </div>
-          ) : (
-            // User - loading state
-            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#999' }}>
-              <p>Đang kết nối...</p>
             </div>
           )}
         </div>
