@@ -142,7 +142,9 @@ const ChatWidget = () => {
 
   // Load data on open (chỉ gọi khi mở chat)
   useEffect(() => {
+    console.log('[DEBUG] useEffect triggered: isAuthenticated:', isAuthenticated, 'isOpen:', isOpen, 'isAdminOrStaff:', isAdminOrStaff);
     if (isAuthenticated && isOpen) {
+      console.log('[DEBUG] Calling loadConversations()...');
       if (isAdminOrStaff) {
         loadConversations();
       } else {
@@ -188,11 +190,13 @@ const ChatWidget = () => {
     try {
       const res = await chatService.getConversations();
       const convs = res.data.data || [];
+      console.log('[DEBUG] loadConversations returned:', convs.length, 'conversations');
+      console.log('[DEBUG] conversations data:', JSON.stringify(convs));
       setConversations(convs);
       const totalUnread = convs.reduce((sum, c) => sum + (c.unreadCount || 0), 0);
       setUnreadCount(totalUnread);
     } catch (err) {
-      console.error('Error loading conversations:', err);
+      console.error('[DEBUG] Error loading conversations:', err);
     }
   };
 
