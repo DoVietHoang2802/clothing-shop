@@ -171,10 +171,9 @@ const createOrder = asyncHandler(async (req, res, next) => {
 
   try {
     // 1. Tạo đơn hàng
-    let order;
     const paymentMethodVal = paymentMethod || 'COD';
 
-    [order] = await Order.create([{
+    const order = new Order({
       user: userId,
       items: orderItems,
       totalPrice,
@@ -184,7 +183,8 @@ const createOrder = asyncHandler(async (req, res, next) => {
       shippingAddress: shippingAddress || null,
       paymentMethod: paymentMethodVal,
       paymentStatus: 'PENDING',
-    }], { session });
+    });
+    await order.save({ session });
 
     // 2. Giảm stock chỉ khi tạo đơn COD (MoMo sẽ trừ stock khi thanh toán thành công)
     if (paymentMethodVal === 'COD') {
