@@ -60,9 +60,7 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.temp
-
 # Claude session temp dirs
 backend/tmpclaude-*/
 frontend/tmpclaude-*/
 .claude/
-

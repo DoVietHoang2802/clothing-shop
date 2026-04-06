@@ -225,7 +225,6 @@ const createOrder = asyncHandler(async (req, res, next) => {
       data: null,
     });
   }
-
   await order.populate('user', 'name email');
   await order.populate('items.product', 'name price image');
 
