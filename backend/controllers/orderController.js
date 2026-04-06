@@ -227,17 +227,6 @@ const createOrder = asyncHandler(async (req, res, next) => {
 
   const orderIdShort = order._id.toString().slice(-6).toUpperCase();
 
-  // Broadcast Socket.io cho tất cả admins (nếu có)
-  const io = req.app.get('io');
-  if (io) {
-    io.emit('new_order', {
-      type: 'NEW_ORDER',
-      orderId: order._id,
-      order: order,
-      message: `📦 Đơn hàng mới #${orderIdShort} từ ${order.user?.name || 'Khách hàng'}`,
-    });
-  }
-
   // SSE broadcast tới tất cả admin đang kết nối
   const { broadcastNewOrder } = require('./orderSSEController');
   broadcastNewOrder(order);
@@ -492,33 +481,6 @@ const updateOrderStatus = asyncHandler(async (req, res, next) => {
     link: `/my-orders`,
     data: { orderId: order._id.toString(), oldStatus, newStatus: status },
   });
-
-  // Gửi thông báo real-time qua Socket.io (chỉ khi hoạt động - local dev)
-  const io = req.app.get('io');
-  if (io) {
-    const userId = order.user._id.toString();
-
-    // Gửi cho user
-    io.to(`user_${userId}`).emit('order_updated', {
-      type: 'ORDER_STATUS_CHANGED',
-      orderId: order._id,
-      oldStatus,
-      newStatus: status,
-      statusLabel: statusLabels[status],
-      order: order,
-      message: `Đơn hàng #${orderIdShort} đã được cập nhật: ${statusLabels[status]}`,
-    });
-
-    // Gửi cho tất cả admin/staff
-    io.emit('admin_order_updated', {
-      type: 'ORDER_STATUS_CHANGED',
-      orderId: order._id,
-      oldStatus,
-      newStatus: status,
-      statusLabel: statusLabels[status],
-      order: order,
-    });
-  }
 
   res.status(200).json({
     success: true,

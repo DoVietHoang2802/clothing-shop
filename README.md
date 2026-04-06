@@ -40,88 +40,83 @@ clothing-shop/
 │   ├── config/
 │   │   ├── connectDB.js             # Kết nối MongoDB
 │   │   ├── firebase.js              # Firebase Admin SDK (OAuth)
-│   │   ├── momo.js                   # MoMo payment config
-│   │   ├── socket.js                # Socket.io config
-│   │   └── upload.js                # Multer upload config
+│   │   ├── momo.js                 # MoMo payment config
+│   │   └── upload.js               # Multer upload config
 │   │
-│   ├── controllers/                  # XỬ LÝ LOGIC (KHÔNG điều hướng)
+│   ├── controllers/                  # XỬ LÝ LOGIC
 │   │   ├── authController.js        # Đăng ký, đăng nhập, OAuth
 │   │   ├── userController.js        # Quản lý người dùng
 │   │   ├── productController.js     # CRUD sản phẩm
-│   │   ├── categoryController.js    # CRUD danh mục
+│   │   ├── categoryController.js     # CRUD danh mục
 │   │   ├── orderController.js       # CRUD đơn hàng + SSE
 │   │   ├── orderSSEController.js    # Server-Sent Events cho orders
-│   │   ├── chatController.js        # Nhắn tin User ↔ Admin/Staff
 │   │   ├── couponController.js      # CRUD coupon
 │   │   ├── reviewController.js      # Đánh giá sản phẩm
 │   │   ├── wishlistController.js    # Yêu thích
 │   │   ├── notificationController.js # Thông báo
 │   │   ├── paymentController.js     # Thanh toán MoMo
 │   │   ├── addressController.js     # Địa chỉ giao hàng
-│   │   ├── adminController.js       # Dashboard thống kê
+│   │   └── adminController.js       # Dashboard thống kê
 │   │
-│   ├── routes/                       # ĐIỀU HƯỚNG (chỉ gọi controller)
+│   ├── routes/                       # ĐIỀU HƯỚNG
 │   │   ├── auth.js                  # POST /api/auth/*
-│   │   ├── user.js                  # GET/PUT /api/users/*
-│   │   ├── product.js               # CRUD /api/products/*
-│   │   ├── category.js              # CRUD /api/categories/*
-│   │   ├── order.js                 # CRUD /api/orders/*
-│   │   ├── chat.js                  # CRUD /api/chat/*
-│   │   ├── coupon.js                # CRUD /api/coupons/*
-│   │   ├── review.js                # CRUD /api/reviews/*
-│   │   ├── wishlist.js              # CRUD /api/wishlist/*
-│   │   ├── notification.js          # CRUD /api/notifications/*
-│   │   ├── momo.js                  # MoMo payment endpoints
-│   │   ├── address.js               # CRUD /api/addresses/*
-│   │   └── admin.js                 # Dashboard /api/admin/*
+│   │   ├── user.js                # GET/PUT /api/users/*
+│   │   ├── product.js             # CRUD /api/products/*
+│   │   ├── category.js            # CRUD /api/categories/*
+│   │   ├── order.js              # CRUD /api/orders/*
+│   │   ├── coupon.js             # CRUD /api/coupons/*
+│   │   ├── review.js             # CRUD /api/reviews/*
+│   │   ├── wishlist.js           # CRUD /api/wishlist/*
+│   │   ├── notification.js       # CRUD /api/notifications/*
+│   │   ├── momo.js               # MoMo payment endpoints
+│   │   ├── address.js            # CRUD /api/addresses/*
+│   │   └── admin.js              # Dashboard /api/admin/*
 │   │
 │   ├── models/                       # MONGOOSE SCHEMAS
-│   │   ├── User.js                  # Tài khoản (local + OAuth)
-│   │   ├── Product.js               # Sản phẩm
-│   │   ├── Category.js              # Danh mục
-│   │   ├── Order.js                 # Đơn hàng
-│   │   ├── Coupon.js                # Mã giảm giá
-│   │   ├── Review.js                # Đánh giá
-│   │   ├── Wishlist.js              # Yêu thích
-│   │   ├── Message.js               # Tin nhắn chat
-│   │   ├── Notification.js           # Thông báo
-│   │   └── Address.js               # Địa chỉ
+│   │   ├── User.js              # Tài khoản (local + OAuth)
+│   │   ├── Product.js           # Sản phẩm
+│   │   ├── Category.js         # Danh mục
+│   │   ├── Order.js            # Đơn hàng
+│   │   ├── Coupon.js           # Mã giảm giá
+│   │   ├── Review.js           # Đánh giá
+│   │   ├── Wishlist.js         # Yêu thích
+│   │   ├── Notification.js      # Thông báo
+│   │   └── Address.js          # Địa chỉ
 │   │
 │   ├── middlewares/
-│   │   ├── auth.js                  # verifyToken, authorizeRoles
-│   │   └── errorHandler.js          # Xử lý lỗi
+│   │   ├── auth.js            # verifyToken, authorizeRoles
+│   │   └── errorHandler.js     # Xử lý lỗi
 │   │
 │   ├── utils/
-│   │   └── asyncHandler.js          # Wrapper async handler
+│   │   └── asyncHandler.js     # Wrapper async handler
 │   │
-│   ├── app.js                        # Express app (đăng ký routes)
-│   ├── server.js                     # Entry point
+│   ├── app.js                  # Express app (đăng ký routes)
+│   ├── server.js               # Entry point
 │   └── package.json
 │
 ├── frontend/                         # React SPA
 │   ├── src/
 │   │   ├── components/               # Reusable UI components
-│   │   │   ├── Navbar.jsx            # Thanh điều hướng
-│   │   │   ├── Footer.jsx            # Footer
-│   │   │   ├── ChatWidget.jsx        # Widget chat
-│   │   │   ├── Carousel.jsx          # Banner carousel
+│   │   │   ├── Navbar.jsx          # Thanh điều hướng
+│   │   │   ├── Footer.jsx          # Footer
+│   │   │   ├── Carousel.jsx        # Banner carousel
 │   │   │   ├── ProductFilterPanel.jsx # Bộ lọc sản phẩm
-│   │   │   ├── ReviewSection.jsx     # Hiển thị đánh giá
+│   │   │   ├── ReviewSection.jsx   # Hiển thị đánh giá
 │   │   │   └── ToastNotification.jsx # Toast messages
 │   │   │
 │   │   ├── pages/                    # Page components
-│   │   │   ├── HomePage.jsx          # Trang chủ
+│   │   │   ├── HomePage.jsx         # Trang chủ
 │   │   │   ├── ProductDetailPage.jsx # Chi tiết sản phẩm
-│   │   │   ├── LoginPage.jsx         # Đăng nhập
-│   │   │   ├── RegisterPage.jsx      # Đăng ký
-│   │   │   ├── CartPage.jsx          # Giỏ hàng
-│   │   │   ├── MyOrdersPage.jsx      # Đơn hàng của tôi
-│   │   │   ├── WishlistPage.jsx      # Yêu thích
-│   │   │   ├── UserProfilePage.jsx   # Tài khoản
+│   │   │   ├── LoginPage.jsx        # Đăng nhập
+│   │   │   ├── RegisterPage.jsx     # Đăng ký
+│   │   │   ├── CartPage.jsx         # Giỏ hàng
+│   │   │   ├── MyOrdersPage.jsx     # Đơn hàng của tôi
+│   │   │   ├── WishlistPage.jsx     # Yêu thích
+│   │   │   ├── UserProfilePage.jsx  # Tài khoản
 │   │   │   ├── PaymentResultPage.jsx # Kết quả thanh toán
 │   │   │   │
 │   │   │   ├── Admin/
-│   │   │   │   ├── AdminDashboard.jsx   # Dashboard
+│   │   │   │   ├── AdminDashboard.jsx    # Dashboard
 │   │   │   │   ├── AdminProductsPage.jsx
 │   │   │   │   ├── AdminOrdersPage.jsx
 │   │   │   │   ├── AdminCategoriesPage.jsx
@@ -132,21 +127,20 @@ clothing-shop/
 │   │   │       ├── StaffDashboard.jsx
 │   │   │       └── StaffProductsPage.jsx
 │   │   │
-│   │   │   ├── services/                # API service layer
-│   │   │   ├── api.js               # Axios instance + interceptors
-│   │   │   ├── authService.js       # Auth API
-│   │   │   ├── productService.js    # Sản phẩm
-│   │   │   ├── orderService.js      # Đơn hàng
-│   │   │   ├── momoService.js       # MoMo payment
-│   │   │   ├── chatService.js        # Chat
+│   │   ├── services/                # API service layer
+│   │   │   ├── api.js              # Axios instance + interceptors
+│   │   │   ├── authService.js      # Auth API
+│   │   │   ├── productService.js  # Sản phẩm
+│   │   │   ├── orderService.js    # Đơn hàng
+│   │   │   ├── momoService.js      # MoMo payment
 │   │   │   └── ...
 │   │   │
 │   │   ├── config/
-│   │   │   ├── sse.js               # SSE real-time service
-│   │   │   └── firebase.js          # Firebase config (Google OAuth)
+│   │   │   ├── sse.js             # SSE real-time service
+│   │   │   └── firebase.js        # Firebase config (Google OAuth)
 │   │   │
 │   │   └── context/
-│   │       ├── AuthContext.jsx      # Auth state
+│   │       ├── AuthContext.jsx     # Auth state
 │   │       └── NotificationContext.jsx
 │   │
 │   ├── vercel.json
@@ -159,8 +153,6 @@ clothing-shop/
 
 ## 🏗️ Mô Hình Xử Lý
 
-### Luồng Request-Response
-
 ```
 ┌──────────────────────────────────────────────────────────────┐
 │                        CLIENT (React)                        │
@@ -170,7 +162,6 @@ clothing-shop/
                               ▼ HTTP/JSON
 ┌──────────────────────────────────────────────────────────────┐
 │                     SERVER (Node.js)                         │
-│                                                              │
 │  ┌─────────────┐                                             │
 │  │   app.js    │  ← Đăng ký tất cả routes                   │
 │  └──────┬──────┘                                             │
@@ -186,30 +177,6 @@ clothing-shop/
 │                    │  (MongoDB)  │                          │
 │                    └─────────────┘                          │
 └──────────────────────────────────────────────────────────────┘
-```
-
-### Ví dụ cụ thể
-
-#### 1. Route (Điều hướng)
-```javascript
-// routes/product.js
-router.get('/', getAllProducts);
-router.get('/:id', getProductById);
-router.post('/', verifyToken, authorizeRoles('ADMIN', 'STAFF'), createProduct);
-```
-
-#### 2. Controller (Xử lý logic)
-```javascript
-// controllers/productController.js
-const getAllProducts = asyncHandler(async (req, res) => {
-  const products = await Product.find();
-  res.json({ success: true, data: products });
-});
-
-const createProduct = asyncHandler(async (req, res) => {
-  const product = await Product.create(req.body);
-  res.json({ success: true, data: product });
-});
 ```
 
 ---
@@ -238,21 +205,10 @@ const createProduct = asyncHandler(async (req, res) => {
 - **COD**: Thanh toán khi nhận hàng
 - **MoMo**: Thanh toán qua ví MoMo (UAT)
 
-### 💬 Chat System
-- Nhắn tin User ↔ Admin/Staff
-- Badge số tin nhắn chưa đọc
-- Real-time với SSE
-
 ### 🔔 Notification System
 - Thông báo đơn hàng mới cho Admin
 - Thông báo cập nhật trạng thái cho User
 - Real-time với SSE
-
-### 📊 Dashboard
-| Role | Chức năng |
-|------|-----------|
-| **Admin** | Quản lý users, categories, products, orders, coupons, thống kê |
-| **Staff** | Quản lý sản phẩm, xử lý đơn hàng |
 
 ---
 
@@ -299,17 +255,6 @@ const createProduct = asyncHandler(async (req, res) => {
 | DELETE | `/api/orders/:id` | Xóa đơn hàng | USER, STAFF |
 | GET | `/api/orders/sse` | SSE real-time | All |
 
-### Chat
-| Method | Endpoint | Mô tả | Access |
-|--------|----------|--------|--------|
-| GET | `/api/chat` | Danh sách cuộc trò chuyện | All |
-| GET | `/api/chat/:userId` | Tin nhắn với 1 người | All |
-| POST | `/api/chat` | Gửi tin nhắn | All |
-| PUT | `/api/chat/read/:userId` | Đánh dấu đã đọc | All |
-| DELETE | `/api/chat/message/:id` | Xóa tin nhắn | USER |
-| DELETE | `/api/chat/conversation/:userId` | Xóa cuộc trò chuyện | USER |
-| GET | `/api/chat/sse` | SSE real-time | All |
-
 ### Notifications
 | Method | Endpoint | Mô tả | Access |
 |--------|----------|--------|--------|
@@ -319,6 +264,52 @@ const createProduct = asyncHandler(async (req, res) => {
 | PUT | `/api/notifications/read-all` | Đánh dấu đã đọc tất cả | All |
 | DELETE | `/api/notifications/:id` | Xóa thông báo | All |
 | DELETE | `/api/notifications/read` | Xóa thông báo đã đọc | All |
+
+### Addresses
+| Method | Endpoint | Mô tả | Access |
+|--------|----------|--------|--------|
+| GET | `/api/addresses` | Danh sách địa chỉ | USER |
+| GET | `/api/addresses/:id` | Chi tiết địa chỉ | USER |
+| POST | `/api/addresses` | Tạo địa chỉ | USER |
+| PUT | `/api/addresses/:id` | Cập nhật địa chỉ | USER |
+| DELETE | `/api/addresses/:id` | Xóa địa chỉ | USER |
+| PUT | `/api/addresses/:id/default` | Đặt mặc định | USER |
+
+### Wishlist
+| Method | Endpoint | Mô tả | Access |
+|--------|----------|--------|--------|
+| GET | `/api/wishlist` | Danh sách yêu thích | USER |
+| POST | `/api/wishlist` | Thêm vào yêu thích | USER |
+| DELETE | `/api/wishlist/:productId` | Xóa khỏi yêu thích | USER |
+| GET | `/api/wishlist/check/:productId` | Kiểm tra yêu thích | USER |
+
+### Reviews
+| Method | Endpoint | Mô tả | Access |
+|--------|----------|--------|--------|
+| GET | `/api/reviews/product/:productId` | Đánh giá sản phẩm | Public |
+| GET | `/api/reviews/product/:productId/average` | Điểm trung bình | Public |
+| POST | `/api/reviews` | Tạo đánh giá | USER |
+| PUT | `/api/reviews/:id` | Cập nhật đánh giá | USER |
+| DELETE | `/api/reviews/:id` | Xóa đánh giá | USER |
+
+### Coupons
+| Method | Endpoint | Mô tả | Access |
+|--------|----------|--------|--------|
+| POST | `/api/coupons/validate` | Kiểm tra coupon | Public |
+| GET | `/api/coupons` | Danh sách coupon | ADMIN |
+| GET | `/api/coupons/:id` | Chi tiết coupon | ADMIN |
+| POST | `/api/coupons` | Tạo coupon | ADMIN |
+| PUT | `/api/coupons/:id` | Cập nhật coupon | ADMIN |
+| DELETE | `/api/coupons/:id` | Xóa coupon | ADMIN |
+
+### Users
+| Method | Endpoint | Mô tả | Access |
+|--------|----------|--------|--------|
+| GET | `/api/users/profile` | Hồ sơ cá nhân | USER |
+| PUT | `/api/users/profile` | Cập nhật hồ sơ | USER |
+| GET | `/api/users` | Tất cả người dùng | ADMIN |
+| PUT | `/api/users/:id/role` | Cập nhật vai trò | ADMIN |
+| DELETE | `/api/users/:id` | Xóa người dùng | ADMIN |
 
 ### MoMo Payment
 | Method | Endpoint | Mô tả | Access |
@@ -375,7 +366,7 @@ VITE_FIREBASE_APP_ID=1:123456789:web:abcdef
 ### Frontend (.env.production)
 
 ```env
-VITE_API_BASE_URL=https://clothing-shop-api.onrender.com/api
+VITE_API_BASE_URL=https://clothing-shop-api-8wae.onrender.com/api
 
 # Firebase Config (production)
 VITE_FIREBASE_API_KEY=...
@@ -413,7 +404,7 @@ VITE_FIREBASE_APP_ID=...
 4. Output Directory: `dist`
 5. Environment Variables:
    ```
-   VITE_API_BASE_URL=https://clothing-shop-api.onrender.com/api
+   VITE_API_BASE_URL=https://clothing-shop-api-8wae.onrender.com/api
    VITE_FIREBASE_API_KEY=...
    VITE_FIREBASE_AUTH_DOMAIN=...
    VITE_FIREBASE_PROJECT_ID=...
@@ -443,8 +434,8 @@ VITE_FIREBASE_APP_ID=...
 
 | Endpoint | Events |
 |----------|--------|
-| `GET /api/orders/sse` | NEW_ORDER, ORDER_STATUS_CHANGED, new_notification |
-| `GET /api/chat/sse` | new_message, reload_conversations |
+| `GET /api/orders/sse` | NEW_ORDER, ORDER_STATUS_CHANGED |
+| `GET /api/notifications/sse` | new_notification |
 
 ### Luồng SSE
 
@@ -464,7 +455,6 @@ VITE_FIREBASE_APP_ID=...
 
 - 1 SSE connection cho tất cả features
 - Heartbeat mỗi 15s để giữ kết nối
-- Exponential backoff khi reconnect (3s → 30s max)
 - Polling fallback mỗi 30s cho notification bell
 
 ---
@@ -477,8 +467,6 @@ VITE_FIREBASE_APP_ID=...
   name: String,
   email: String (unique),
   password: String (nullable for OAuth),
-  phone: String,
-  address: String,
   role: 'USER' | 'STAFF' | 'ADMIN',
   avatar: String,
   provider: 'local' | 'google',
@@ -493,13 +481,10 @@ VITE_FIREBASE_APP_ID=...
   name: String,
   description: String,
   price: Number,
-  salePrice: Number,
+  image: String,
   category: ObjectId,
-  images: [String],
   stock: Number,
   soldCount: Number,
-  rating: Number,
-  isActive: Boolean,
   createdAt: Date
 }
 ```
@@ -513,36 +498,19 @@ VITE_FIREBASE_APP_ID=...
     name: String,
     price: Number,
     quantity: Number,
-    image: String
+    size: String,
+    color: String
   }],
   totalPrice: Number,
   finalPrice: Number,
-  coupon: ObjectId,
-  discount: Number,
-  shippingAddress: {
-    name: String,
-    phone: String,
-    address: String,
-    city: String
-  },
+  coupon: { code, discountType, discountValue },
+  discountAmount: Number,
+  shippingAddress: { fullName, phone, address, ward, district, city },
   paymentMethod: 'COD' | 'MOMO',
-  paymentStatus: 'PENDING' | 'PAID' | 'FAILED',
+  paymentStatus: 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED',
   status: 'PENDING' | 'CONFIRMED' | 'SHIPPED' | 'DELIVERING' | 'ARRIVED' | 'PAID_TO_SHIPPER' | 'COMPLETED' | 'CANCELLED',
   momoOrderId: String,
   momoTransId: String,
-  createdAt: Date
-}
-```
-
-### Message (Chat)
-```javascript
-{
-  sender: ObjectId,
-  receiver: ObjectId,
-  content: String,
-  image: String,
-  messageType: 'text' | 'image',
-  read: Boolean,
   createdAt: Date
 }
 ```
@@ -551,15 +519,62 @@ VITE_FIREBASE_APP_ID=...
 ```javascript
 {
   code: String (unique),
-  type: 'percentage' | 'fixed',
-  value: Number,
+  discountType: 'PERCENTAGE' | 'FIXED',
+  discountValue: Number,
   minOrderValue: Number,
   maxDiscount: Number,
-  quantity: Number,
-  usedCount: Number,
-  startDate: Date,
-  endDate: Date,
+  usageLimit: Number,
+  usageCount: Number,
+  expiresAt: Date,
   isActive: Boolean
+}
+```
+
+### Review
+```javascript
+{
+  product: ObjectId,
+  user: ObjectId,
+  rating: Number (1-5),
+  comment: String,
+  createdAt: Date
+}
+```
+
+### Wishlist
+```javascript
+{
+  user: ObjectId,
+  product: ObjectId,
+  createdAt: Date
+}
+```
+
+### Notification
+```javascript
+{
+  user: ObjectId,
+  type: String,
+  title: String,
+  message: String,
+  isRead: Boolean,
+  link: String,
+  createdAt: Date
+}
+```
+
+### Address
+```javascript
+{
+  user: ObjectId,
+  fullName: String,
+  phone: String,
+  address: String,
+  ward: String,
+  district: String,
+  city: String,
+  isDefault: Boolean,
+  label: 'home' | 'office' | 'other'
 }
 ```
 
@@ -578,7 +593,8 @@ VITE_FIREBASE_APP_ID=...
 | CRUD coupon | ❌ | ❌ | ✅ |
 | CRUD users | ❌ | ❌ | ✅ |
 | Dashboard thống kê | ❌ | ✅ | ✅ |
-| Chat | ✅ | ✅ | ✅ |
+| Đánh giá sản phẩm | ✅ | ✅ | ✅ |
+| Quản lý địa chỉ | ✅ | ✅ | ✅ |
 
 ---
 
@@ -601,15 +617,6 @@ npm install
 npm run dev
 # Frontend: http://localhost:5173
 ```
-
----
-
-## 📝 Ghi Chú
-
-- **Không sử dụng MVC** theo yêu cầu: Routes và Controllers tách riêng
-- Routes chỉ điều hướng (gọi controller)
-- Controllers xử lý logic (không điều hướng)
-- Real-time dùng SSE thay vì Socket.io (Render Free không hỗ trợ WebSocket)
 
 ---
 

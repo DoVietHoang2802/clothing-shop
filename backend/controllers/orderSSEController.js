@@ -1,6 +1,5 @@
 /**
- * Order SSE Controller - Real-time order status updates
- * Fallback cho production khi Socket.io không hoạt động (Vercel serverless)
+ * Order SSE Controller - Real-time order status updates via SSE
  */
 
 const Order = require('../models/Order');
