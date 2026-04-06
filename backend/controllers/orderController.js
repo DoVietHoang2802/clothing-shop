@@ -165,15 +165,17 @@ const createOrder = asyncHandler(async (req, res, next) => {
     };
   }
 
+  // === TẠM THỜI BỎ TRANSACTION ĐỂ TEST - SẼ THÊM LẠI SAU ===
   // Bắt đầu transaction để đảm bảo tính toàn vẹn dữ liệu
-  const session = await mongoose.startSession();
-  session.startTransaction();
+  // const session = await mongoose.startSession();
+  // session.startTransaction();
+
+  let order;
+  const paymentMethodVal = paymentMethod || 'COD';
 
   try {
     // 1. Tạo đơn hàng
-    const paymentMethodVal = paymentMethod || 'COD';
-
-    const order = new Order({
+    order = await Order.create({
       user: userId,
       items: orderItems,
       totalPrice,
@@ -184,43 +186,31 @@ const createOrder = asyncHandler(async (req, res, next) => {
       paymentMethod: paymentMethodVal,
       paymentStatus: 'PENDING',
     });
-    await order.save({ session });
 
     // 2. Giảm stock chỉ khi tạo đơn COD (MoMo sẽ trừ stock khi thanh toán thành công)
     if (paymentMethodVal === 'COD') {
       for (const product of productsToUpdate) {
-        await Product.updateOne(
-          { _id: product.productId },
+        await Product.findByIdAndUpdate(
+          product.productId,
           { $inc: { stock: -product.quantity } },
-          { session }
+          { new: true }
         );
       }
     }
 
     // 3. Tăng coupon usage count (nếu có coupon)
-    if (couponData) {
-      await Coupon.updateOne(
-        { _id: couponId },
-        { $inc: { usageCount: 1 } },
-        { session }
-      );
+    if (couponData && couponId) {
+      await Coupon.findByIdAndUpdate(couponId, { $inc: { usageCount: 1 } });
     }
 
-    // 4. Commit transaction — tất cả thay đổi được ghi vĩnh viễn
-    await session.commitTransaction();
-    session.endSession();
-
   } catch (err) {
-    // Nếu có lỗi ở bất kỳ bước nào → abort, rollback mọi thứ
-    await session.abortTransaction();
-    session.endSession();
-
     return res.status(500).json({
       success: false,
       message: 'Tạo đơn hàng thất bại: ' + err.message,
       data: null,
     });
   }
+  // ===============================================
   await order.populate('user', 'name email');
   await order.populate('items.product', 'name price image');
 
