@@ -23,6 +23,7 @@ const AdminProductsPage = () => {
     category: '',
   });
   const [searchTerm, setSearchTerm] = useState('');
+  const [stockFilter, setStockFilter] = useState('all'); // 'all' | 'out' | 'low' | 'normal'
   const [imagePreview, setImagePreview] = useState('');
   const fileInputRef = useRef(null);
 
@@ -170,9 +171,24 @@ const AdminProductsPage = () => {
     }
   };
 
-  const filteredProducts = products.filter(product =>
-    product.name?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredProducts = products.filter(product => {
+    const matchName = product.name?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchStock = stockFilter === 'all'
+      ? true
+      : stockFilter === 'out'
+        ? product.stock === 0
+        : stockFilter === 'low'
+          ? product.stock > 0 && product.stock <= 5
+          : product.stock > 5;
+    return matchName && matchStock;
+  });
+
+  const stockCounts = {
+    all: products.length,
+    out: products.filter(p => p.stock === 0).length,
+    low: products.filter(p => p.stock > 0 && p.stock <= 5).length,
+    normal: products.filter(p => p.stock > 5).length,
+  };
 
   if (loading) {
     return (
@@ -214,7 +230,12 @@ const AdminProductsPage = () => {
       }}>
         <div>
           <h1 style={{ margin: 0, fontSize: '2rem', fontWeight: '700' }}>👕 Quản Lý Sản Phẩm</h1>
-          <p style={{ margin: '0.5rem 0 0 0', opacity: 0.9 }}>{products.length} sản phẩm</p>
+          <p style={{ margin: '0.5rem 0 0 0', opacity: 0.9 }}>
+            {products.length} sản phẩm &nbsp;|&nbsp;
+            <span style={{ color: '#ffe066' }}>🟡 Sắp hết: {stockCounts.low}</span>
+            &nbsp;|&nbsp;
+            <span style={{ color: '#ff8080' }}>🔴 Hết hàng: {stockCounts.out}</span>
+          </p>
         </div>
         <button
           onClick={() => navigate('/admin/dashboard')}
@@ -259,40 +280,69 @@ const AdminProductsPage = () => {
         </div>
       )}
 
-      {/* Search & Add Button */}
-      <div style={{
-        display: 'flex',
-        gap: '1rem',
-        marginBottom: '1.5rem'
-      }}>
-        <input
-          type="text"
-          placeholder="🔍 Tìm kiếm sản phẩm..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          style={{
-            flex: 1,
-            padding: '1rem',
-            border: '2px solid #e0e0e0',
-            borderRadius: '8px',
-            fontSize: '1rem'
-          }}
-        />
-        <button
-          onClick={() => setShowForm(true)}
-          style={{
-            padding: '1rem 2rem',
-            background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
-            color: 'white',
-            border: 'none',
-            borderRadius: '8px',
-            fontWeight: '600',
-            cursor: 'pointer',
-            whiteSpace: 'nowrap'
-          }}
-        >
-          ➕ Thêm Sản Phẩm
-        </button>
+      {/* Search & Filter & Add Button */}
+      <div style={{ marginBottom: '1.5rem' }}>
+        {/* Stock filter tabs */}
+        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
+          {[
+            { key: 'all', label: '📦 Tất cả', count: stockCounts.all },
+            { key: 'low', label: '🟡 Sắp hết', count: stockCounts.low },
+            { key: 'out', label: '🔴 Hết hàng', count: stockCounts.out },
+            { key: 'normal', label: '🟢 Còn nhiều', count: stockCounts.normal },
+          ].map(({ key, label, count }) => (
+            <button
+              key={key}
+              onClick={() => setStockFilter(key)}
+              style={{
+                padding: '0.5rem 1rem',
+                background: stockFilter === key
+                  ? key === 'out' ? '#e74c3c' : key === 'low' ? '#f39c12' : key === 'normal' ? '#27ae60' : '#4facfe'
+                  : '#f0f0f0',
+                color: stockFilter === key ? 'white' : '#555',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontWeight: '600',
+                fontSize: '0.85rem',
+                transition: 'all 0.2s'
+              }}
+            >
+              {label} ({count})
+            </button>
+          ))}
+        </div>
+
+        {/* Search + Add */}
+        <div style={{ display: 'flex', gap: '1rem' }}>
+          <input
+            type="text"
+            placeholder="🔍 Tìm kiếm sản phẩm..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            style={{
+              flex: 1,
+              padding: '1rem',
+              border: '2px solid #e0e0e0',
+              borderRadius: '8px',
+              fontSize: '1rem'
+            }}
+          />
+          <button
+            onClick={() => setShowForm(true)}
+            style={{
+              padding: '1rem 2rem',
+              background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            ➕ Thêm Sản Phẩm
+          </button>
+        </div>
       </div>
 
       {/* Products Table */}
