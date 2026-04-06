@@ -79,23 +79,14 @@ const getAllUsers = asyncHandler(async (req, res, next) => {
 // @desc    Lấy chi tiết người dùng
 // @route   GET /api/users/:id
 // @access  Private/ADMIN
+// NOTE: This method is defined but not exported - no route uses it
 const getUserById = asyncHandler(async (req, res, next) => {
   const { id } = req.params;
-
   const user = await User.findById(id).select('-password');
   if (!user) {
-    return res.status(404).json({
-      success: false,
-      message: 'Người dùng không tìm thấy',
-      data: null,
-    });
+    return res.status(404).json({ success: false, message: 'Người dùng không tìm thấy', data: null });
   }
-
-  res.status(200).json({
-    success: true,
-    message: 'Lấy chi tiết người dùng thành công',
-    data: user,
-  });
+  res.status(200).json({ success: true, message: 'Lấy chi tiết người dùng thành công', data: user });
 });
 
 // @desc    Cập nhật role người dùng

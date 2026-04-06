@@ -165,11 +165,6 @@ const ipnCallback = asyncHandler(async (req, res) => {
     orderInfo,
   } = req.body;
 
-  console.log('=== MoMo IPN Callback ===');
-  console.log('OrderId:', orderId);
-  console.log('ResultCode:', resultCode);
-  console.log('Amount:', amount);
-
   // Xử lý thanh toán thành công
   if (resultCode == 0) {
     // Trích xuất orderId từ orderInfo: "thanh toan don hang 123abc"
@@ -196,14 +191,12 @@ const ipnCallback = asyncHandler(async (req, res) => {
           order.paidAt = new Date();
           await order.save();
 
-          console.log('✅ Payment success, stock reduced, order updated:', dbOrderId);
         }
       } catch (err) {
         console.error('Error updating order:', err);
       }
     }
   } else {
-    console.log('❌ Payment failed, resultCode:', resultCode, 'message:', message);
     // KHÔNG xóa đơn ở đây - chỉ xóa ở returnCallback (khi user thực sự hủy)
   }
 
@@ -216,9 +209,6 @@ const ipnCallback = asyncHandler(async (req, res) => {
 // @access  Public
 const returnCallback = asyncHandler(async (req, res) => {
   const { resultCode, orderInfo, transId, amount, message } = req.query;
-
-  console.log('=== MoMo Return Callback ===');
-  console.log('ResultCode:', resultCode);
 
   // Trích xuất orderId từ orderInfo: "thanh toan don hang 123abc"
   const orderIdMatch = orderInfo ? orderInfo.match(/thanh toan don hang (.+)/i) : null;
@@ -243,7 +233,6 @@ const returnCallback = asyncHandler(async (req, res) => {
           }
           // Xóa đơn hàng
           await Order.findByIdAndDelete(dbOrderId);
-          console.log('✅ Order cancelled due to payment failure, stock restored:', dbOrderId);
         }
       } catch (err) {
         console.error('Error cancelling order:', err);

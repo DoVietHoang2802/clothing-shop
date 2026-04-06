@@ -199,8 +199,6 @@ const getConversations = asyncHandler(async (req, res, next) => {
   const currentUserRole = req.user.role;
   const isAdminOrStaff = currentUserRole === 'ADMIN' || currentUserRole === 'STAFF';
 
-  console.log(`[CHAT DEBUG] getConversations: userId=${currentUserId}, role=${currentUserRole}, isAdminOrStaff=${isAdminOrStaff}`);
-
   try {
     const currentUserIdObj = new mongoose.Types.ObjectId(currentUserId);
 
@@ -227,13 +225,10 @@ const getConversations = asyncHandler(async (req, res, next) => {
     .sort({ createdAt: -1 })
     .limit(200);
 
-    console.log(`[CHAT DEBUG] getConversations: found ${messages.length} messages`);
-
     // Gom nhóm theo người chat (người còn lại trong cuộc trò chuyện)
     const conversationMap = new Map();
 
     for (const msg of messages) {
-      console.log(`[CHAT DEBUG] Processing message: senderRole=${msg.sender.role}, receiverRole=${msg.receiver.role}`);
       // Xác định người chat còn lại
       let otherUser;
       let conversationKey;
@@ -266,8 +261,6 @@ const getConversations = asyncHandler(async (req, res, next) => {
 
       // Chỉ lấy tin nhắn đầu tiên (mới nhất) cho mỗi user
       if (otherUser && !conversationMap.has(conversationKey)) {
-        // Với user: đếm tin nhắn chưa đọc từ otherUser gửi đến currentUser
-        // Với admin: đếm tin nhắn chưa đọc từ user gửi đến bất kỳ admin/staff nào
         const unreadQuery = isAdminOrStaff
           ? { sender: otherUser._id, read: false }
           : { sender: otherUser._id, receiver: currentUserIdObj, read: false };
@@ -300,7 +293,6 @@ const getConversations = asyncHandler(async (req, res, next) => {
     const conversations = Array.from(conversationMap.values())
       .sort((a, b) => new Date(b.lastMessage.createdAt) - new Date(a.lastMessage.createdAt));
 
-    console.log(`[CHAT DEBUG] getConversations: returning ${conversations.length} conversations`);
     res.status(200).json({
       success: true,
       message: 'Lấy danh sách cuộc trò chuyện thành công',
@@ -308,7 +300,6 @@ const getConversations = asyncHandler(async (req, res, next) => {
     });
 
   } catch (err) {
-    console.error('[CHAT DEBUG] getConversations error:', err);
     return res.status(500).json({
       success: false,
       message: 'Lỗi khi lấy danh sách cuộc trò chuyện',

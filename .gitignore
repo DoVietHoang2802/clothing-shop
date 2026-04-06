@@ -64,3 +64,7 @@ Thumbs.db
 backend/tmpclaude-*/
 frontend/tmpclaude-*/
 .claude/
+
+# Personal presentation & session notes (not project code)
+PRESENTATION_OUTLINE.md
+SESSION_NOTES.md

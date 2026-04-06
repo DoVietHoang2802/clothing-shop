@@ -59,7 +59,6 @@ clothing-shop/
 │   │   ├── paymentController.js     # Thanh toán MoMo
 │   │   ├── addressController.js     # Địa chỉ giao hàng
 │   │   ├── adminController.js       # Dashboard thống kê
-│   │   └── reviewController.js      # Đánh giá sản phẩm
 │   │
 │   ├── routes/                       # ĐIỀU HƯỚNG (chỉ gọi controller)
 │   │   ├── auth.js                  # POST /api/auth/*
@@ -97,7 +96,6 @@ clothing-shop/
 │   │
 │   ├── app.js                        # Express app (đăng ký routes)
 │   ├── server.js                     # Entry point
-│   ├── serviceAccountKey.json        # Firebase Admin SDK
 │   └── package.json
 │
 ├── frontend/                         # React SPA
@@ -134,10 +132,9 @@ clothing-shop/
 │   │   │       ├── StaffDashboard.jsx
 │   │   │       └── StaffProductsPage.jsx
 │   │   │
-│   │   ├── services/                # API service layer
+│   │   │   ├── services/                # API service layer
 │   │   │   ├── api.js               # Axios instance + interceptors
 │   │   │   ├── authService.js       # Auth API
-│   │   │   ├── googleAuthService.js # Google OAuth
 │   │   │   ├── productService.js    # Sản phẩm
 │   │   │   ├── orderService.js      # Đơn hàng
 │   │   │   ├── momoService.js       # MoMo payment
@@ -146,7 +143,7 @@ clothing-shop/
 │   │   │
 │   │   ├── config/
 │   │   │   ├── sse.js               # SSE real-time service
-│   │   │   └── firebase.js          # Firebase config
+│   │   │   └── firebase.js          # Firebase config (Google OAuth)
 │   │   │
 │   │   └── context/
 │   │       ├── AuthContext.jsx      # Auth state

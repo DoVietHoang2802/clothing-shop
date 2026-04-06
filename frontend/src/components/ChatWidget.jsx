@@ -37,7 +37,7 @@ const ChatWidget = () => {
       eventSourceRef.current = eventSource;
 
       eventSource.onopen = () => {
-        console.log('SSE Connected');
+        // Connected
       };
 
       eventSource.onmessage = (event) => {
@@ -62,7 +62,6 @@ const ChatWidget = () => {
       };
 
       eventSource.onerror = () => {
-        console.log('SSE Error, reconnecting...');
         eventSource.close();
         // Reconnect sau 5s
         setTimeout(() => {
@@ -183,8 +182,6 @@ const ChatWidget = () => {
     try {
       const res = await chatService.getConversations();
       const convs = res.data.data || [];
-      console.log('[DEBUG] loadConversations returned:', convs.length, 'conversations');
-      console.log('[DEBUG] conversations data:', JSON.stringify(convs));
       setConversations(convs);
       const totalUnread = convs.reduce((sum, c) => sum + (c.unreadCount || 0), 0);
       setUnreadCount(totalUnread);
