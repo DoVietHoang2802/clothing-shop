@@ -1,0 +1,47 @@
+import api from './api';
+
+const orderService = {
+  createOrder: (items, couponCode = null, shippingAddress = null, paymentMethod = 'COD') => {
+    return api.post('/orders', { items, couponCode, shippingAddress, paymentMethod });
+  },
+
+  getMyOrders: () => {
+    return api.get('/orders/my');
+  },
+
+  getOrderById: (id) => {
+    return api.get(`/orders/${id}`);
+  },
+
+  getAllOrders: () => {
+    return api.get('/orders');
+  },
+
+  updateOrderStatus: (id, status) => {
+    return api.put(`/orders/${id}/status`, { status });
+  },
+
+  // User xác nhận đã thanh toán cho shipper (COD)
+  confirmPaidToShipper: (id) => {
+    return api.put(`/orders/${id}/paid-to-shipper`);
+  },
+
+  // User xác nhận đã nhận hàng (MOMO)
+  confirmReceivedOrder: (id) => {
+    return api.put(`/orders/${id}/received`);
+  },
+
+  cancelOrder: (id) => {
+    return api.put(`/orders/${id}/cancel`);
+  },
+
+  deleteOrder: (id) => {
+    return api.delete(`/orders/${id}`);
+  },
+
+  deleteOrderAdmin: (id) => {
+    return api.delete(`/orders/admin/${id}`);
+  },
+};
+
+export default orderService;

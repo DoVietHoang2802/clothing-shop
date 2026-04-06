@@ -1,0 +1,306 @@
+const Product = require('../models/Product');
+const Review = require('../models/Review');
+const asyncHandler = require('../utils/asyncHandler');
+const path = require('path');
+
+// @desc    Lấy tất cả sản phẩm (với search, filter, pagination, sort)
+// @route   GET /api/products
+// @access  Public
+// Query params: search, category, minPrice, maxPrice, page, limit, sortBy
+const getAllProducts = asyncHandler(async (req, res, next) => {
+  const { search, category, minPrice, maxPrice, page = 1, limit = 10, sortBy, lowStock, outOfStock } = req.query;
+  let query = {};
+
+  // Search by name
+  if (search) {
+    query.name = { $regex: search, $options: 'i' }; // Case-insensitive
+  }
+
+  // Filter by category
+  if (category) {
+    query.category = category;
+  }
+
+  // Filter by price range
+  if (minPrice || maxPrice) {
+    query.price = {};
+    if (minPrice) {
+      query.price.$gte = parseFloat(minPrice);
+    }
+    if (maxPrice) {
+      query.price.$lte = parseFloat(maxPrice);
+    }
+  }
+
+  // Filter by stock
+  if (lowStock === 'true') {
+    query.stock = { $lte: 5, $gt: 0 }; // Sắp hết: > 0 và <= 5
+  }
+  if (outOfStock === 'true') {
+    query.stock = 0; // Hết hàng
+  }
+
+  // Pagination
+  const pageNum = Math.max(1, parseInt(page));
+  const pageSize = Math.max(1, Math.min(100, parseInt(limit))); // Max 100 per page
+  const skip = (pageNum - 1) * pageSize;
+
+  // Sort options
+  let sortOption = { createdAt: -1 }; // Default: newest first
+  if (sortBy) {
+    switch (sortBy) {
+      case 'name-asc':
+        sortOption = { name: 1 };
+        break;
+      case 'name-desc':
+        sortOption = { name: -1 };
+        break;
+      case 'price-asc':
+        sortOption = { price: 1 };
+        break;
+      case 'price-desc':
+        sortOption = { price: -1 };
+        break;
+      case 'best-selling':
+        sortOption = { soldCount: -1 };
+        break;
+      case 'newest':
+      default:
+        sortOption = { createdAt: -1 };
+        break;
+    }
+  }
+
+  // Get total count for pagination
+  const total = await Product.countDocuments(query);
+
+  // Get products with pagination and sorting
+  const products = await Product.find(query)
+    .populate('category', 'name')
+    .limit(pageSize)
+    .skip(skip)
+    .sort(sortOption);
+
+  // Get rating info for all products in one aggregation
+  const productIds = products.map(p => p._id);
+  const ratingData = await Review.aggregate([
+    { $match: { product: { $in: productIds } } },
+    {
+      $group: {
+        _id: '$product',
+        averageRating: { $avg: '$rating' },
+        totalReviews: { $sum: 1 },
+      },
+    },
+  ]);
+
+  // Create a map for quick lookup
+  const ratingMap = {};
+  ratingData.forEach(r => {
+    ratingMap[r._id.toString()] = {
+      averageRating: Math.round(r.averageRating * 10) / 10, // Round to 1 decimal
+      totalReviews: r.totalReviews,
+    };
+  });
+
+  // Add rating info to each product
+  const productsWithRatings = products.map(p => {
+    const ratingInfo = ratingMap[p._id.toString()] || { averageRating: 0, totalReviews: 0 };
+    return {
+      ...p.toObject(),
+      averageRating: ratingInfo.averageRating,
+      totalReviews: ratingInfo.totalReviews,
+    };
+  });
+
+  res.status(200).json({
+    success: true,
+    message: 'Lấy danh sách sản phẩm thành công',
+    data: productsWithRatings,
+    pagination: {
+      currentPage: pageNum,
+      pageSize: pageSize,
+      total: total,
+      totalPages: Math.ceil(total / pageSize),
+    },
+  });
+});
+
+// @desc    Lấy một sản phẩm theo ID
+// @route   GET /api/products/:id
+// @access  Public
+const getProductById = asyncHandler(async (req, res, next) => {
+  const { id } = req.params;
+
+  const product = await Product.findById(id).populate('category');
+  if (!product) {
+    return res.status(404).json({
+      success: false,
+      message: 'Sản phẩm không tìm thấy',
+      data: null,
+    });
+  }
+
+  res.status(200).json({
+    success: true,
+    message: 'Lấy sản phẩm thành công',
+    data: product,
+  });
+});
+
+// @desc    Tạo sản phẩm mới
+// @route   POST /api/products
+// @access  Private/ADMIN,STAFF
+const createProduct = asyncHandler(async (req, res, next) => {
+  const { name, description, price, stock, image, category } = req.body;
+
+  if (!name || !price || !category) {
+    return res.status(400).json({
+      success: false,
+      message: 'Vui lòng cung cấp tên, giá và danh mục sản phẩm',
+      data: null,
+    });
+  }
+
+  // Validation
+  if (price < 0) {
+    return res.status(400).json({
+      success: false,
+      message: 'Giá sản phẩm không được âm',
+      data: null,
+    });
+  }
+
+  if (stock !== undefined && stock < 0) {
+    return res.status(400).json({
+      success: false,
+      message: 'Tồn kho không được âm',
+      data: null,
+    });
+  }
+
+  const product = await Product.create({
+    name,
+    description,
+    price,
+    stock: stock || 0,
+    image: image || 'https://via.placeholder.com/300x300?text=No+Image',
+    category,
+  });
+
+  await product.populate('category', 'name');
+
+  res.status(201).json({
+    success: true,
+    message: 'Tạo sản phẩm thành công',
+    data: product,
+  });
+});
+
+// @desc    Cập nhật sản phẩm
+// @route   PUT /api/products/:id
+// @access  Private/ADMIN,STAFF
+const updateProduct = asyncHandler(async (req, res, next) => {
+  const { id } = req.params;
+  const { name, description, price, stock, image, category } = req.body;
+
+  let product = await Product.findById(id);
+  if (!product) {
+    return res.status(404).json({
+      success: false,
+      message: 'Sản phẩm không tìm thấy',
+      data: null,
+    });
+  }
+
+  // Validation
+  if (price !== undefined && price < 0) {
+    return res.status(400).json({
+      success: false,
+      message: 'Giá sản phẩm không được âm',
+      data: null,
+    });
+  }
+
+  if (stock !== undefined && stock < 0) {
+    return res.status(400).json({
+      success: false,
+      message: 'Tồn kho không được âm',
+      data: null,
+    });
+  }
+
+  if (name) product.name = name;
+  if (description) product.description = description;
+  if (price !== undefined) product.price = price;
+  if (stock !== undefined) product.stock = stock;
+  if (image) product.image = image;
+  if (category) product.category = category;
+
+  product = await product.save();
+  await product.populate('category', 'name');
+
+  res.status(200).json({
+    success: true,
+    message: 'Cập nhật sản phẩm thành công',
+    data: product,
+  });
+});
+
+// @desc    Xóa sản phẩm
+// @route   DELETE /api/products/:id
+// @access  Private/ADMIN
+const deleteProduct = asyncHandler(async (req, res, next) => {
+  const { id } = req.params;
+
+  const product = await Product.findByIdAndDelete(id);
+  if (!product) {
+    return res.status(404).json({
+      success: false,
+      message: 'Sản phẩm không tìm thấy',
+      data: null,
+    });
+  }
+
+  res.status(200).json({
+    success: true,
+    message: 'Xóa sản phẩm thành công',
+    data: product,
+  });
+});
+
+// @desc    Upload ảnh sản phẩm
+// @route   POST /api/products/upload
+// @access  Private/ADMIN,STAFF
+const uploadProductImage = asyncHandler(async (req, res, next) => {
+  if (!req.file) {
+    return res.status(400).json({
+      success: false,
+      message: 'Vui lòng chọn file ảnh',
+      data: null,
+    });
+  }
+
+  // Luôn dùng https để tránh Mixed Content khi deploy
+  const protocol = process.env.API_PROTOCOL || req.protocol;
+  const baseUrl = `${protocol}://${req.get('host')}`;
+  const imageUrl = `${baseUrl}/uploads/${req.file.filename}`;
+
+  res.status(200).json({
+    success: true,
+    message: 'Upload ảnh thành công',
+    data: {
+      url: imageUrl,
+      filename: req.file.filename,
+    },
+  });
+});
+
+module.exports = {
+  getAllProducts,
+  getProductById,
+  createProduct,
+  updateProduct,
+  deleteProduct,
+  uploadProductImage,
+};

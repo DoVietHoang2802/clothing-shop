@@ -1,0 +1,211 @@
+/* Contact Modal Overlay */
+.contact-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Contact Modal */
+.contact-modal {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  padding: 0;
+  max-width: 400px;
+  width: 90%;
+  animation: slideUp 0.3s ease-out;
+  position: relative;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Modal Close Button */
+.contact-modal-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #999;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+
+.contact-modal-close:hover {
+  background: #f0f0f0;
+  color: #333;
+}
+
+/* Modal Header */
+.contact-modal-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 24px 24px 16px;
+  border-bottom: 1px solid #eee;
+}
+
+.contact-modal-icon {
+  font-size: 32px;
+}
+
+.contact-modal-header h2 {
+  margin: 0;
+  font-size: 1.3rem;
+  color: #1a1a1a;
+}
+
+/* Modal Content */
+.contact-modal-content {
+  padding: 24px;
+}
+
+/* Contact Info Box */
+.contact-info-box {
+  background: linear-gradient(135deg, #f5f3f0 0%, #faf9f7 100%);
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  border-left: 4px solid #ff6b35;
+}
+
+.contact-label {
+  margin: 0 0 8px 0;
+  font-size: 0.9rem;
+  color: #666;
+  font-weight: 500;
+}
+
+.contact-value {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #1a1a1a;
+  font-weight: 600;
+  word-break: break-all;
+}
+
+/* Modal Actions */
+.contact-modal-actions {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.contact-btn {
+  flex: 1;
+  padding: 12px 16px;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.95rem;
+  text-align: center;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.contact-btn-copy {
+  background: #e8e8e8;
+  color: #333;
+}
+
+.contact-btn-copy:hover {
+  background: #d5d5d5;
+}
+
+.contact-btn-action {
+  background: linear-gradient(90deg, #ff6b35 0%, #f7931e 100%);
+  color: white;
+}
+
+.contact-btn-action:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+}
+
+/* Modal Description */
+.contact-modal-description {
+  margin: 16px 0 0 0;
+  padding-top: 16px;
+  border-top: 1px solid #eee;
+  font-size: 0.9rem;
+  color: #666;
+  line-height: 1.5;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .contact-modal {
+    max-width: 350px;
+  }
+
+  .contact-modal-header {
+    padding: 20px 20px 12px;
+  }
+
+  .contact-modal-content {
+    padding: 20px;
+  }
+
+  .contact-modal-header h2 {
+    font-size: 1.1rem;
+  }
+
+  .contact-value {
+    font-size: 1rem;
+  }
+
+  .contact-btn {
+    font-size: 0.9rem;
+    padding: 10px 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .contact-modal {
+    max-width: 90%;
+    width: 100%;
+  }
+
+  .contact-modal-actions {
+    flex-direction: column;
+  }
+}
