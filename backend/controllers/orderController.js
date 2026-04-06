@@ -93,6 +93,7 @@ const createOrder = asyncHandler(async (req, res, next) => {
 
   // Xử lý coupon nếu có
   let couponData = null;
+  let couponId = null; // lưu _id của coupon để dùng trong transaction
   let discountAmount = 0;
   let finalPrice = totalPrice;
 
@@ -109,7 +110,7 @@ const createOrder = asyncHandler(async (req, res, next) => {
       });
     }
 
-    // Check if active
+    couponId = coupon._id;
     if (!coupon.isActive) {
       return res.status(400).json({
         success: false,
@@ -162,11 +163,6 @@ const createOrder = asyncHandler(async (req, res, next) => {
       discountType: coupon.discountType,
       discountValue: coupon.discountValue,
     };
-
-    // Update coupon usage
-    await Coupon.findByIdAndUpdate(coupon._id, {
-      $inc: { usageCount: 1 },
-    });
   }
 
   // Bắt đầu transaction để đảm bảo tính toàn vẹn dữ liệu
@@ -204,7 +200,7 @@ const createOrder = asyncHandler(async (req, res, next) => {
     // 3. Tăng coupon usage count (nếu có coupon)
     if (couponData) {
       await Coupon.updateOne(
-        { _id: coupon._id },
+        { _id: couponId },
         { $inc: { usageCount: 1 } },
         { session }
       );
