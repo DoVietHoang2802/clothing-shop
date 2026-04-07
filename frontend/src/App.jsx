@@ -18,7 +18,6 @@ import PaymentResultPage from './pages/PaymentResultPage';
 import AddressPage from './pages/AddressPage';
 import NotificationPage from './pages/NotificationPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
-import ResetPasswordPage from './pages/ResetPasswordPage';
 import { ToastContainer } from './components/ToastNotification';
 
 // Admin Pages
@@ -47,7 +46,6 @@ function App() {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-            <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
             <Route path="/payment-result" element={<PaymentResultPage />} />
 
             {/* User Routes */}
