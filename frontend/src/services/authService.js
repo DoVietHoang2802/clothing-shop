@@ -67,8 +67,14 @@ const authService = {
     return api.post('/auth/google', { googleToken });
   },
 
-  forgotPassword: (email) => {
-    return api.post('/auth/forgot-password', { email });
+  // Step 1: Verify email + name, returns resetToken
+  verifyForgotPassword: (email, name) => {
+    return api.post('/auth/forgot-password', { email, name });
+  },
+
+  // Step 2 (legacy): email + name + password (for single-page flow)
+  forgotPassword: (email, name, newPassword, confirmPassword) => {
+    return api.post('/auth/forgot-password', { email, name, newPassword, confirmPassword });
   },
 
   resetPassword: (token, newPassword, confirmPassword) => {

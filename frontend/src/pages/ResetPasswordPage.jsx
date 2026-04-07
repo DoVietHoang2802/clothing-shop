@@ -7,169 +7,158 @@ const ResetPasswordPage = () => {
   const navigate = useNavigate();
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPasswords, setShowPasswords] = useState({ new: false, confirm: false });
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
+
+  const toggleShow = (field) => {
+    setShowPasswords((prev) => ({ ...prev, [field]: !prev[field] }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
-    if (!newPassword || !confirmPassword) {
-      setError('Vui lòng điền đầy đủ thông tin');
-      return;
-    }
-
-    if (newPassword.length < 6) {
-      setError('Mật khẩu mới phải có ít nhất 6 ký tự');
-      return;
-    }
-
-    if (newPassword !== confirmPassword) {
-      setError('Mật khẩu mới không khớp');
-      return;
-    }
+    if (!newPassword) { setError('Vui lòng nhập mật khẩu mới'); return; }
+    if (newPassword.length < 6) { setError('Mật khẩu phải có ít nhất 6 ký tự'); return; }
+    if (newPassword !== confirmPassword) { setError('Mật khẩu xác nhận không khớp'); return; }
 
     try {
       setLoading(true);
       await authService.resetPassword(token, newPassword, confirmPassword);
-      setSuccess(true);
+      navigate('/login', { replace: true });
     } catch (err) {
-      setError(err.response?.data?.message || 'Có lỗi xảy ra. Vui lòng thử lại.');
+      setError(err.response?.data?.message || 'Token không hợp lệ hoặc đã hết hạn. Vui lòng thử lại.');
     } finally {
       setLoading(false);
     }
   };
 
-  if (success) {
-    return (
-      <div
-        className="container"
-        style={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          minHeight: '80vh'
-        }}
-      >
-        <div
-          className="card"
-          style={{
-            width: '100%',
-            maxWidth: '400px',
-            padding: '2rem',
-            textAlign: 'center'
-          }}
-        >
-          <div style={{
-            width: '60px',
-            height: '60px',
-            borderRadius: '50%',
-            background: '#27ae60',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            margin: '0 auto 1rem',
-            fontSize: '2rem',
-            color: 'white'
-          }}>
-            ✓
-          </div>
-          <h2 style={{ color: '#27ae60', marginBottom: '1rem' }}>
-            Đặt lại mật khẩu thành công!
-          </h2>
-          <p style={{ color: '#666', marginBottom: '1.5rem' }}>
-            Mật khẩu của bạn đã được thay đổi. Bây giờ bạn có thể đăng nhập với mật khẩu mới.
-          </p>
-
-          <Link
-            to="/login"
-            style={{
-              display: 'inline-block',
-              padding: '12px 24px',
-              background: '#667eea',
-              color: 'white',
-              borderRadius: '8px',
-              textDecoration: 'none',
-              fontWeight: '600'
-            }}
-          >
-            Đăng Nhập Ngay
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div
-      className="container"
-      style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        minHeight: '80vh'
-      }}
-    >
-      <div
-        className="card"
-        style={{
-          width: '100%',
-          maxWidth: '400px',
-          padding: '2rem'
-        }}
-      >
-        <h1 style={{ textAlign: 'center', marginBottom: '0.5rem' }}>
-          Đặt Lại Mật Khẩu
-        </h1>
-        <p style={{
-          textAlign: 'center',
-          color: '#666',
-          marginBottom: '2rem',
-          fontSize: '0.9rem'
+    <div style={{
+      minHeight: '80vh', display: 'flex', justifyContent: 'center', alignItems: 'center',
+      padding: '2rem 1rem', background: '#f5f6fa'
+    }}>
+      <div style={{
+        width: '100%', maxWidth: '440px',
+        background: 'white', borderRadius: '20px',
+        padding: '2rem', boxShadow: '0 4px 20px rgba(0,0,0,0.08)'
+      }}>
+        {/* Lock icon */}
+        <div style={{
+          width: '64px', height: '64px', borderRadius: '50%',
+          background: 'linear-gradient(135deg, #667eea, #764ba2)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          margin: '0 auto 1.5rem', fontSize: '1.75rem'
         }}>
+          🔒
+        </div>
+
+        <h2 style={{ textAlign: 'center', marginBottom: '0.25rem', color: '#1a1a2e' }}>
+          Đặt Mật Khẩu Mới
+        </h2>
+        <p style={{ textAlign: 'center', color: '#888', fontSize: '0.9rem', marginBottom: '2rem' }}>
           Nhập mật khẩu mới cho tài khoản của bạn
         </p>
 
-        {error && <div className="alert alert-error">{error}</div>}
+        {/* Error */}
+        {error && (
+          <div style={{
+            padding: '0.875rem 1rem', marginBottom: '1.25rem',
+            background: '#fee', color: '#e74c3c', borderRadius: '10px',
+            borderLeft: '4px solid #e74c3c', fontSize: '0.875rem'
+          }}>
+            {error}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label htmlFor="newPassword">Mật khẩu mới</label>
-            <input
-              type="password"
-              id="newPassword"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              disabled={loading}
-              placeholder="Ít nhất 6 ký tự"
-            />
+          {/* New password */}
+          <div style={{ marginBottom: '1.25rem' }}>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', color: '#555' }}>
+              Mật khẩu mới
+            </label>
+            <div style={{ position: 'relative' }}>
+              <input
+                type={showPasswords.new ? 'text' : 'password'}
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Tối thiểu 6 ký tự"
+                disabled={loading}
+                style={{
+                  width: '100%', padding: '0.75rem 2.5rem 0.75rem 0.75rem',
+                  border: error ? '2px solid #e74c3c' : '2px solid #e0e0e0',
+                  borderRadius: '10px', fontSize: '1rem', outline: 'none',
+                  boxSizing: 'border-box', transition: 'border 0.2s',
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => toggleShow('new')}
+                style={{
+                  position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)',
+                  background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.1rem',
+                }}
+              >
+                {showPasswords.new ? '🙈' : '👁️'}
+              </button>
+            </div>
           </div>
 
-          <div className="form-group">
-            <label htmlFor="confirmPassword">Xác nhận mật khẩu</label>
-            <input
-              type="password"
-              id="confirmPassword"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              disabled={loading}
-              placeholder="Nhập lại mật khẩu mới"
-            />
+          {/* Confirm password */}
+          <div style={{ marginBottom: '1.5rem' }}>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', color: '#555' }}>
+              Xác nhận mật khẩu
+            </label>
+            <div style={{ position: 'relative' }}>
+              <input
+                type={showPasswords.confirm ? 'text' : 'password'}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Nhập lại mật khẩu mới"
+                disabled={loading}
+                style={{
+                  width: '100%', padding: '0.75rem 2.5rem 0.75rem 0.75rem',
+                  border: error ? '2px solid #e74c3c' : '2px solid #e0e0e0',
+                  borderRadius: '10px', fontSize: '1rem', outline: 'none',
+                  boxSizing: 'border-box', transition: 'border 0.2s',
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => toggleShow('confirm')}
+                style={{
+                  position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)',
+                  background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.1rem',
+                }}
+              >
+                {showPasswords.confirm ? '🙈' : '👁️'}
+              </button>
+            </div>
           </div>
 
           <button
             type="submit"
-            className="btn btn-primary"
-            style={{ width: '100%', marginTop: '1rem' }}
             disabled={loading}
+            style={{
+              width: '100%', padding: '0.875rem',
+              background: loading
+                ? '#a0a0c0'
+                : 'linear-gradient(135deg, #667eea, #764ba2)',
+              color: 'white', border: 'none', borderRadius: '10px',
+              fontWeight: '700', fontSize: '1rem', cursor: loading ? 'not-allowed' : 'pointer',
+              transition: 'all 0.2s',
+            }}
           >
-            {loading ? 'Đang xử lý...' : 'Đặt lại mật khẩu'}
+            {loading ? 'Đang xử lý...' : 'Đặt Mật Khẩu Mới'}
           </button>
         </form>
 
-        <p style={{ textAlign: 'center', marginTop: '1.5rem' }}>
-          <Link to="/login">← Quay lại đăng nhập</Link>
+        <p style={{ textAlign: 'center', marginTop: '1.5rem', color: '#888', fontSize: '0.875rem' }}>
+          Nhớ mật khẩu rồi?{' '}
+          <Link to="/login" style={{ color: '#667eea', fontWeight: '600' }}>
+            Đăng Nhập
+          </Link>
         </p>
       </div>
     </div>

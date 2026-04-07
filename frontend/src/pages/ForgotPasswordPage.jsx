@@ -3,40 +3,39 @@ import { Link, useNavigate } from 'react-router-dom';
 import authService from '../services/authService';
 
 const ForgotPasswordPage = () => {
-  const [email, setEmail] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [error, setError] = useState('');
-  const [devToken, setDevToken] = useState('');
-
   const navigate = useNavigate();
+  const [email, setEmail] = useState('');
+  const [name, setName] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPasswords, setShowPasswords] = useState({ new: false, confirm: false });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
+
+  const toggleShow = (field) => {
+    setShowPasswords((prev) => ({ ...prev, [field]: !prev[field] }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    setDevToken('');
 
-    if (!email) {
-      setError('Vui lòng nhập email');
-      return;
-    }
-
-    // Basic email validation
+    if (!email) { setError('Vui lòng nhập email'); return; }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      setError('Email không hợp lệ');
-      return;
-    }
+    if (!emailRegex.test(email)) { setError('Email không hợp lệ'); return; }
+
+    if (!name.trim()) { setError('Vui lòng nhập họ tên'); return; }
+
+    if (!newPassword) { setError('Vui lòng nhập mật khẩu mới'); return; }
+    if (newPassword.length < 6) { setError('Mật khẩu phải có ít nhất 6 ký tự'); return; }
+
+    if (newPassword !== confirmPassword) { setError('Mật khẩu xác nhận không khớp'); return; }
 
     try {
       setLoading(true);
-      const res = await authService.forgotPassword(email);
+      await authService.forgotPassword(email, name, newPassword, confirmPassword);
       setSuccess(true);
-
-      // DEV MODE: Nếu có resetToken trả về (chỉ dev)
-      if (res.data.data?.resetToken) {
-        setDevToken(res.data.data.resetToken);
-      }
     } catch (err) {
       setError(err.response?.data?.message || 'Có lỗi xảy ra. Vui lòng thử lại.');
     } finally {
@@ -44,164 +43,204 @@ const ForgotPasswordPage = () => {
     }
   };
 
-  if (success) {
-    return (
-      <div
-        className="container"
-        style={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          minHeight: '80vh'
-        }}
-      >
-        <div
-          className="card"
-          style={{
-            width: '100%',
-            maxWidth: '450px',
-            padding: '2rem',
-            textAlign: 'center'
-          }}
-        >
-          <div style={{
-            width: '60px',
-            height: '60px',
-            borderRadius: '50%',
-            background: '#27ae60',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            margin: '0 auto 1rem',
-            fontSize: '2rem'
-          }}>
-            ✓
-          </div>
-          <h2 style={{ color: '#27ae60', marginBottom: '1rem' }}>Đã gửi liên kết!</h2>
-          <p style={{ color: '#666', marginBottom: '1.5rem' }}>
-            Nếu email <strong>{email}</strong> tồn tại trong hệ thống,
-            bạn sẽ nhận được liên kết đặt lại mật khẩu trong giây lát.
-          </p>
+  return (
+    <div style={{
+      minHeight: '80vh', display: 'flex', justifyContent: 'center', alignItems: 'center',
+      padding: '2rem 1rem', background: '#f5f6fa'
+    }}>
+      <div style={{
+        width: '100%', maxWidth: '440px',
+        background: 'white', borderRadius: '20px',
+        padding: '2rem', boxShadow: '0 4px 20px rgba(0,0,0,0.08)'
+      }}>
 
-          {devToken && (
+        {!success ? (
+          <>
+            {/* Lock icon */}
             <div style={{
-              background: '#fff3cd',
-              border: '1px solid #ffc107',
-              borderRadius: '8px',
-              padding: '1rem',
-              marginBottom: '1rem',
-              textAlign: 'left'
+              width: '64px', height: '64px', borderRadius: '50%',
+              background: 'linear-gradient(135deg, #667eea, #764ba2)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              margin: '0 auto 1.5rem', fontSize: '1.75rem'
             }}>
-              <p style={{ fontWeight: '600', color: '#856404', marginBottom: '0.5rem', fontSize: '0.85rem' }}>
-                ⚠️ DEV MODE - Token reset (xóa khi deploy):
-              </p>
-              <code style={{
-                display: 'block',
-                wordBreak: 'break-all',
-                fontSize: '0.75rem',
-                color: '#856404'
+              🔑
+            </div>
+
+            <h2 style={{ textAlign: 'center', marginBottom: '0.25rem', color: '#1a1a2e' }}>
+              Quên Mật Khẩu
+            </h2>
+            <p style={{ textAlign: 'center', color: '#888', fontSize: '0.9rem', marginBottom: '2rem' }}>
+              Nhập thông tin bên dưới để đặt lại mật khẩu
+            </p>
+
+            {/* Error */}
+            {error && (
+              <div style={{
+                padding: '0.875rem 1rem', marginBottom: '1.25rem',
+                background: '#fee', color: '#e74c3c', borderRadius: '10px',
+                borderLeft: '4px solid #e74c3c', fontSize: '0.875rem'
               }}>
-                {devToken}
-              </code>
+                {error}
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit}>
+              {/* Email */}
+              <div style={{ marginBottom: '1.25rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', color: '#555' }}>
+                  Email
+                </label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Nhập email đã đăng ký"
+                  disabled={loading}
+                  style={{
+                    width: '100%', padding: '0.75rem',
+                    border: error && !email ? '2px solid #e74c3c' : '2px solid #e0e0e0',
+                    borderRadius: '10px', fontSize: '1rem', outline: 'none',
+                    boxSizing: 'border-box', transition: 'border 0.2s',
+                  }}
+                />
+              </div>
+
+              {/* Họ tên */}
+              <div style={{ marginBottom: '1.25rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', color: '#555' }}>
+                  Họ và tên
+                </label>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Nhập họ tên đã đăng ký"
+                  disabled={loading}
+                  style={{
+                    width: '100%', padding: '0.75rem',
+                    border: '2px solid #e0e0e0',
+                    borderRadius: '10px', fontSize: '1rem', outline: 'none',
+                    boxSizing: 'border-box', transition: 'border 0.2s',
+                  }}
+                />
+              </div>
+
+              {/* Mật khẩu mới */}
+              <div style={{ marginBottom: '1.25rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', color: '#555' }}>
+                  Mật khẩu mới
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type={showPasswords.new ? 'text' : 'password'}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Tối thiểu 6 ký tự"
+                    disabled={loading}
+                    style={{
+                      width: '100%', padding: '0.75rem 2.5rem 0.75rem 0.75rem',
+                      border: '2px solid #e0e0e0',
+                      borderRadius: '10px', fontSize: '1rem', outline: 'none',
+                      boxSizing: 'border-box', transition: 'border 0.2s',
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => toggleShow('new')}
+                    style={{
+                      position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)',
+                      background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.1rem',
+                    }}
+                  >
+                    {showPasswords.new ? '🙈' : '👁️'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Xác nhận mật khẩu */}
+              <div style={{ marginBottom: '1.5rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', color: '#555' }}>
+                  Xác nhận mật khẩu
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type={showPasswords.confirm ? 'text' : 'password'}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Nhập lại mật khẩu mới"
+                    disabled={loading}
+                    style={{
+                      width: '100%', padding: '0.75rem 2.5rem 0.75rem 0.75rem',
+                      border: '2px solid #e0e0e0',
+                      borderRadius: '10px', fontSize: '1rem', outline: 'none',
+                      boxSizing: 'border-box', transition: 'border 0.2s',
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => toggleShow('confirm')}
+                    style={{
+                      position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)',
+                      background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.1rem',
+                    }}
+                  >
+                    {showPasswords.confirm ? '🙈' : '👁️'}
+                  </button>
+                </div>
+              </div>
+
               <button
-                onClick={() => navigate(`/reset-password/${devToken}`)}
+                type="submit"
+                disabled={loading}
                 style={{
-                  marginTop: '0.5rem',
-                  padding: '6px 12px',
-                  background: '#ffc107',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  fontSize: '0.8rem',
-                  fontWeight: '600'
+                  width: '100%', padding: '0.875rem',
+                  background: loading
+                    ? '#a0a0c0'
+                    : 'linear-gradient(135deg, #667eea, #764ba2)',
+                  color: 'white', border: 'none', borderRadius: '10px',
+                  fontWeight: '700', fontSize: '1rem', cursor: loading ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.2s',
                 }}
               >
-                Đi đến trang đặt lại mật khẩu →
+                {loading ? 'Đang xử lý...' : 'Đặt Lại Mật Khẩu'}
               </button>
+            </form>
+
+            <p style={{ textAlign: 'center', marginTop: '1.5rem', color: '#888', fontSize: '0.875rem' }}>
+              Nhớ mật khẩu rồi?{' '}
+              <Link to="/login" style={{ color: '#667eea', fontWeight: '600' }}>Đăng Nhập</Link>
+            </p>
+          </>
+        ) : (
+          /* ===== SUCCESS STATE ===== */
+          <div style={{ textAlign: 'center' }}>
+            <div style={{
+              width: '72px', height: '72px', borderRadius: '50%',
+              background: 'linear-gradient(135deg, #27ae60, #2ecc71)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              margin: '0 auto 1.5rem', fontSize: '2rem'
+            }}>
+              ✓
             </div>
-          )}
-
-          <p style={{ color: '#888', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
-            Không nhận được email? Kiểm tra thư mục Spam hoặc thử lại.
-          </p>
-
-          <Link
-            to="/login"
-            style={{
-              display: 'inline-block',
-              padding: '10px 24px',
-              background: '#667eea',
-              color: 'white',
-              borderRadius: '8px',
-              textDecoration: 'none',
-              fontWeight: '600'
-            }}
-          >
-            Quay lại đăng nhập
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div
-      className="container"
-      style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        minHeight: '80vh'
-      }}
-    >
-      <div
-        className="card"
-        style={{
-          width: '100%',
-          maxWidth: '400px',
-          padding: '2rem'
-        }}
-      >
-        <h1 style={{ textAlign: 'center', marginBottom: '0.5rem' }}>
-          Quên Mật Khẩu?
-        </h1>
-        <p style={{
-          textAlign: 'center',
-          color: '#666',
-          marginBottom: '2rem',
-          fontSize: '0.9rem'
-        }}>
-          Nhập email của bạn để nhận liên kết đặt lại mật khẩu
-        </p>
-
-        {error && <div className="alert alert-error">{error}</div>}
-
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label htmlFor="email">Email</label>
-            <input
-              type="email"
-              id="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              disabled={loading}
-              placeholder="Nhập email đã đăng ký"
-            />
+            <h3 style={{ color: '#1a1a2e', marginBottom: '0.75rem' }}>
+              Đặt lại mật khẩu thành công!
+            </h3>
+            <p style={{ color: '#888', fontSize: '0.9rem', marginBottom: '2rem' }}>
+              Mật khẩu của bạn đã được cập nhật. Vui lòng đăng nhập với mật khẩu mới.
+            </p>
+            <button
+              onClick={() => navigate('/login')}
+              style={{
+                width: '100%', padding: '0.875rem',
+                background: 'linear-gradient(135deg, #667eea, #764ba2)',
+                color: 'white', border: 'none', borderRadius: '10px',
+                fontWeight: '700', fontSize: '1rem', cursor: 'pointer',
+              }}
+            >
+              Đăng Nhập
+            </button>
           </div>
-
-          <button
-            type="submit"
-            className="btn btn-primary"
-            style={{ width: '100%', marginTop: '1rem' }}
-            disabled={loading}
-          >
-            {loading ? 'Đang xử lý...' : 'Gửi liên kết đặt lại'}
-          </button>
-        </form>
-
-        <p style={{ textAlign: 'center', marginTop: '1.5rem' }}>
-          Nhớ mật khẩu rồi? <Link to="/login">Đăng Nhập</Link>
-        </p>
+        )}
       </div>
     </div>
   );
