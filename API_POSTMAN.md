@@ -2,17 +2,19 @@
 
 > **Base URL:** `https://clothing-shop-api-8wae.onrender.com/api`
 >
-> **Header mặc định cho API Private:**
+> **Header cho API cần đăng nhập:**
 > ```
 > Authorization: Bearer <token>
 > Content-Type: application/json
 > ```
+>
+> **Cách lấy token:** Gọi `POST /api/auth/login` → copy `data.token` từ response.
 
 ---
 
 ## 1. AUTH - Xác thực
 
-### 1.1. Đăng ký tài khoản
+### 1.1. Đăng ký
 ```
 POST /api/auth/register
 ```
@@ -24,26 +26,18 @@ POST /api/auth/register
   "password": "matkhau123"
 }
 ```
-**Response 201 - Thành công:**
+**Response 201:**
 ```json
 {
   "success": true,
   "message": "Đăng ký thành công",
   "data": {
-    "user": {
-      "id": "665f1a2b3c4d5e6f7a8b9c0d",
-      "name": "Nguyễn Văn A",
-      "email": "nguyenvana@gmail.com",
-      "role": "USER"
-    },
+    "user": { "id": "...", "name": "Nguyễn Văn A", "email": "nguyenvana@gmail.com", "role": "USER" },
     "token": "eyJhbGciOiJIUzI1NiIs..."
   }
 }
 ```
-**Response 400 - Email đã tồn tại:**
-```json
-{ "success": false, "message": "Email đã tồn tại", "data": null }
-```
+**Lỗi 400:** `{ "success": false, "message": "Email đã tồn tại", "data": null }`
 
 ---
 
@@ -58,54 +52,22 @@ POST /api/auth/login
   "password": "matkhau123"
 }
 ```
-**Response 200 - Thành công:**
-```json
-{
-  "success": true,
-  "message": "Đăng nhập thành công",
-  "data": {
-    "user": {
-      "id": "665f1a2b3c4d5e6f7a8b9c0d",
-      "name": "Nguyễn Văn A",
-      "email": "nguyenvana@gmail.com",
-      "role": "USER"
-    },
-    "token": "eyJhbGciOiJIUzI1NiIs..."
-  }
-}
-```
-**Response 401 - Sai email/mật khẩu:**
-```json
-{ "success": false, "message": "Email hoặc mật khẩu không chính xác", "data": null }
-```
-
----
-
-### 1.3. Đăng nhập Google
-```
-POST /api/auth/google
-```
-**Body:**
-```json
-{
-  "googleToken": "ya29.a0AfH6SMBx..."
-}
-```
 **Response 200:**
 ```json
 {
   "success": true,
   "message": "Đăng nhập thành công",
   "data": {
-    "user": { "id": "...", "name": "...", "email": "...", "role": "USER" },
+    "user": { "id": "...", "name": "Nguyễn Văn A", "email": "nguyenvana@gmail.com", "role": "USER" },
     "token": "eyJhbGciOiJIUzI1NiIs..."
   }
 }
 ```
+**Lỗi 401:** `{ "success": false, "message": "Email hoặc mật khẩu không chính xác", "data": null }`
 
 ---
 
-### 1.4. Quên mật khẩu (Đổi mk mới - không cần token cũ)
+### 1.3. Quên mật khẩu (Đổi mật khẩu mới)
 ```
 POST /api/auth/forgot-password
 ```
@@ -118,7 +80,7 @@ POST /api/auth/forgot-password
   "confirmPassword": "haha1234"
 }
 ```
-**Response 200 - ✅ Thành công:**
+**Response 200 ✅:**
 ```json
 {
   "success": true,
@@ -126,7 +88,7 @@ POST /api/auth/forgot-password
   "data": null
 }
 ```
-**Response 200 - Email/name sai (bảo mật - không tiết lộ):**
+**Response 200 (email/name sai - không tiết lộ):**
 ```json
 {
   "success": true,
@@ -134,20 +96,16 @@ POST /api/auth/forgot-password
   "data": null
 }
 ```
-**Response 400 - Validation lỗi:**
+**Lỗi 400:**
 ```json
 { "success": false, "message": "Mật khẩu xác nhận không khớp", "data": null }
-```
-```json
 { "success": false, "message": "Mật khẩu phải có ít nhất 6 ký tự", "data": null }
-```
-```json
 { "success": false, "message": "Vui lòng nhập email", "data": null }
 ```
 
 ---
 
-### 1.5. Đổi mật khẩu (cần mật khẩu cũ)
+### 1.4. Đổi mật khẩu (cần mật khẩu cũ)
 ```
 POST /api/auth/change-password
 ```
@@ -161,58 +119,36 @@ POST /api/auth/change-password
   "confirmPassword": "matkhaumoi456"
 }
 ```
-**Response 200:**
-```json
-{ "success": true, "message": "Đổi mật khẩu thành công", "data": null }
-```
-**Response 400:**
-```json
-{ "success": false, "message": "Mật khẩu cũ không chính xác", "data": null }
-```
-
----
-
-### 1.6. Refresh token
-```
-POST /api/auth/refresh-token
-```
-**Body:**
-```json
-{ "token": "eyJhbGciOiJIUzI1NiIs..." }
-```
+**Response 200:** `{ "success": true, "message": "Đổi mật khẩu thành công", "data": null }`
+**Lỗi 400:** `{ "success": false, "message": "Mật khẩu cũ không chính xác", "data": null }`
 
 ---
 
 ## 2. PRODUCTS - Sản phẩm
 
-### 2.1. Lấy tất cả sản phẩm
+### 2.1. Lấy danh sách sản phẩm
 ```
 GET /api/products
 ```
 **Query params (tùy chọn):**
 | Param | Ví dụ | Mô tả |
-|-------|-------|-------|
+|-------|--------|-------|
 | `page` | `1` | Trang |
 | `limit` | `12` | Số lượng mỗi trang |
 | `search` | `áo phông` | Tìm theo tên |
-| `category` | `665f1a2b3c4d5e6f7a8b9c0d` | Lọc theo danh mục |
+| `category` | `id-danh-muc` | Lọc theo danh mục |
 | `minPrice` | `100000` | Giá tối thiểu |
 | `maxPrice` | `500000` | Giá tối đa |
-| `sort` | `newest` | Sắp xếp: `newest`, `price_asc`, `price_desc`, `name_asc`, `bestselling` |
-| `lowStock` | `true` | Chỉ hiện sản phẩm sắp hết hàng |
-| `inStock` | `true` | Chỉ hiện sản phẩm còn hàng |
+| `sort` | `newest` | `newest`, `price_asc`, `price_desc`, `name_asc`, `bestselling` |
+| `lowStock` | `true` | Sản phẩm sắp hết hàng |
+| `inStock` | `true` | Chỉ sản phẩm còn hàng |
 
 **Response 200:**
 ```json
 {
   "success": true,
   "data": [/* array sản phẩm */],
-  "pagination": {
-    "currentPage": 1,
-    "pageSize": 12,
-    "total": 48,
-    "totalPages": 4
-  }
+  "pagination": { "currentPage": 1, "pageSize": 12, "total": 48, "totalPages": 4 }
 }
 ```
 
@@ -227,12 +163,12 @@ GET /api/products/:id
 {
   "success": true,
   "data": {
-    "_id": "665f1a2b3c4d5e6f7a8b9c0d",
+    "_id": "...",
     "name": "Áo Phông Nam Trơn",
     "price": 250000,
     "stock": 45,
     "category": { "_id": "...", "name": "Áo Nam" },
-    "images": ["data:image/jpeg;base64,..."],
+    "images": ["..."],
     "description": "Chất liệu cotton 100%...",
     "averageRating": 4.5,
     "reviewCount": 12
@@ -254,13 +190,9 @@ POST /api/products
   "name": "Áo Phông Nữ Caro",
   "price": 299000,
   "stock": 50,
-  "categoryId": "665f1a2b3c4d5e6f7a8b9c0d",
+  "categoryId": "id-danh-muc",
   "description": "Áo phông nữ chất liệu vải thoáng mát"
 }
-```
-**Response 201:**
-```json
-{ "success": true, "message": "Tạo sản phẩm thành công", "data": {/* sản phẩm */} }
 ```
 
 ---
@@ -272,16 +204,11 @@ POST /api/products/upload
 **Header:** `Authorization: Bearer <token>`
 **Content-Type:** `multipart/form-data`
 
-**Body:** `image` (file ảnh)
+**Body:** Chọn file ảnh gửi lên với key là `image`
 
 **Response 200:**
 ```json
-{
-  "success": true,
-  "data": {
-    "url": "/uploads/products/image-665f1a2b3c4d.jpg"
-  }
-}
+{ "success": true, "data": { "url": "/uploads/products/image-xxx.jpg" } }
 ```
 
 ---
@@ -292,7 +219,7 @@ PUT /api/products/:id
 ```
 **Header:** `Authorization: Bearer <token>`
 
-**Body:** giống create (các trường muốn sửa)
+**Body:** các trường muốn sửa (name, price, stock, categoryId, description, images)
 
 ---
 
@@ -306,7 +233,7 @@ DELETE /api/products/:id
 
 ## 3. CATEGORIES - Danh mục
 
-### 3.1. Lấy tất cả danh mục (PUBLIC)
+### 3.1. Lấy tất cả danh mục
 ```
 GET /api/categories
 ```
@@ -315,12 +242,13 @@ GET /api/categories
 {
   "success": true,
   "data": [
-    { "_id": "665f1a2b3c4d5e6f7a8b9c0d", "name": "Áo Nam" },
-    { "_id": "665f1a2b3c4d5e6f7a8b9c0e", "name": "Áo Nữ" },
-    { "_id": "665f1a2b3c4d5e6f7a8b9c0f", "name": "Quần Nam" }
+    { "_id": "...", "name": "Áo Nam" },
+    { "_id": "...", "name": "Áo Nữ" }
   ]
 }
 ```
+
+---
 
 ### 3.2. Tạo danh mục (ADMIN)
 ```
@@ -333,6 +261,8 @@ POST /api/categories
 { "name": "Giày Dép" }
 ```
 
+---
+
 ### 3.3. Cập nhật danh mục (ADMIN)
 ```
 PUT /api/categories/:id
@@ -341,6 +271,8 @@ PUT /api/categories/:id
 ```json
 { "name": "Giày Thể Thao" }
 ```
+
+---
 
 ### 3.4. Xóa danh mục (ADMIN)
 ```
@@ -361,7 +293,8 @@ POST /api/orders
 ```json
 {
   "items": [
-    { "productId": "665f1a2b3c4d5e6f7a8b9c0d", "quantity": 2 }
+    { "productId": "id-san-pham-1", "quantity": 2 },
+    { "productId": "id-san-pham-2", "quantity": 1 }
   ],
   "couponCode": "GIAM10",
   "paymentMethod": "COD",
@@ -372,14 +305,16 @@ POST /api/orders
   }
 }
 ```
+**paymentMethod:** `COD` (nhận hàng rồi trả tiền) hoặc `MOMO` (thanh toán MoMo online)
+
 **Response 201:**
 ```json
 {
   "success": true,
   "message": "Tạo đơn hàng thành công",
   "data": {
-    "_id": "665f1a2b3c4d5e6f7a8b9c0d",
-    "orderId": "ORD-665f1a2b",
+    "_id": "...",
+    "orderId": "ORD-xxx",
     "totalPrice": 500000,
     "status": "PENDING"
   }
@@ -405,7 +340,7 @@ GET /api/orders/my
 
 ---
 
-### 4.3. Lấy chi tiết đơn hàng
+### 4.3. Lấy chi tiết 1 đơn hàng
 ```
 GET /api/orders/:id
 ```
@@ -419,10 +354,7 @@ PUT /api/orders/:id/cancel
 ```
 **Header:** `Authorization: Bearer <token>`
 
-**Response 200:**
-```json
-{ "success": true, "message": "Hủy đơn hàng thành công", "data": null }
-```
+**Response 200:** `{ "success": true, "message": "Hủy đơn hàng thành công", "data": null }`
 
 ---
 
@@ -434,7 +366,7 @@ PUT /api/orders/:id/received
 
 ---
 
-### 4.6. Xác nhận đã thanh toán shipper (COD)
+### 4.6. Xác nhận đã thanh toán cho shipper (COD)
 ```
 PUT /api/orders/:id/paid-to-shipper
 ```
@@ -454,13 +386,12 @@ GET /api/orders
 ```
 PUT /api/orders/:id/status
 ```
-**Header:** `Authorization: Bearer <token>`
-
 **Body:**
 ```json
 { "status": "SHIPPING" }
 ```
-**Các status hợp lệ:** `PENDING`, `CONFIRMED`, `SHIPPING`, `DELIVERED`, `CANCELLED`, `REFUNDED`
+**Các status:** `PENDING` → `CONFIRMED` → `SHIPPING` → `DELIVERED`
+<br>Còn `CANCELLED` (hủy), `REFUNDED` (hoàn tiền)
 
 ---
 
@@ -468,7 +399,6 @@ PUT /api/orders/:id/status
 ```
 DELETE /api/orders/:id
 ```
-**Header:** `Authorization: Bearer <token>`
 
 ---
 
@@ -480,21 +410,6 @@ GET /api/users/profile
 ```
 **Header:** `Authorization: Bearer <token>`
 
-**Response 200:**
-```json
-{
-  "success": true,
-  "data": {
-    "_id": "665f1a2b3c4d5e6f7a8b9c0d",
-    "name": "Nguyễn Văn A",
-    "email": "nguyenvana@gmail.com",
-    "role": "USER",
-    "avatar": null,
-    "createdAt": "2024-01-15T10:30:00Z"
-  }
-}
-```
-
 ---
 
 ### 5.2. Cập nhật profile
@@ -505,9 +420,7 @@ PUT /api/users/profile
 
 **Body:**
 ```json
-{
-  "name": "Nguyễn Văn B"
-}
+{ "name": "Nguyễn Văn B" }
 ```
 
 ---
@@ -562,7 +475,7 @@ POST /api/addresses
   "phone": "0909123456",
   "address": "123 Nguyễn Trãi, Quận 1",
   "city": "TP.HCM",
-  "isDefault": false
+  "isDefault": true
 }
 ```
 
@@ -593,27 +506,15 @@ GET /api/wishlist
 ```
 **Header:** `Authorization: Bearer <token>`
 
-**Response 200:**
-```json
-{
-  "success": true,
-  "data": [
-    { "product": { "_id": "...", "name": "...", "price": 250000, "images": [...] } }
-  ]
-}
-```
-
 ---
 
 ### 7.2. Thêm vào wishlist
 ```
 POST /api/wishlist
 ```
-**Header:** `Authorization: Bearer <token>`
-
 **Body:**
 ```json
-{ "productId": "665f1a2b3c4d5e6f7a8b9c0d" }
+{ "productId": "id-san-pham" }
 ```
 
 ---
@@ -640,18 +541,9 @@ GET /api/reviews/product/:productId
 ```
 **Query params:** `page`, `limit`
 
-**Response 200:**
-```json
-{
-  "success": true,
-  "data": [/* array reviews */],
-  "pagination": { "currentPage": 1, "pageSize": 5, "total": 12, "totalPages": 3 }
-}
-```
-
 ---
 
-### 8.2. Lấy điểm đánh giá trung bình
+### 8.2. Lấy điểm đánh giá trung bình sản phẩm
 ```
 GET /api/reviews/product/:productId/average
 ```
@@ -671,7 +563,7 @@ POST /api/reviews
 **Body:**
 ```json
 {
-  "productId": "665f1a2b3c4d5e6f7a8b9c0d",
+  "productId": "id-san-pham",
   "rating": 5,
   "comment": "Sản phẩm rất tốt, giao hàng nhanh!"
 }
@@ -699,7 +591,7 @@ DELETE /api/reviews/:id
 
 ## 9. COUPONS - Mã giảm giá
 
-### 9.1. Xác nhận/áp dụng coupon (PUBLIC)
+### 9.1. Áp dụng / kiểm tra coupon (PUBLIC)
 ```
 POST /api/coupons/validate
 ```
@@ -725,10 +617,7 @@ POST /api/coupons/validate
   }
 }
 ```
-**Response 400 - Coupon hết hạn/sai:**
-```json
-{ "success": false, "message": "Mã coupon không hợp lệ hoặc đã hết hạn", "data": null }
-```
+**Lỗi 400:** `{ "success": false, "message": "Mã coupon không hợp lệ hoặc đã hết hạn", "data": null }`
 
 ---
 
@@ -758,7 +647,7 @@ POST /api/coupons
   "expiresAt": "2024-12-31T23:59:59Z"
 }
 ```
-**Type hợp lệ:** `percentage`, `fixed`
+`type`: `percentage` (%) hoặc `fixed` (VND)
 
 ---
 
@@ -790,10 +679,7 @@ GET /api/notifications
 ```
 GET /api/notifications/unread-count
 ```
-**Response 200:**
-```json
-{ "success": true, "data": { "count": 3 } }
-```
+**Response 200:** `{ "success": true, "data": { "count": 3 } }`
 
 ---
 
@@ -825,168 +711,22 @@ DELETE /api/notifications/:id
 
 ---
 
-## 11. PAYMENT MoMo - Thanh toán MoMo
+## Tổng kết nhanh
 
-### 11.1. Tạo thanh toán MoMo
-```
-POST /api/momo/create
-```
-**Header:** `Authorization: Bearer <token>`
+| Nhóm | API | Mức |
+|------|-----|-----|
+| **Auth** | register, login, forgot-password, change-password | Public + Private |
+| **Products** | get all, get one, create, upload image, update, delete | Public + Private |
+| **Categories** | get all, create, update, delete | Public + Private |
+| **Orders** | create, my orders, detail, cancel, received, paid-to-shipper, all orders, update status, delete | Private |
+| **Users** | profile, update profile, all users, delete, update role | Private |
+| **Addresses** | CRUD địa chỉ | Private |
+| **Wishlist** | get, add, remove, check | Private |
+| **Reviews** | get reviews, average, create, update, delete | Public + Private |
+| **Coupons** | validate, CRUD coupon | Public + Private |
+| **Notifications** | get, unread count, mark read, delete | Private |
 
-**Body:**
-```json
-{
-  "orderId": "665f1a2b3c4d5e6f7a8b9c0d",
-  "amount": 500000
-}
-```
-**Response 200:**
-```json
-{
-  "success": true,
-  "data": {
-    "payUrl": "https://test-payment.momo.vn/...",
-    "orderId": "MOMO665f1a2b"
-  }
-}
-```
-
----
-
-### 11.2. Kiểm tra giao dịch MoMo
-```
-GET /api/momo/query/:orderId
-```
-
----
-
-## 12. ADMIN DASHBOARD
-
-### 12.1. Lấy thống kê dashboard
-```
-GET /api/admin/stats
-```
-**Header:** `Authorization: Bearer <token>` (ADMIN)
-
-**Response 200:**
-```json
-{
-  "success": true,
-  "data": {
-    "totalUsers": 125,
-    "totalOrders": 342,
-    "totalRevenue": 85650000,
-    "pendingOrders": 12,
-    "lowStockProducts": 5
-  }
-}
-```
-
----
-
-### 12.2. Lấy dữ liệu biểu đồ
-```
-GET /api/admin/stats/chart
-```
-**Header:** `Authorization: Bearer <token>` (ADMIN)
-
-**Query params:** `period=weekly` (hoặc `monthly`, `yearly`)
-
----
-
-## 13. CHAT - Nhắn tin
-
-### 13.1. Lấy danh sách cuộc trò chuyện
-```
-GET /api/chat/conversations/all
-```
-**Header:** `Authorization: Bearer <token>`
-
----
-
-### 13.2. Lấy danh sách admin/staff để chat
-```
-GET /api/chat/users/list
-```
-
----
-
-### 13.3. Lấy tin nhắn với 1 người
-```
-GET /api/chat/:userId
-```
-
----
-
-### 13.4. Gửi tin nhắn
-```
-POST /api/chat/send
-```
-**Header:** `Authorization: Bearer <token>`
-
-**Body:**
-```json
-{
-  "receiverId": "665f1a2b3c4d5e6f7a8b9c0d",
-  "message": "Xin chào, tôi cần hỗ trợ"
-}
-```
-
----
-
-### 13.5. Đánh dấu đã đọc tin nhắn
-```
-PUT /api/chat/read/:userId
-```
-
----
-
-### 13.6. Số tin nhắn chưa đọc
-```
-GET /api/chat/unread/count
-```
-
----
-
-### 13.7. Xóa tin nhắn
-```
-DELETE /api/chat/message/:id
-```
-
----
-
-### 13.8. Xóa cuộc trò chuyện
-```
-DELETE /api/chat/conversation/:userId
-```
-
----
-
-## 14. SSE - Real-time (Events)
-
-> SSE dùng để server tự động gửi dữ liệu tới trình duyệt **không cần client gửi request**. Ví dụ: thông báo mới, đơn hàng thay đổi.
-
-### 14.1. SSE nhận cập nhật đơn hàng
-```
-GET /api/orders/sse
-```
-**Header:** `Authorization: Bearer <token>`
-**Kiểu:** SSE (text/event-stream)
-**Không dùng Postman test được** — dùng trình duyệt hoặc code:
-
-```javascript
-// Ví dụ trong trình duyệt console:
-const es = new EventSource('http://localhost:5000/api/orders/sse', {
-  headers: { Authorization: 'Bearer ' + token }
-});
-es.onmessage = (event) => {
-  const data = JSON.parse(event.data);
-  console.log('Order update:', data);
-};
-```
-
-### 14.2. SSE nhận tin nhắn chat
-```
-GET /api/chat/sse
-```
-**Header:** `Authorization: Bearer <token>`
+**Phân quyền:**
+- `USER` → Khách hàng thường
+- `STAFF` → Nhân viên (quản lý đơn hàng, sản phẩm)
+- `ADMIN` → Quản trị viên (toàn quyền)
