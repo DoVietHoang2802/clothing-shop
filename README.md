@@ -1,6 +1,4 @@
-# 👕 Clothing Shop - Hệ Thống Web Bán Hàng Full Stack
-
-> Website bán quần áo trực tuyến với đầy đủ tính năng quản lý đơn hàng, thanh toán MoMo, và real-time notifications.
+đồ trực tuyến với đầy đủ tính năng quản lý đơn hàng, thanh toán MoMo, và real-time notifications.
 
 ---
 
